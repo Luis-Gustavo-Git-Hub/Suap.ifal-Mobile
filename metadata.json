@@ -1,0 +1,8 @@
+{
+  "name": "Suap.ifal Mobile",
+  "description": "Cliente n\u00e3o oficial SUAP",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

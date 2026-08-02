@@ -1,0 +1,1197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.1.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.1.1)" variant="all" version="9.1.1">
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="                                                            text = String.format(&quot;%02d:%02d&quot;, notificationHour, notificationMinute),"
+        errorLine2="                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="593"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="                StatItem(label = &quot;Média Geral&quot;, value = String.format(&quot;%.1f&quot;, overallAverage), color = MaterialTheme.colorScheme.primary)"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/StatisticsScreen.kt"
+            line="131"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="        Text(String.format(&quot;%.1f&quot;, value), style = MaterialTheme.typography.labelSmall)"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/StatisticsScreen.kt"
+            line="211"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="                    val maFormatted = String.format(&quot;%.1f&quot;, ma)"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/StatisticsScreen.kt"
+            line="332"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="                        val requiredRFFormatted = String.format(&quot;%.1f&quot;, requiredRF)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/StatisticsScreen.kt"
+            line="335"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.LocalDate#of`"
+        errorLine1="                    java.time.LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())"
+        errorLine2="                                        ~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="447"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.LocalDate#of`"
+        errorLine1="                    java.time.LocalDate.of(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())"
+        errorLine2="                                        ~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="452"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.LocalDate#of`"
+        errorLine1="                    java.time.LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())"
+        errorLine2="                                        ~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="454"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 24): `java.time.LocalDate#getDayOfWeek`"
+        errorLine1="                extractedDay = when (it.dayOfWeek) {"
+        errorLine2="                                        ~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="459"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Enum for switch requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek`"
+        errorLine1="                extractedDay = when (it.dayOfWeek) {"
+        errorLine2="                                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="459"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#MONDAY`"
+        errorLine1="                    java.time.DayOfWeek.MONDAY -> &quot;Segunda-feira&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="460"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#TUESDAY`"
+        errorLine1="                    java.time.DayOfWeek.TUESDAY -> &quot;Terça-feira&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="461"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#WEDNESDAY`"
+        errorLine1="                    java.time.DayOfWeek.WEDNESDAY -> &quot;Quarta-feira&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="462"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#THURSDAY`"
+        errorLine1="                    java.time.DayOfWeek.THURSDAY -> &quot;Quinta-feira&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="463"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#FRIDAY`"
+        errorLine1="                    java.time.DayOfWeek.FRIDAY -> &quot;Sexta-feira&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="464"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#SATURDAY`"
+        errorLine1="                    java.time.DayOfWeek.SATURDAY -> &quot;Sábado&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="465"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 24): `java.time.DayOfWeek#SUNDAY`"
+        errorLine1="                    java.time.DayOfWeek.SUNDAY -> &quot;Domingo&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeMarcarAlmocoScreen.kt"
+            line="466"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 29 (current min is 24): `android.provider.MediaStore.Downloads#EXTERNAL_CONTENT_URI`"
+        errorLine1="                        val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="365"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="RedundantLabel"
+        message="Redundant label can be removed"
+        errorLine1="            android:label=&quot;@string/app_name&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="25"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 9.1.1 is available: 9.3.1"
+        errorLine1="agp = &quot;9.1.1&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="2"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.fragment:fragment than 1.8.6 is available: 1.8.9"
+        errorLine1="  implementation(&quot;androidx.fragment:fragment:1.8.6&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="86"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.fragment:fragment-ktx than 1.8.6 is available: 1.8.9"
+        errorLine1="  implementation(&quot;androidx.fragment:fragment-ktx:1.8.6&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="87"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.work:work-runtime-ktx than 2.9.0 is available: 2.11.2"
+        errorLine1="  implementation(&quot;androidx.work:work-runtime-ktx:2.9.0&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="89"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.18.0 is available: 1.19.0"
+        errorLine1="coreKtx = &quot;1.18.0&quot;"
+        errorLine2="          ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="3"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.8.7 is available: 2.11.0"
+        errorLine1="lifecycleRuntimeKtx = &quot;2.8.7&quot;"
+        errorLine2="                      ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="7"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.8.7 is available: 2.11.0"
+        errorLine1="lifecycleViewmodelCompose = &quot;2.8.7&quot;"
+        errorLine2="                            ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="8"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0"
+        errorLine1="lifecycleRuntimeCompose = &quot;2.8.7&quot;"
+        errorLine2="                          ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="9"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.10.1 is available: 1.13.0"
+        errorLine1="activityCompose = &quot;1.10.1&quot;"
+        errorLine2="                  ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="10"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.fragment:fragment-ktx than 1.8.6 is available: 1.8.9"
+        errorLine1="fragment = &quot;1.8.6&quot;"
+        errorLine2="           ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2024.09.00 is available: 2026.06.01"
+        errorLine1="composeBom = &quot;2024.09.00&quot;"
+        errorLine2="             ~~~~~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="13"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.8.9 is available: 2.9.8"
+        errorLine1="navigationCompose = &quot;2.8.9&quot;"
+        errorLine2="                    ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="15"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.7.0 is available: 2.8.4"
+        errorLine1="roomRuntime = &quot;2.7.0&quot;"
+        errorLine2="              ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="16"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.7.0 is available: 2.8.4"
+        errorLine1="roomKtx = &quot;2.7.0&quot;"
+        errorLine2="          ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="17"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.7.0 is available: 2.8.4"
+        errorLine1="roomCompiler = &quot;2.7.0&quot;"
+        errorLine2="               ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="18"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test:core than 1.6.1 is available: 1.7.0"
+        errorLine1="core = &quot;1.6.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="20"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.test:runner than 1.6.2 is available: 1.7.0"
+        errorLine1="runner = &quot;1.6.2&quot;"
+        errorLine2="         ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="21"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-location than 21.3.0 is available: 21.4.0"
+        errorLine1="playServicesLocation = &quot;21.3.0&quot;"
+        errorLine2="                       ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="28"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-camera2 than 1.5.0 is available: 1.6.1"
+        errorLine1="cameraCamera2 = &quot;1.5.0&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="29"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-lifecycle than 1.5.0 is available: 1.6.1"
+        errorLine1="cameraLifecycle = &quot;1.5.0&quot;"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="30"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-view than 1.5.0 is available: 1.6.1"
+        errorLine1="cameraView = &quot;1.5.0&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="31"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-core than 1.5.0 is available: 1.6.1"
+        errorLine1="cameraCore = &quot;1.5.0&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="32"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore-preferences than 1.1.7 is available: 1.2.1"
+        errorLine1="datastorePreferences = &quot;1.1.7&quot;"
+        errorLine2="                       ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="37"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.firebase:firebase-bom than 34.15.0 is available: 34.16.0"
+        errorLine1="firebaseBom = &quot;34.15.0&quot;"
+        errorLine2="              ~~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="40"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials:credentials than 1.5.0 is available: 1.6.0"
+        errorLine1="credentials = &quot;1.5.0&quot;"
+        errorLine2="              ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="43"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials:credentials-play-services-auth than 1.5.0 is available: 1.6.0"
+        errorLine1="credentials = &quot;1.5.0&quot;"
+        errorLine2="              ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="43"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.libraries.identity.googleid:googleid than 1.1.1 is available: 1.2.0"
+        errorLine1="googleid = &quot;1.1.1&quot;"
+        errorLine2="           ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="44"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.compose than 2.2.10 is available: 2.4.10"
+        errorLine1="kotlin = &quot;2.2.10&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="12"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.10.2 is available: 1.11.0"
+        errorLine1="kotlinxCoroutinesTest = &quot;1.10.2&quot;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="19"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.retrofit2:retrofit than 2.12.0 is available: 3.0.0"
+        errorLine1="retrofit = &quot;2.12.0&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="23"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.retrofit2:converter-moshi than 2.12.0 is available: 3.0.0"
+        errorLine1="converterMoshi = &quot;2.12.0&quot;"
+        errorLine2="                 ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="24"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.10.2 is available: 1.11.0"
+        errorLine1="kotlinxCoroutinesAndroid = &quot;1.10.2&quot;"
+        errorLine2="                           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="25"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.10.2 is available: 1.11.0"
+        errorLine1="kotlinxCoroutinesCore = &quot;1.10.2&quot;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="26"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:logging-interceptor than 4.10.0 is available: 5.4.0"
+        errorLine1="loggingInterceptor = &quot;4.10.0&quot;"
+        errorLine2="                     ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="33"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:okhttp than 4.10.0 is available: 5.4.0"
+        errorLine1="okhttp = &quot;4.10.0&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="34"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.github.takahirom.roborazzi than 1.59.0 is available: 1.70.0"
+        errorLine1="roborazzi = &quot;1.59.0&quot;"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.github.takahirom.roborazzi:roborazzi than 1.59.0 is available: 1.70.0"
+        errorLine1="roborazzi = &quot;1.59.0&quot;"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.github.takahirom.roborazzi:roborazzi-compose than 1.59.0 is available: 1.70.0"
+        errorLine1="roborazzi = &quot;1.59.0&quot;"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of io.github.takahirom.roborazzi:roborazzi-junit-rule than 1.59.0 is available: 1.70.0"
+        errorLine1="roborazzi = &quot;1.59.0&quot;"
+        errorLine2="            ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jsoup:jsoup than 1.18.1 is available: 1.22.2"
+        errorLine1="jsoup = &quot;1.18.1&quot;"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="45"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/receiver/ClassReminderReceiver.kt"
+            line="204"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 24"
+        errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/receiver/LunchReminderReceiver.kt"
+            line="127"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_200&quot;>#FFBB86FC&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_500` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_500&quot;>#FF6200EE&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.purple_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;purple_700&quot;>#FF3700B3&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="5"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_200` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_200&quot;>#FF03DAC5&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="6"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.teal_700` appears to be unused"
+        errorLine1="    &lt;color name=&quot;teal_700&quot;>#FF018786&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="7"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.black` appears to be unused"
+        errorLine1="    &lt;color name=&quot;black&quot;>#FF000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="8"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.white` appears to be unused"
+        errorLine1="    &lt;color name=&quot;white&quot;>#FFFFFFFF&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/colors.xml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.suap_mobile_icon_1785051712305` appears to be unused">
+        <location
+            file="src/main/res/drawable/suap_mobile_icon_1785051712305.jpg"/>
+    </issue>
+
+    <issue
+        id="IconDipSize"
+        message="The image `ic_launcher.webp` varies significantly in its density-independent (dip) size across the various density versions: mipmap-hdpi/ic_launcher.webp: 48x48 dp (72x72 px), mipmap-xhdpi/ic_launcher.webp: 48x48 dp (96x96 px), mipmap-xxhdpi/ic_launcher.webp: 12268x3140438 dp (36803x9421313 px)">
+        <location
+            file="src/main/res/mipmap-xhdpi/ic_launcher.webp"/>
+        <location
+            file="src/main/res/mipmap-hdpi/ic_launcher.webp"/>
+        <location
+            file="src/main/res/mipmap-xxhdpi/ic_launcher.webp"/>
+    </issue>
+
+    <issue
+        id="IconDipSize"
+        message="The image `ic_launcher_round.webp` varies significantly in its density-independent (dip) size across the various density versions: mipmap-hdpi/ic_launcher_round.webp: 48x48 dp (72x72 px), mipmap-xhdpi/ic_launcher_round.webp: 48x48 dp (96x96 px), mipmap-xxhdpi/ic_launcher_round.webp: 12268x3140438 dp (36803x9421313 px), mipmap-xxxhdpi/ic_launcher_round.webp: 12273x3141760 dp (49091x12567041 px)">
+        <location
+            file="src/main/res/mipmap-xhdpi/ic_launcher_round.webp"/>
+        <location
+            file="src/main/res/mipmap-hdpi/ic_launcher_round.webp"/>
+        <location
+            file="src/main/res/mipmap-xxhdpi/ic_launcher_round.webp"/>
+        <location
+            file="src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/suap_mobile_icon_1785051712305.jpg` in densityless folder">
+        <location
+            file="src/main/res/drawable/suap_mobile_icon_1785051712305.jpg"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                sharedPrefs.edit().putString(&quot;username&quot;, u).putString(&quot;password&quot;, p).apply()"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="101"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                sharedPrefs.edit().putString(&quot;last_sync_time&quot;, time).apply()"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="107"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                sharedPrefs.edit().putString(&quot;last_sync_time&quot;, time).apply()"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="116"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                    sharedPrefs.edit().putString(&quot;username&quot;, editMatricula).putString(&quot;password&quot;, editSenha).apply()"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="471"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                            appPrefs.edit().putBoolean(&quot;lunch_notification_enabled&quot;, isChecked).apply()"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="559"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                                    appPrefs.edit().putInt(&quot;lunch_notification_hour&quot;, h).putInt(&quot;lunch_notification_minute&quot;, m).apply()"
+        errorLine2="                                                                    ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="583"
+            column="69"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                                            appPrefs.edit().putBoolean(&quot;lunch_notification_day_$day&quot;, isDayEnabled).apply()"
+        errorLine2="                                                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="627"
+            column="77"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                            appPrefs.edit().putBoolean(&quot;avisos_notification_enabled&quot;, isChecked).apply()"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="689"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                            appPrefs.edit().putBoolean(&quot;class_notification_enabled&quot;, isChecked).apply()"
+        errorLine2="                                                            ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="717"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                    sigaaPrefs.edit().putString(&quot;username&quot;, editSigaaMatricula).putString(&quot;password&quot;, editSigaaSenha).apply()"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="807"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                        sigaaPrefs.edit().clear().apply()"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="825"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                sharedPrefs.edit().putString(&quot;username&quot;, editMatricula).putString(&quot;password&quot;, editSenha).apply()"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="880"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                                sigaaPrefs.edit().putString(&quot;username&quot;, editSigaaMatricula).putString(&quot;password&quot;, editSigaaSenha).apply()"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="883"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                        sharedPrefs.edit().putString(&quot;username&quot;, u).putString(&quot;password&quot;, p).apply()"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="964"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                        sharedPrefs.edit().putString(&quot;last_sync_time&quot;, time).apply()"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AppNavigation.kt"
+            line="970"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="                                data = Uri.parse(&quot;mailto:$email&quot;)"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AvisosScreen.kt"
+            line="370"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="                                data = Uri.parse(&quot;mailto:$email&quot;)"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/AvisosScreen.kt"
+            line="370"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toColorInt` instead?"
+        errorLine1="                .setColor(Color.parseColor(&quot;#1976D2&quot;))"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/receiver/ClassReminderReceiver.kt"
+            line="110"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                    prefs.edit().putBoolean(&quot;terms_accepted&quot;, true).apply()"
+        errorLine2="                                    ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/LoginScreen.kt"
+            line="303"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                prefs.edit().putBoolean(&quot;terms_accepted&quot;, termsAccepted).apply()"
+        errorLine2="                                ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/LoginScreen.kt"
+            line="334"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                prefs.edit().putBoolean(&quot;terms_accepted&quot;, it).apply()"
+        errorLine2="                                ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/LoginScreen.kt"
+            line="342"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toColorInt` instead?"
+        errorLine1="                .setColor(Color.parseColor(&quot;#4CAF50&quot;))"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/receiver/LunchReminderReceiver.kt"
+            line="80"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                    sharedPrefs.edit()"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeLoginScreen.kt"
+            line="271"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                    sharedPrefs.edit().clear().apply()"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeLoginScreen.kt"
+            line="277"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                    sharedPrefs.edit()"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeLoginScreen.kt"
+            line="294"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                                    sharedPrefs.edit().clear().apply()"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SigaaNativeLoginScreen.kt"
+            line="300"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        sharedPreferences.edit().putBoolean(&quot;saved_is_dark_mode&quot;, isDark).apply()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="93"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="                sharedPreferences.edit()"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="246"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="            sharedPreferences.edit()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="411"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="            sharedPreferences.edit()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="441"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        sharedPreferences.edit()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="717"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `SharedPreferences.edit` instead?"
+        errorLine1="        sharedPreferences.edit()"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SuapViewModel.kt"
+            line="982"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="                                    val request = DownloadManager.Request(Uri.parse(url))"
+        errorLine2="                                                                          ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SubjectTopicsScreen.kt"
+            line="100"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="                                val request = DownloadManager.Request(Uri.parse(url))"
+        errorLine2="                                                                      ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/example/ui/SubjectTopicsScreen.kt"
+            line="147"
+            column="71"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="  implementation(&quot;androidx.fragment:fragment:1.8.6&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="86"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use the existing version catalog reference (`libs.androidx.fragment.ktx`) instead"
+        errorLine1="  implementation(&quot;androidx.fragment:fragment-ktx:1.8.6&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="87"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="  implementation(&quot;androidx.work:work-runtime-ktx:2.9.0&quot;)"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="89"
+            column="18"/>
+    </issue>
+
+</issues>
