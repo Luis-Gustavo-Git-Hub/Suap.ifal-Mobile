@@ -5,7 +5,6 @@ import com.example.ui.theme.AppSemanticColors
 import com.example.ui.theme.rememberAppFlingBehavior
 
 import android.graphics.Bitmap
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -1518,12 +1517,12 @@ fun FriendItemCard(
     }
     
     val emblemName = when (globalLevel) {
-        1 -> "🌱 Calouro"
-        2 -> "📖 Aprendiz"
-        3 -> "🎓 Elite"
-        4 -> "🧠 Mestre"
-        5 -> "👑 Lenda"
-        else -> "🌱 Calouro"
+        1 -> "Calouro"
+        2 -> "Aprendiz"
+        3 -> "Elite"
+        4 -> "Mestre"
+        5 -> "Lenda"
+        else -> "Calouro"
     }
 
     val badgeIcon = when (globalLevel) {

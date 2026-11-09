@@ -2,7 +2,6 @@ package com.example.ui
 
 import android.content.Context
 import android.webkit.CookieManager
-import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn

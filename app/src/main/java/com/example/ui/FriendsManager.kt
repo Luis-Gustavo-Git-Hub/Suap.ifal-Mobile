@@ -14,6 +14,11 @@ import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import java.util.UUID
 
+private fun Context.googleWebClientId(): String {
+    val resourceId = resources.getIdentifier("default_web_client_id", "string", packageName)
+    return resourceId.takeIf { it != 0 }?.let(::getString).orEmpty()
+}
+
 data class Friend(
     val uid: String = "",
     val email: String = "",
@@ -61,7 +66,7 @@ object FriendsManager {
             val digest = md.digest(bytes)
             val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
-            val webClientId = context.getString(com.example.R.string.default_web_client_id).ifEmpty {
+            val webClientId = context.googleWebClientId().ifEmpty {
                 Log.e("FriendsManager", "WEB_CLIENT_ID is missing!")
                 return false
             }
@@ -308,7 +313,7 @@ object FriendsManager {
             val digest = md.digest(bytes)
             val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
-            val webClientId = context.getString(com.example.R.string.default_web_client_id).ifEmpty {
+            val webClientId = context.googleWebClientId().ifEmpty {
                 return null
             }
 

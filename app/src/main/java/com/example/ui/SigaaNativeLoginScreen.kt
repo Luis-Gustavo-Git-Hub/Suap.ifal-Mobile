@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -287,8 +289,14 @@ fun SigaaNativeLoginScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             trailingIcon = {
-                                androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
-                                    androidx.compose.material3.Text(text = if (showPassword) "🙈" else "👁️")
+                                IconButton(
+                                    onClick = { showPassword = !showPassword },
+                                    modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
+                                    )
                                 }
                             }
                         )

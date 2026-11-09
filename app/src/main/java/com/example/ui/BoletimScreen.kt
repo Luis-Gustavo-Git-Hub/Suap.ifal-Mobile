@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.Role
 import androidx.compose.animation.core.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.platform.LocalContext
@@ -874,10 +875,10 @@ fun SubjectBimesterCard(
 
                     Box(
                         modifier = Modifier
-                            .height(20.dp)
+                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                             .background(model.primaryColor.copy(alpha = if (isDark) 0.22f else 0.14f), MaterialTheme.shapes.extraSmall)
-                            .clickable { onShowDetails(subject) }
-                            .padding(horizontal = 4.dp),
+                            .clickable(role = Role.Button) { onShowDetails(subject) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -886,15 +887,15 @@ fun SubjectBimesterCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Book,
-                                contentDescription = "Detalhes",
+                                contentDescription = "Abrir detalhes de ${model.cleanName}",
                                 tint = model.primaryColor,
-                                modifier = Modifier.size(10.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
                                 tint = model.primaryColor,
-                                modifier = Modifier.size(8.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                         }
                     }

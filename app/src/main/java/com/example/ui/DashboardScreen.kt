@@ -1546,7 +1546,7 @@ fun AcademicLevelsDialog(
 
                 LevelDialogInfoRow(
                     level = 1,
-                    name = "🌱 Calouro Curioso",
+                    name = "Calouro Curioso",
                     xpRange = "0 - ${lvl2 - 1} XP",
                     avgGrade = "Média Anual < 3.50",
                     color = AppSemanticColors.success,
@@ -1554,7 +1554,7 @@ fun AcademicLevelsDialog(
                 )
                 LevelDialogInfoRow(
                     level = 2,
-                    name = "📖 Aprendiz Dedicado",
+                    name = "Aprendiz Dedicado",
                     xpRange = "$lvl2 - ${lvl3 - 1} XP",
                     avgGrade = "Média Anual 3.50 a 5.9",
                     color = AppSemanticColors.info,
@@ -1562,7 +1562,7 @@ fun AcademicLevelsDialog(
                 )
                 LevelDialogInfoRow(
                     level = 3,
-                    name = "🎓 Estudante de Elite",
+                    name = "Estudante de Elite",
                     xpRange = "$lvl3 - ${lvl4 - 1} XP",
                     avgGrade = "Média Anual 6.00 a 7.9",
                     color = MaterialTheme.colorScheme.tertiary,
@@ -1570,7 +1570,7 @@ fun AcademicLevelsDialog(
                 )
                 LevelDialogInfoRow(
                     level = 4,
-                    name = "🧠 Mestre Acadêmico",
+                    name = "Mestre Acadêmico",
                     xpRange = "$lvl4 - ${lvl5 - 1} XP",
                     avgGrade = "Média Anual 8.00 a 8.9",
                     color = AppSemanticColors.warning,
@@ -1578,7 +1578,7 @@ fun AcademicLevelsDialog(
                 )
                 LevelDialogInfoRow(
                     level = 5,
-                    name = "👑 Lenda do Campus",
+                    name = "Lenda do Campus",
                     xpRange = "$lvl5+ XP",
                     avgGrade = "Média Anual ≥ 9.00",
                     color = AppSemanticColors.warning,
