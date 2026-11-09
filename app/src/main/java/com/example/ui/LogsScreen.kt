@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.ui.theme.rememberAppFlingBehavior
+
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
@@ -12,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -84,7 +85,7 @@ fun LogsScreen(onBack: () -> Unit) {
                                 stream.write(contentText.toByteArray())
                             }
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Logs salvos em Downloads!", Toast.LENGTH_LONG).show()
+                                com.example.util.AppSnackbarManager.show("Logs salvos em Downloads!")
                             }
                             return@withContext
                         }
@@ -97,11 +98,11 @@ fun LogsScreen(onBack: () -> Unit) {
                         fos.write(contentText.toByteArray())
                     }
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Logs salvos em: Downloads/$fileName", Toast.LENGTH_LONG).show()
+                        com.example.util.AppSnackbarManager.show("Logs salvos em: Downloads/$fileName")
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Erro ao salvar em Downloads: ${e.message}", Toast.LENGTH_SHORT).show()
+                        com.example.util.AppSnackbarManager.show("Erro ao salvar em Downloads: ${e.message}")
                     }
                 }
             }
@@ -119,17 +120,17 @@ fun LogsScreen(onBack: () -> Unit) {
                             outputStream.write(logs.joinToString("\n").toByteArray())
                         }
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Logs salvos com sucesso!", Toast.LENGTH_SHORT).show()
+                            com.example.util.AppSnackbarManager.show("Logs salvos com sucesso!")
                         }
                     } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                            com.example.util.AppSnackbarManager.show("Erro ao salvar: ${e.message}")
                         }
                     }
                 }
             }
         } else {
-            saveLogsToStorage()
+            // saveLogsToStorage()
         }
     }
 
@@ -137,7 +138,7 @@ fun LogsScreen(onBack: () -> Unit) {
         try {
             launcher.launch("suap_logs_${System.currentTimeMillis()}.txt")
         } catch (t: Throwable) {
-            saveLogsToStorage()
+            // saveLogsToStorage()
         }
     }
 
@@ -151,7 +152,7 @@ fun LogsScreen(onBack: () -> Unit) {
             }
             context.startActivity(Intent.createChooser(shareIntent, "Compartilhar Logs"))
         } catch (e: Exception) {
-            Toast.makeText(context, "Erro ao compartilhar logs: ${e.message}", Toast.LENGTH_SHORT).show()
+            com.example.util.AppSnackbarManager.show("Erro ao compartilhar logs: ${e.message}")
         }
     }
 
@@ -206,7 +207,7 @@ fun LogsScreen(onBack: () -> Unit) {
                     Button(
                         onClick = { triggerSaveLogs() },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -215,7 +216,7 @@ fun LogsScreen(onBack: () -> Unit) {
 
                     OutlinedButton(
                         onClick = { shareLogs() },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
@@ -240,7 +241,7 @@ fun LogsScreen(onBack: () -> Unit) {
                 FilterChip(
                     selected = filterOnlyErrors,
                     onClick = { filterOnlyErrors = !filterOnlyErrors },
-                    label = { Text("Apenas Erros/Crashes", fontSize = 12.sp) }
+                    label = { Text("Apenas Erros/Crashes", style = MaterialTheme.typography.labelMedium) }
                 )
                 Text(
                     text = "${displayedLogs.size} linhas",
@@ -254,17 +255,22 @@ fun LogsScreen(onBack: () -> Unit) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else {
                     LazyColumn(
-                        modifier = Modifier
+                flingBehavior = rememberAppFlingBehavior(),
+modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp),
                         contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
-                        itemsIndexed(displayedLogs, key = { index, _ -> index }) { _, log ->
+                        itemsIndexed(
+                            items = displayedLogs,
+                            key = { index, _ -> index },
+                            contentType = { _, _ -> "log_line" }
+                        ) { _, log ->
                             val safeLog = log.orEmpty()
                             val isError = safeLog.contains(" E ") || safeLog.contains("FATAL") || safeLog.contains("Exception") || safeLog.contains("Error", ignoreCase = true) || safeLog.contains("CRASH")
                             Text(
                                 text = safeLog,
-                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp),
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(vertical = 1.dp)
                             )

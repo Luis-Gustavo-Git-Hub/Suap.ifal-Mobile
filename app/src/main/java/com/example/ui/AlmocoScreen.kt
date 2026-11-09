@@ -1,10 +1,11 @@
 package com.example.ui
 
+import com.example.ui.theme.AppSemanticColors
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Login
@@ -37,14 +38,21 @@ fun AlmocoScreen(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            MarcarAlmocoActionCard(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToMarcarAlmoco)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 600.dp)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                MarcarAlmocoActionCard(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToMarcarAlmoco)
+            }
         }
     }
 }
@@ -53,7 +61,7 @@ fun AlmocoScreen(
 fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -108,8 +116,8 @@ fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
 fun MarcarAlmocoActionCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = AppSemanticColors.warning),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(
@@ -118,8 +126,8 @@ fun MarcarAlmocoActionCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.secondary,
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+                            AppSemanticColors.warning,
+                            AppSemanticColors.warning.copy(alpha = 0.85f)
                         )
                     )
                 )

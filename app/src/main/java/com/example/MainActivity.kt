@@ -29,31 +29,40 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.util.CrashLogger
 import com.example.util.NotificationHelper
 
+@OptIn(androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
 @SuppressLint("InvalidFragmentVersionForActivityResult")
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        CrashLogger.autoSaveFullLogToDownloads(this)
         safeScheduleAlarms()
 
         val app = application as SuapApplication
         val sharedPrefs = getSharedPreferences("suap_credentials", android.content.Context.MODE_PRIVATE)
-        val viewModelFactory = SuapViewModelFactory(app.repository, sharedPrefs)
+        
+        com.example.util.CredentialStore.getInstance(this).migrateOldCredentialsIfNeeded()
+        com.example.util.NotificationHelper.createNotificationChannel(this)
+        val viewModelFactory = SuapViewModelFactory(this.applicationContext, app.repository, sharedPrefs)
         val viewModel = ViewModelProvider(this, viewModelFactory)[SuapViewModel::class.java]
 
         enableEdgeToEdge()
 
         setContent {
+            val windowSizeClass = androidx.compose.material3.windowsizeclass.calculateWindowSizeClass(this)
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
+            val fontOverride by viewModel.fontOverride.collectAsStateWithLifecycle()
 
-            MyApplicationTheme(appTheme = appTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavigation(viewModel = viewModel)
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.example.ui.components.LocalWindowSizeClass provides windowSizeClass
+            ) {
+                MyApplicationTheme(appTheme = appTheme, fontOverride = fontOverride) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        AppNavigation(viewModel = viewModel)
+                    }
                 }
             }
         }
@@ -61,7 +70,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        CrashLogger.autoSaveFullLogToDownloads(this)
     }
 
     private fun safeScheduleAlarms() {
@@ -69,7 +77,7 @@ class MainActivity : ComponentActivity() {
             LunchReminderReceiver.scheduleAlarm(this)
             ClassReminderReceiver.scheduleNextClassAlarm(this)
         } catch (e: Exception) {
-            e.printStackTrace()
+            com.example.util.AppLog.printStackTrace(e)
         }
     }
 }

@@ -21,6 +21,9 @@ object CrashLogger {
     private const val TAG = "CrashLogger"
     private const val INTERNAL_LOG_FILE = "suap_crash_logs.txt"
     private const val AUTO_SAVE_FILE_NAME = "suap_app_logs_auto_saved.txt"
+    private const val MAX_INTERNAL_LOG_BYTES = 1024L * 1024L
+    private const val RETAINED_LOG_BYTES = 768 * 1024
+    private val fileLock = Any()
     private var isInitialized = false
 
     fun init(context: Context) {
@@ -54,22 +57,35 @@ object CrashLogger {
         logLine.append("\n")
 
         val logText = logLine.toString()
-        Log.e(TAG, logText)
+        AppLog.e(TAG, logText)
 
         try {
             val file = File(context.filesDir, INTERNAL_LOG_FILE)
-            FileOutputStream(file, true).use { stream ->
-                stream.write(logText.toByteArray())
+            val bytes = logText.toByteArray()
+            synchronized(fileLock) {
+                if (file.length() + bytes.size > MAX_INTERNAL_LOG_BYTES) {
+                    val tail = if (file.exists()) {
+                        java.io.RandomAccessFile(file, "r").use { input ->
+                            val length = input.length().coerceAtMost(RETAINED_LOG_BYTES.toLong()).toInt()
+                            ByteArray(length).also { buffer ->
+                                input.seek((input.length() - length).coerceAtLeast(0L))
+                                input.readFully(buffer)
+                            }
+                        }
+                    } else byteArrayOf()
+                    FileOutputStream(file, false).use { it.write(tail) }
+                }
+                FileOutputStream(file, true).use { stream -> stream.write(bytes) }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLog.printStackTrace(e)
         }
 
         /*
         try {
             appendDirectToDownloads(context, logText)
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLog.printStackTrace(e)
         }
         */
     }
@@ -85,23 +101,12 @@ object CrashLogger {
 
     private fun appendDirectToDownloads(context: Context, text: String) {
         try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs()
-            }
-            val logFile = File(downloadsDir, AUTO_SAVE_FILE_NAME)
-            FileOutputStream(logFile, true).use { stream ->
+            val extDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
+            val file = File(extDir, AUTO_SAVE_FILE_NAME)
+            FileOutputStream(file, true).use { stream ->
                 stream.write(text.toByteArray())
             }
-        } catch (_: Throwable) {
-            try {
-                val extDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
-                val file = File(extDir, AUTO_SAVE_FILE_NAME)
-                FileOutputStream(file, true).use { stream ->
-                    stream.write(text.toByteArray())
-                }
-            } catch (_: Throwable) {}
-        }
+        } catch (_: Throwable) {}
     }
 
     fun autoSaveFullLogToDownloads(context: Context) {
@@ -117,36 +122,6 @@ object CrashLogger {
     private fun saveFullLogSync(context: Context) {
         val fullLogText = getAllLogs(context)
         val fileName = AUTO_SAVE_FILE_NAME
-
-        // 1. MediaStore API for Android 10+ Downloads folder
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val resolver = context.contentResolver
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                }
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-                if (uri != null) {
-                    resolver.openOutputStream(uri)?.use { stream ->
-                        stream.write(fullLogText.toByteArray())
-                    }
-                }
-            } catch (_: Throwable) {}
-        }
-
-        // 2. Direct File API in Downloads directory
-        try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) downloadsDir.mkdirs()
-            val file = File(downloadsDir, fileName)
-            FileOutputStream(file, false).use { stream ->
-                stream.write(fullLogText.toByteArray())
-            }
-        } catch (_: Throwable) {}
-
-        // 3. Fallback to app External Documents
         try {
             val extDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
             if (!extDir.exists()) extDir.mkdirs()

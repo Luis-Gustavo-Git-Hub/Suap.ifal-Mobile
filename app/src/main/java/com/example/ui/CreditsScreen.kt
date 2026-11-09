@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DesignServices
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,7 +25,11 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreditsScreen(onBack: () -> Unit, onViewLogs: () -> Unit = {}) {
+fun CreditsScreen(
+    onBack: () -> Unit,
+    onViewLogs: () -> Unit = {},
+    onActivateDemoMode: () -> Unit = {}
+) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Scaffold(
         topBar = {
@@ -139,6 +144,18 @@ fun CreditsScreen(onBack: () -> Unit, onViewLogs: () -> Unit = {}) {
                 Icon(Icons.Default.Code, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Ver Logs do Sistema")
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Button(
+                onClick = onActivateDemoMode,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.AutoFixHigh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Ativar Modo Demonstração")
             }
             
             Spacer(modifier = Modifier.height(16.dp))

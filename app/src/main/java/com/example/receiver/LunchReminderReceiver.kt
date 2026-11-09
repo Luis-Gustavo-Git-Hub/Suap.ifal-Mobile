@@ -63,14 +63,8 @@ class LunchReminderReceiver : BroadcastReceiver() {
             }
             val pendingIntent = PendingIntent.getActivity(context, 0, i, PendingIntent.FLAG_IMMUTABLE)
 
-            val iconRes = try {
-                R.drawable.ic_launcher_foreground
-            } catch (e: Exception) {
-                android.R.drawable.ic_popup_reminder
-            }
-
             val notification = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(iconRes)
+                .setSmallIcon(R.drawable.ic_stat_notification)
                 .setContentTitle("🍽️ Hora de marcar o almoço!")
                 .setContentText("Não se esqueça de reservar sua refeição no SIGAA.")
                 .setStyle(NotificationCompat.BigTextStyle()
@@ -84,9 +78,9 @@ class LunchReminderReceiver : BroadcastReceiver() {
                 .build()
 
             try {
-                notificationManager.notify(1001, notification)
+                notificationManager.notify(1003, notification)
             } catch (e: Exception) {
-                e.printStackTrace()
+                com.example.util.AppLog.printStackTrace(e)
             }
         }
 
@@ -124,7 +118,21 @@ class LunchReminderReceiver : BroadcastReceiver() {
             }
 
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (alarmManager.canScheduleExactAlarms()) {
+                        alarmManager.setExactAndAllowWhileIdle(
+                            android.app.AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                        )
+                    } else {
+                        alarmManager.setAndAllowWhileIdle(
+                            android.app.AlarmManager.RTC_WAKEUP,
+                            calendar.timeInMillis,
+                            pendingIntent
+                        )
+                    }
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     alarmManager.setExactAndAllowWhileIdle(
                         android.app.AlarmManager.RTC_WAKEUP,
                         calendar.timeInMillis,

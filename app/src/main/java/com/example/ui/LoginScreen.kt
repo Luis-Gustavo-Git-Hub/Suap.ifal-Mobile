@@ -1,4 +1,6 @@
 package com.example.ui
+import com.example.BuildConfig
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 
 import android.annotation.SuppressLint
@@ -24,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.size
@@ -34,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.text.style.TextDecoration
@@ -41,7 +45,32 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Surface
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import com.example.util.SyncFailureReason
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private enum class LoginMethod { CREDENTIALS, GOV_BR }
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -51,32 +80,108 @@ fun LoginScreen(
     onBack: () -> Unit = {},
     onSaveCredentials: (String, String) -> Unit,
     onHtmlScraped: (String) -> Unit,
+    onGovBrLogin: (String) -> Unit = {},
     onDemoClick: () -> Unit,
     isSilentSync: Boolean = false,
-    onSyncFailed: () -> Unit = {}
+    onSyncFailed: (SyncFailureReason) -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val prefs = context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
 
     var showWebView by remember { mutableStateOf(false) }
     var hiddenWebView by remember { mutableStateOf(false) }
+    var loginMethod by remember { mutableStateOf(LoginMethod.CREDENTIALS) }
+    var showMatriculaDialog by remember { mutableStateOf(false) }
+    var matriculaManual by remember { mutableStateOf("") }
+    var activeWebView by remember { mutableStateOf<WebView?>(null) }
     var inputMatricula by remember { mutableStateOf(savedUsername) }
     var inputSenha by remember { mutableStateOf(savedPassword) }
     var isLoading by remember { mutableStateOf(false) }
+    var isProcessingHtml by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var termsAccepted by remember { mutableStateOf(prefs.getBoolean("terms_accepted", false)) }
+    val focusManager = LocalFocusManager.current
+    val canSubmit = termsAccepted && inputMatricula.isNotBlank() && inputSenha.isNotEmpty() && !isLoading
+
+    fun startLogin() {
+        if (!canSubmit) return
+        focusManager.clearFocus()
+        errorMessage = null
+        onSaveCredentials(inputMatricula.trim(), inputSenha)
+        isProcessingHtml = false
+        loginMethod = LoginMethod.CREDENTIALS
+        isLoading = false
+        hiddenWebView = false
+        showWebView = true
+    }
+
+    fun startGovBrLogin() {
+        errorMessage = null
+        loginMethod = LoginMethod.GOV_BR
+        isLoading = false
+        hiddenWebView = false
+        showWebView = true
+    }
+
+    fun reportFailure(reason: SyncFailureReason, message: String) {
+        isLoading = false
+        isProcessingHtml = false
+        hiddenWebView = false
+        showWebView = false
+        errorMessage = message
+        if (reason == SyncFailureReason.SESSION_EXPIRED) {
+            com.example.util.AppSnackbarManager.showSyncError(reason)
+            com.example.util.NotificationHelper.sendNotification(
+                context,
+                "Sessão do SUAP expirou",
+                "Entre novamente para sincronizar seus dados.",
+                901
+            )
+        }
+        if (isSilentSync) onSyncFailed(reason)
+    }
+
+    androidx.activity.compose.BackHandler(enabled = showWebView) {
+        showWebView = false
+        hiddenWebView = false
+        isLoading = false
+    }
+
+    val hasSavedCredentials = savedUsername.isNotBlank() && savedPassword.isNotBlank()
+    val tutorialAlreadyCompleted = prefs.getBoolean("suap_tutorial_completed", false)
+    var showTutorial by remember {
+        mutableStateOf(!hasSavedCredentials && !tutorialAlreadyCompleted && !isSilentSync)
+    }
+
+    if (showTutorial) {
+        SuapTutorialDialog(
+            onDismissRequest = {
+                showTutorial = false
+                prefs.edit().putBoolean("suap_tutorial_completed", true).apply()
+            },
+            onComplete = {
+                showTutorial = false
+                prefs.edit().putBoolean("suap_tutorial_completed", true).apply()
+            }
+        )
+    }
 
     androidx.compose.runtime.LaunchedEffect(isSilentSync) {
         if (isSilentSync && inputMatricula.isNotEmpty() && inputSenha.isNotEmpty()) {
             hiddenWebView = true
             isLoading = true
         } else if (isSilentSync) {
-            onSyncFailed()
+            onSyncFailed(SyncFailureReason.NO_CREDENTIALS)
         }
     }
 
-    androidx.compose.runtime.LaunchedEffect(isLoading) {
-        if (isLoading) {
+    androidx.compose.runtime.LaunchedEffect(isLoading, isProcessingHtml) {
+        if (isLoading && !isProcessingHtml) {
             kotlinx.coroutines.delay(20000)
-            if (isLoading) {
+            if (isSilentSync) {
+                reportFailure(SyncFailureReason.TIMEOUT, "O SUAP demorou para responder.")
+            } else {
                 showWebView = true
                 hiddenWebView = false
                 isLoading = false
@@ -88,51 +193,102 @@ fun LoginScreen(
         if (showWebView || hiddenWebView) {
             AndroidView(
             factory = { context ->
-                WebView(context).apply {
+                val hasDeliveredHtml = java.util.concurrent.atomic.AtomicBoolean(false)
+            WebView(context).apply {
+                    activeWebView = this
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    settings.allowFileAccess = false
+                    settings.allowFileAccessFromFileURLs = false
+                    settings.allowUniversalAccessFromFileURLs = false
+                    settings.allowContentAccess = false
+                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        settings.safeBrowsingEnabled = true
+                    }
+                    android.webkit.WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(
+                        this,
+                        loginMethod == LoginMethod.CREDENTIALS
+                    )
                     
-                    // Add a Javascript interface to get the HTML
-                    addJavascriptInterface(object {
+                    // The gov.br WebView intentionally has no JavaScript bridge.
+                    if (loginMethod == LoginMethod.CREDENTIALS) addJavascriptInterface(object {
                         @JavascriptInterface
                         fun processHTML(html: String) {
-                            Log.d("SUAP_HTML", "HTML scraped length: ${html.length}")
+                            if (!hasDeliveredHtml.compareAndSet(false, true)) return
+                            com.example.util.AppLog.d("SUAP_HTML", "HTML scraped length: ${html.length}")
                             post {
+                                isProcessingHtml = true
+                                isLoading = true
+                                showWebView = false
                                 onHtmlScraped(html)
                             }
                         }
                         
                         @JavascriptInterface
-                        fun saveCredentials(u: String, p: String) {
-                            post {
-                                onSaveCredentials(u, p)
-                            }
-                        }
-                        @JavascriptInterface
                         fun showCaptcha() {
                             post {
-                                showWebView = true
-                                hiddenWebView = false
-                                isLoading = false
+                                if (isSilentSync) {
+                                    reportFailure(SyncFailureReason.CAPTCHA_REQUIRED, "Conclua a verificação do SUAP para continuar.")
+                                } else {
+                                    showWebView = true
+                                    hiddenWebView = false
+                                    isLoading = false
+                                }
                             }
                         }
                         @JavascriptInterface
                         fun loginFailed() {
                             post {
-                                isLoading = false
-                                hiddenWebView = false
-                                if (isSilentSync) {
-                                    onSyncFailed()
-                                }
+                                reportFailure(SyncFailureReason.INVALID_CREDENTIALS, "Não foi possível entrar. Confira sua matrícula e senha.")
                             }
                         }
 
                     }, "HTMLOUT")
 
                     webViewClient = object : WebViewClient() {
-                                                override fun onPageFinished(view: WebView, url: String) {
+                        override fun onReceivedError(
+                            view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?
+                        ) {
+                            if (request?.isForMainFrame == true) {
+                                val reason = when (error?.errorCode) {
+                                    ERROR_HOST_LOOKUP, ERROR_CONNECT -> SyncFailureReason.NO_INTERNET
+                                    ERROR_TIMEOUT -> SyncFailureReason.TIMEOUT
+                                    else -> SyncFailureReason.GENERIC
+                                }
+                                reportFailure(reason, "Não foi possível acessar o SUAP. Verifique sua conexão e tente novamente.")
+                            }
+                        }
+
+                        override fun onReceivedHttpError(
+                            view: WebView?, request: WebResourceRequest?, errorResponse: android.webkit.WebResourceResponse?
+                        ) {
+                            if (request?.isForMainFrame == true) {
+                                reportFailure(SyncFailureReason.SUAP_UNAVAILABLE, "O SUAP está indisponível no momento. Tente novamente em instantes.")
+                            }
+                        }
+
+                        override fun onReceivedSslError(
+                            view: WebView?,
+                            handler: android.webkit.SslErrorHandler?,
+                            error: android.net.http.SslError?
+                        ) {
+                            handler?.cancel()
+                            reportFailure(SyncFailureReason.GENERIC, "Não foi possível validar a conexão segura. Confira a rede e tente novamente.")
+                        }
+
+                        override fun onPageFinished(view: WebView, url: String) {
                             super.onPageFinished(view, url)
-                            if (url.contains("/accounts/login")) {
+                            if (isProcessingHtml) return
+                            if (!com.example.util.UrlSecurityUtils.isAllowedLoginUrl(url)) return
+                            val pageUri = android.net.Uri.parse(url)
+                            val pagePath = pageUri.path.orEmpty()
+                            if (isSilentSync && pagePath.contains("/accounts/login")) {
+                                reportFailure(SyncFailureReason.SESSION_EXPIRED, "Sua sessão do SUAP expirou. Entre novamente para sincronizar.")
+                                return
+                            }
+                            if (pagePath.contains("/accounts/login") && loginMethod == LoginMethod.CREDENTIALS) {
                                 view.evaluateJavascript(
                                     "(function() {" +
 
@@ -145,51 +301,49 @@ fun LoginScreen(
                                     "    if(captcha && captcha.offsetParent !== null) {" +
                                     "        window.HTMLOUT.showCaptcha();" +
                                     "    }" +
-                                    "    var form = document.querySelector('form');" +
-                                    "    if(form) {" +
-                                    "        form.addEventListener('submit', function(e) {" +
-                                    "            var u = document.getElementById('id_username');" +
-                                    "            var p = document.getElementById('id_password');" +
-                                    "            if(u && p) {" +
-                                    "                window.HTMLOUT.saveCredentials(u.value, p.value);" +
-                                    "            }" +
-                                    "        });" +
-                                    "    }" +
-                                    "    var savedU = '" + inputMatricula.replace("\\", "\\\\").replace("'", "\\'") + "';" +
-                                    "    var savedP = '" + inputSenha.replace("\\", "\\\\").replace("'", "\\'") + "';" +
-                                    "    if (savedU && savedP) {" +
-                                    "        var attempts = 0;" +
-                                    "        var interval = setInterval(function() {" +
-                                    "            var u = document.getElementById('id_username') || document.querySelector('input[name=\"username\"]');" +
-                                    "            var p = document.getElementById('id_password') || document.querySelector('input[name=\"password\"]');" +
-                                    "            if(u && p) {" +
-                                    "                if(!u.value) u.value = savedU;" +
-                                    "                if(!p.value) p.value = savedP;" +
-                                    "                var btn = document.querySelector('input[type=\"submit\"], button[type=\"submit\"], button.primary');" +
-                                    "                if (btn && " + hiddenWebView + " && (u.value === savedU && p.value === savedP)) btn.click();" +
-                                    "                clearInterval(interval);" +
-                                    "            }" +
-                                    "            attempts++;" +
-                                    "            if(attempts > 20) clearInterval(interval);" +
-                                    "        }, 100);" +
-                                    "    }" +
                                     "})();",
                                     null
                                 )
                             }
-                            if (url == "https://suap.ifal.edu.br/" || url == "https://suap.ifal.edu.br" || url.contains("/dashboard") || (url.startsWith("https://suap.ifal.edu.br/") && !url.contains("/login") && !url.contains("/edu/aluno/"))) {
-                                view.loadUrl("https://suap.ifal.edu.br/edu/aluno/${inputMatricula.trim()}/?tab=boletim")
-                            }
-                            
-                            if (url.contains("/edu/aluno/") && url.contains("tab=boletim")) {
-                                view.evaluateJavascript(
-                                    "(function() { return document.documentElement.outerHTML; })();"
-                                ) { html ->
-                                    val unescaped = html?.replace("\\u003C", "<")?.replace("\\\"", "\"")
-                                    if (unescaped != null) {
-                                        // Pass the HTML back to Android
-                                        android.webkit.CookieManager.getInstance().flush()
-                                        view.evaluateJavascript("window.HTMLOUT.processHTML(document.documentElement.outerHTML);", null)
+                            val studentPath = Regex("""^/edu/aluno/(\d+)/?""").find(pagePath)
+                            if (studentPath != null && pageUri.getQueryParameter("tab") != "boletim") {
+                                inputMatricula = studentPath.groupValues[1]
+                                view.loadUrl("https://suap.ifal.edu.br/edu/aluno/${studentPath.groupValues[1]}/?tab=boletim")
+                            } else if (studentPath != null && pageUri.getQueryParameter("tab") == "boletim") {
+                                android.webkit.CookieManager.getInstance().flush()
+                                if (loginMethod == LoginMethod.CREDENTIALS) {
+                                    view.evaluateJavascript("window.HTMLOUT.processHTML(document.documentElement.outerHTML);", null)
+                                } else if (!isProcessingHtml) {
+                                    val matricula = studentPath.groupValues[1]
+                                    val cookies = CookieManager.getInstance().getCookie(url).orEmpty()
+                                    isProcessingHtml = true
+                                    val bulletinUrl = "https://suap.ifal.edu.br/edu/aluno/$matricula/?tab=boletim"
+                                    view.post {
+                                        coroutineScope.launch {
+                                            val html = withContext(Dispatchers.IO) {
+                                                runCatching {
+                                                    val request = okhttp3.Request.Builder()
+                                                        .url(bulletinUrl)
+                                                        .header("Cookie", cookies)
+                                                        .build()
+                                                    okhttp3.OkHttpClient().newCall(request).execute().use { response ->
+                                                        val finalPath = response.request.url.encodedPath
+                                                        if (!response.isSuccessful || finalPath.startsWith("/accounts/login")) null
+                                                        else response.body?.string()
+                                                    }
+                                                }.getOrNull()
+                                            }
+                                            if (html.isNullOrBlank()) {
+                                                isProcessingHtml = false
+                                                reportFailure(SyncFailureReason.SESSION_EXPIRED, "Não foi possível validar sua sessão. Entre novamente no SUAP.")
+                                            } else {
+                                                inputMatricula = matricula
+                                                onSaveCredentials(matricula, "")
+                                                onGovBrLogin(matricula)
+                                                showWebView = false
+                                                onHtmlScraped(html)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -199,11 +353,36 @@ fun LoginScreen(
                             view: WebView?,
                             request: WebResourceRequest?
                         ): Boolean {
+                            val urlStr = request?.url?.toString()
+                            if (!com.example.util.UrlSecurityUtils.isAllowedLoginUrl(urlStr)) {
+                                return true
+                            }
+                            return false
+                        }
+
+                        @Deprecated("Deprecated in Java")
+                        override fun shouldOverrideUrlLoading(
+                            view: WebView?,
+                            url: String?
+                        ): Boolean {
+                            if (!com.example.util.UrlSecurityUtils.isAllowedLoginUrl(url)) {
+                                return true
+                            }
                             return false
                         }
                     }
-                    loadUrl("https://suap.ifal.edu.br/accounts/login/?next=/")
+                    if (isSilentSync && savedUsername.matches(Regex("\\d+"))) {
+                        loadUrl("https://suap.ifal.edu.br/edu/aluno/$savedUsername/?tab=boletim")
+                    } else {
+                        loadUrl("https://suap.ifal.edu.br/accounts/login/?next=/")
+                    }
                 }
+            },
+            onRelease = { webView ->
+                webView.stopLoading()
+                webView.removeJavascriptInterface("HTMLOUT")
+                if (activeWebView === webView) activeWebView = null
+                webView.destroy()
             },
             modifier = if (hiddenWebView && !showWebView) Modifier.size(1.dp).alpha(0f) else Modifier.fillMaxSize()
         )
@@ -222,7 +401,43 @@ fun LoginScreen(
                 ) {
                     Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                 }
+                if (loginMethod == LoginMethod.GOV_BR) {
+                    TextButton(
+                        onClick = { matriculaManual = inputMatricula; showMatriculaDialog = true },
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
+                    ) { Text("Informar matrícula") }
+                }
             }
+        }
+
+        if (showMatriculaDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showMatriculaDialog = false },
+                title = { Text("Matrícula do SUAP") },
+                text = {
+                    OutlinedTextField(
+                        value = matriculaManual,
+                        onValueChange = { matriculaManual = it.filter(Char::isDigit) },
+                        label = { Text("Matrícula") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val matricula = matriculaManual.trim()
+                        if (matricula.isNotEmpty()) {
+                            inputMatricula = matricula
+                            activeWebView?.loadUrl("https://suap.ifal.edu.br/edu/aluno/$matricula/?tab=boletim")
+                            showMatriculaDialog = false
+                        }
+                    }) { Text("Continuar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showMatriculaDialog = false }) { Text("Cancelar") }
+                }
+            )
         }
         
         if (!showWebView) {
@@ -235,19 +450,56 @@ fun LoginScreen(
             }
 
             androidx.compose.foundation.layout.Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
             ) {
-                Text("Login SUAP", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Login SUAP",
+                        style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    FilledTonalButton(
+                        onClick = { showTutorial = true },
+                        shape = MaterialTheme.shapes.small,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Tutorial", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
                 
+                errorMessage?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                }
+
                 OutlinedTextField(
                     value = inputMatricula,
                     onValueChange = { inputMatricula = it },
                     label = { Text("Matrícula") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().testTag("username_input"),
+                    shape = MaterialTheme.shapes.medium,
+                    singleLine = true,
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) })
                 )
-                
+
                 var showPassword by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
                 OutlinedTextField(
@@ -255,15 +507,51 @@ fun LoginScreen(
                     onValueChange = { inputSenha = it },
                     label = { Text("Senha") },
                     visualTransformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("password_input"),
+                    shape = MaterialTheme.shapes.medium,
+                    singleLine = true,
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { startLogin() }),
                     trailingIcon = {
                         androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
-                            androidx.compose.material3.Text(text = if (showPassword) "🙈" else "👁️")
+                            Icon(
+                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
+                            )
                         }
                     }
                 )
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { showTutorial = true },
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Primeiro acesso? Veja como preencher suas credenciais",
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
                 
-                var termsAccepted by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(prefs.getBoolean("terms_accepted", false)) }
                 var showTermsDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                 
                 if (showTermsDialog) {
@@ -276,21 +564,26 @@ fun LoginScreen(
                             ) {
                                 Text(
                                     text = """Termos de Uso e Isenção de Responsabilidade
-                                        
+
 1. Natureza do Aplicativo
-Este aplicativo (Suap.ifal Mobile Não Oficial) é um projeto independente e não possui vínculo oficial com o Instituto Federal de Alagoas (IFAL) ou com os desenvolvedores do sistema acadêmico SUAP original.
+Este aplicativo é um projeto independente, desenvolvido por alunos, e não possui vínculo oficial com a instituição (IFAL) ou com os desenvolvedores dos sistemas acadêmicos originais (SUAP/SIGAA).
 
-2. Coleta e Armazenamento de Dados
-Suas credenciais (matrícula e senha) e demais dados acessados são armazenados exclusivamente de forma local e segura no seu próprio dispositivo. Este aplicativo NÃO envia suas informações para nenhum servidor de terceiros.
+2. Coleta e Armazenamento de Dados Locais
+Suas credenciais institucionais (matrícula e senha) e os dados acadêmicos extraídos (boletins, faltas, horários) são armazenados EXCLUSIVAMENTE de forma local e criptografada no seu próprio dispositivo. O aplicativo não envia esses dados para nenhum servidor externo.
 
-3. Funcionamento
-O aplicativo atua como uma interface alternativa, realizando o login através do portal SUAP via WebView e extraindo (scraping) as informações estritamente para exibi-las na interface nativa do aplicativo.
+3. Funcionalidade de Amigos e Compartilhamento (Firebase)
+Ao utilizar a funcionalidade "Amigos", você concorda que:
+- O login é realizado de forma segura através da sua Conta Google.
+- Apenas o seu E-mail e Foto de Perfil (em formato base64) serão armazenados de forma temporária ou persistente no banco de dados em nuvem (Firebase) estritamente para viabilizar a busca e conexão entre usuários.
+- Sua matrícula, nome completo e senha institucionais NUNCA são compartilhados com o Firebase.
+- Os "Nomes" (apelidos) definidos para os seus amigos são de sua total responsabilidade e ficam salvos apenas na sua conta local/nuvem privada.
+- O compartilhamento de notas e boletins com amigos é opcional, explícito (requer ação manual) e de sua inteira responsabilidade.
 
 4. Isenção de Responsabilidade
 Ao utilizar este aplicativo, você entende e concorda que os desenvolvedores não se responsabilizam por:
-- Quaisquer falhas de acesso, indisponibilidade temporária ou definitiva da conexão ao SUAP.
-- Eventuais mudanças estruturais na página do SUAP que possam desabilitar ou impactar as funcionalidades deste app.
-- Quaisquer consequências do uso inadequado do aplicativo ou pelo comprometimento da segurança do seu dispositivo físico.
+- Quaisquer falhas de acesso, indisponibilidade temporária ou definitiva da conexão aos sistemas institucionais.
+- Eventuais mudanças estruturais nas páginas oficiais que possam desabilitar ou impactar as funcionalidades deste app.
+- Uso indevido do aplicativo, vazamento de notas compartilhadas voluntariamente por você, ou comprometimento da segurança do seu dispositivo físico.
 
 Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceitado todos os termos descritos acima.""".trimIndent(),
                                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall
@@ -320,7 +613,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                 
                 androidx.compose.material3.Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    shape = androidx.compose.material3.MaterialTheme.shapes.large,
                     colors = androidx.compose.material3.CardDefaults.cardColors(
                         containerColor = if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ),
@@ -370,7 +663,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                                     textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
                                 ),
                                 modifier = Modifier
-                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                                    .clip(androidx.compose.material3.MaterialTheme.shapes.extraSmall)
                                     .clickable { showTermsDialog = true }
                                     .padding(vertical = 4.dp, horizontal = 2.dp)
                             )
@@ -379,16 +672,14 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                 }
                 
                 Button(
-                    onClick = { 
-                        onSaveCredentials(inputMatricula, inputSenha)
-                        isLoading = true
-                        hiddenWebView = true 
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    enabled = termsAccepted
+                    onClick = { startLogin() },
+                    modifier = Modifier.fillMaxWidth().height(50.dp).testTag("login_button"),
+                    enabled = canSubmit
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(color = androidx.compose.ui.graphics.Color.White)
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isProcessingHtml) "Salvando dados…" else "Conectando ao SUAP…")
                     } else {
                         Text("Entrar")
                     }
@@ -396,8 +687,11 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                TextButton(onClick = { showWebView = true }, enabled = termsAccepted) {
-                    Text("Conectar via navegador")
+            TextButton(onClick = { errorMessage = null; loginMethod = LoginMethod.CREDENTIALS; showWebView = true }, enabled = termsAccepted && !isLoading) {
+                    Text("Entrar com matrícula e senha")
+                }
+                TextButton(onClick = { startGovBrLogin() }, enabled = termsAccepted && !isLoading) {
+                    Text("Entrar com gov.br")
                 }
                 
 
@@ -406,50 +700,4 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
     }
 }
 
-}
-
-private fun getDemoHtml(): String {
-    return """
-        <html>
-            <div class="title-container">
-                <h2></h2>
-            </div>
-            <dl class="definition-list">
-                <div class="list-item"><dt>Nome</dt><dd></dd></div>
-                <div class="list-item"><dt>Matrícula</dt><dd></dd></div>
-                <div class="list-item"><dt>Ingresso</dt><dd></dd></div>
-                <div class="list-item"><dt>Curso</dt><dd></dd></div>
-            </dl>
-            <table class="bordered">
-                <tbody>
-                    <tr>
-                        <td></td>
-                        <td>Matemática</td><td></td><td></td><td>5</td><td></td><td>Cursando</td><td>80</td><td></td><td>90</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>85</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Física</td><td></td><td></td><td>2</td><td></td><td>Cursando</td><td>70</td><td></td><td>75</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>72</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Programação I</td><td></td><td></td><td>0</td><td></td><td>Cursando</td><td>95</td><td></td><td>100</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>97</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Redes de Computadores</td><td></td><td></td><td>4</td><td></td><td>Cursando</td><td>60</td><td></td><td>65</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>62</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td headers="th_total_faltas">11</td>
-                        <td headers="th_frequencia">93.5 %</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </html>
-    """.trimIndent()
 }

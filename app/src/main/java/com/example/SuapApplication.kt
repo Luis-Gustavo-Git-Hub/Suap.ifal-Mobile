@@ -4,6 +4,7 @@ import android.app.Application
 import com.example.data.AppDatabase
 import com.example.data.SubjectRepository
 import com.example.util.CrashLogger
+import com.example.util.CredentialStore
 import com.example.util.NotificationHelper
 
 class SuapApplication : Application() {
@@ -14,10 +15,17 @@ class SuapApplication : Application() {
         super.onCreate()
         CrashLogger.init(this)
         NotificationHelper.createNotificationChannel(this)
+        CredentialStore.getInstance(this)
         
         val sharedPrefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        if (sharedPrefs.getBoolean("notifications_enabled", false)) {
+        val backgroundChecksEnabled = sharedPrefs.getBoolean("notifications_enabled", false) ||
+            sharedPrefs.getBoolean("notify_grades", false)
+        if (backgroundChecksEnabled && CredentialStore.getInstance(this).hasSuapCredentials()) {
             com.example.worker.WorkScheduler.scheduleDailySync(this)
+        } else {
+            // Remove schedules created by older versions when checks are now off
+            // or the user has disconnected the SUAP account.
+            com.example.worker.WorkScheduler.cancelSync(this)
         }
     }
 }
