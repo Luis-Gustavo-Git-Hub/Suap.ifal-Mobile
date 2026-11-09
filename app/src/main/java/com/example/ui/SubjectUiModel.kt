@@ -66,7 +66,7 @@ data class SubjectUiModel(
 )
 
 private fun parseGradeSafe(input: String?): Double? = AcademicCalculator.parseGrade(input)
-private fun formatGradeDisplay(value: Double?): String = AcademicCalculator.formatGrade(value)
+private fun formatGradeDisplay(value: Double?): String = AcademicCalculator.formatGrade(value).replace('.', ',')
 
 private data class Tuple6<A, B, C, D, E, F>(val a: A, val b: B, val c: C, val d: D, val e: E, val f: F)
 

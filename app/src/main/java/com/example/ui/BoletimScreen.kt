@@ -5,6 +5,7 @@ import com.example.ui.theme.AppSemanticColors
 import com.example.ui.theme.AppDimens
 import com.example.ui.theme.getSubjectColor
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Search
@@ -46,6 +49,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.animation.core.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.platform.LocalContext
@@ -69,7 +74,7 @@ import java.util.Locale
 
 private fun parseGradeSafe(input: String?): Double? = AcademicCalculator.parseGrade(input)
 
-private fun formatGradeDisplay(value: Double?): String = AcademicCalculator.formatGrade(value)
+private fun formatGradeDisplay(value: Double?): String = AcademicCalculator.formatGrade(value).replace('.', ',')
 
 @Composable
 fun CustomFilterChip(
@@ -560,6 +565,7 @@ fun SubjectBimesterCard(
     modifier: Modifier = Modifier
 ) {
     val subject = model.subject
+    var bimestersExpanded by rememberSaveable(subject.id) { mutableStateOf(false) }
 
     val cardSurface = MaterialTheme.colorScheme.surface
     val cardBgBrush = remember(model.primaryColor, model.secondaryColor, isDark, cardSurface) {
@@ -626,7 +632,6 @@ fun SubjectBimesterCard(
         modifier = modifier
             .background(cardBgBrush, MaterialTheme.shapes.large)
             .border(BorderStroke(1.dp, cardBorderBrush), MaterialTheme.shapes.large)
-            .clickable { onShowDetails(subject) }
             .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Column(
@@ -729,12 +734,26 @@ fun SubjectBimesterCard(
                     }
 
                     IconButton(
+                        onClick = { bimestersExpanded = !bimestersExpanded },
+                        modifier = Modifier
+                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                            .semantics {
+                                stateDescription = if (bimestersExpanded) "Expandido" else "Recolhido"
+                            }
+                    ) {
+                        Icon(
+                            imageVector = if (bimestersExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (bimestersExpanded) "Ocultar notas por bimestre" else "Mostrar notas por bimestre"
+                        )
+                    }
+
+                    IconButton(
                         onClick = onToggleFavorite,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     ) {
                         Icon(
                             imageVector = if (subject.isFavorite) Icons.Filled.Star else Icons.Default.Star,
-                            contentDescription = "Favoritar",
+                            contentDescription = if (subject.isFavorite) "Remover ${model.cleanName} dos favoritos" else "Adicionar ${model.cleanName} aos favoritos",
                             tint = if (subject.isFavorite) semantic.warning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             modifier = Modifier.size(15.dp)
                         )
@@ -742,17 +761,25 @@ fun SubjectBimesterCard(
                 }
             }
 
-            // 4 Bimesters Grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                model.bimesters.forEach { bInfo ->
-                    BimesterItem(
-                        modifier = Modifier.weight(1f),
-                        info = bInfo,
-                        isDark = isDark
+            AnimatedVisibility(visible = bimestersExpanded) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Notas por bimestre",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        model.bimesters.forEach { bInfo ->
+                            BimesterItem(
+                                modifier = Modifier.weight(1f),
+                                info = bInfo,
+                                isDark = isDark
+                            )
+                        }
+                    }
                 }
             }
 
