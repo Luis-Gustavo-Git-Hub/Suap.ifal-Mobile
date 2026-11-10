@@ -105,9 +105,15 @@ internal object BenchmarkTestData {
     fun waitForDashboard(device: UiDevice) {
         // A first-access dialog can exist on older app data; close it before measuring navigation.
         device.wait(Until.findObject(By.text("Pular")), 500L)?.click()
-        check(device.wait(Until.hasObject(By.text("Início")), READY_TIMEOUT_MS)) {
-            "Dashboard did not become ready"
+        val homeTab = By.text("Início")
+        for (attempt in 0 until 4) {
+            if (device.findObject(homeTab) != null) break
+            device.pressBack()
         }
+        check(device.wait(Until.hasObject(homeTab), READY_TIMEOUT_MS)) { "Main navigation did not become ready" }
+        val dashboardTitle = By.textContains("Olá,")
+        if (device.findObject(dashboardTitle) == null) device.findObject(homeTab)?.click()
+        check(device.wait(Until.hasObject(dashboardTitle), READY_TIMEOUT_MS)) { "Dashboard did not become ready" }
     }
 
     fun clickText(device: UiDevice, text: String) = click(device, By.text(text), text)
