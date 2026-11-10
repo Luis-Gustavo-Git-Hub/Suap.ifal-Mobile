@@ -19,11 +19,6 @@ internal object BenchmarkTestData {
     fun prepare(device: UiDevice) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val databaseFile = context.getDatabasePath("suap_database")
-        if (appPrefs.getInt("benchmark_data_version", 0) >= 4 && databaseFile.exists()) {
-            device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-            return
-        }
 
         context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE).edit()
             .putString("username", "benchmark-user")
@@ -40,14 +35,13 @@ internal object BenchmarkTestData {
             .commit()
 
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-        launchApp(device)
-
-        // Room opens the database lazily, and the initial screen does not guarantee a query in
-        // this instrumented setup. Create the exact exported Room schema before seeding data.
-        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
+        // Create the exact exported Room schema before launching the app. The initial dashboard
+        // does not reliably trigger Room's lazy database creation in this instrumented setup.
         val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
             ensureRoomSchema(db)
+            db.delete("subjects", null, null)
+            db.delete("aulas_history", null, null)
             db.execSQL(
                 """
                 INSERT OR REPLACE INTO subjects (
@@ -95,7 +89,6 @@ internal object BenchmarkTestData {
             db.close()
         }
         launchApp(device)
-        appPrefs.edit().putInt("benchmark_data_version", 4).commit()
         device.pressHome()
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
     }
