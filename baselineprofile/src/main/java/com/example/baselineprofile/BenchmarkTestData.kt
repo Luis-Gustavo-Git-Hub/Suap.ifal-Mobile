@@ -41,13 +41,15 @@ internal object BenchmarkTestData {
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
         launchApp(device)
 
-        // Open Room once in the target process, then seed a local subject without network access.
-        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
+        // Give the dashboard's Room flow time to run before stopping the app. The database is
+        // opened lazily by its first query, so force-stopping as soon as the first frame appears
+        // can kill initialization before Room creates the file.
         val databaseReadyDeadline = SystemClock.uptimeMillis() + READY_TIMEOUT_MS
         while (!databaseFile.exists() && SystemClock.uptimeMillis() < databaseReadyDeadline) {
             Thread.sleep(100L)
         }
         check(databaseFile.exists()) { "SUAP database was not initialized" }
+        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
         val db = SQLiteDatabase.openDatabase(databaseFile.absolutePath, null, SQLiteDatabase.OPEN_READWRITE)
         try {
             db.execSQL(
