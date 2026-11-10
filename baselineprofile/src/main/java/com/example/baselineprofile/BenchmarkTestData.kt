@@ -15,9 +15,11 @@ internal object BenchmarkTestData {
     private const val READY_TIMEOUT_MS = 15_000L
 
     fun prepare(device: UiDevice) {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val testContext = instrumentation.context
+        val context = testContext.createPackageContext(TARGET_PACKAGE, 0)
         check(context.packageName == TARGET_PACKAGE) {
-            "Benchmark target context points to ${context.packageName}, expected $TARGET_PACKAGE"
+            "Benchmark app context points to ${context.packageName}, expected $TARGET_PACKAGE"
         }
         val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
@@ -40,7 +42,7 @@ internal object BenchmarkTestData {
         // does not reliably trigger Room's lazy database creation in this instrumented setup.
         val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
-            ensureRoomSchema(InstrumentationRegistry.getInstrumentation().context, db)
+            ensureRoomSchema(testContext, db)
             db.delete("subjects", null, null)
             db.delete("aulas_history", null, null)
             db.execSQL(
