@@ -37,7 +37,7 @@ internal object BenchmarkTestData {
         // does not reliably trigger Room's lazy database creation in this instrumented setup.
         val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
-            ensureRoomSchema(context, db)
+            ensureRoomSchema(InstrumentationRegistry.getInstrumentation().context, db)
             db.delete("subjects", null, null)
             db.delete("aulas_history", null, null)
             db.execSQL(
@@ -92,7 +92,7 @@ internal object BenchmarkTestData {
     }
 
     private fun ensureRoomSchema(context: Context, db: SQLiteDatabase) {
-        val schemaJson = context.assets.open("com.example.data.AppDatabase/9.json")
+        val schemaJson = context.assets.open("9.json")
             .bufferedReader()
             .use { it.readText() }
         val databaseSchema = org.json.JSONObject(schemaJson).getJSONObject("database")
