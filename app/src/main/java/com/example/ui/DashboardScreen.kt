@@ -263,7 +263,7 @@ fun DashboardScreen(
                 com.example.ui.components.AppPageHeader(
                     eyebrow = campusName,
                     title = "Olá, $studentName",
-                    titleMaxLines = 3,
+                    titleMaxLines = null,
                     subtitle = "Veja seu resumo acadêmico e os próximos compromissos.",
                     supportingContent = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

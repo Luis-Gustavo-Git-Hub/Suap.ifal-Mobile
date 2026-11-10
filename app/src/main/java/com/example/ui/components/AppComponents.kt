@@ -151,7 +151,7 @@ fun AppPageHeader(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
-    titleMaxLines: Int = 2,
+    titleMaxLines: Int? = 2,
     eyebrow: String? = null,
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
@@ -190,8 +190,8 @@ fun AppPageHeader(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    maxLines = titleMaxLines,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = titleMaxLines ?: Int.MAX_VALUE,
+                    overflow = if (titleMaxLines == null) TextOverflow.Clip else TextOverflow.Ellipsis
                 )
                 Text(
                     text = subtitle,

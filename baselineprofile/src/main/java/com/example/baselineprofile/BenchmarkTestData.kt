@@ -16,6 +16,9 @@ internal object BenchmarkTestData {
 
     fun prepare(device: UiDevice) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        check(context.packageName == TARGET_PACKAGE) {
+            "Benchmark target context points to ${context.packageName}, expected $TARGET_PACKAGE"
+        }
         val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
         context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE).edit()
@@ -83,13 +86,32 @@ internal object BenchmarkTestData {
                     )
                 )
             }
+            check(subjectCount(db) == 1) {
+                "Benchmark subject was not seeded in ${context.packageName}:${context.getDatabasePath("suap_database")}; " +
+                    "subjects=${subjectCount(db)}"
+            }
         } finally {
             db.close()
         }
         launchApp(device)
+        val appDb = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
+        try {
+            check(subjectCount(appDb) == 1) {
+                "Benchmark subject disappeared after app launch from ${context.packageName}:" +
+                    "${context.getDatabasePath("suap_database")}; subjects=${subjectCount(appDb)}"
+            }
+        } finally {
+            appDb.close()
+        }
         device.pressHome()
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
     }
+
+    private fun subjectCount(db: SQLiteDatabase): Int =
+        db.rawQuery("SELECT COUNT(*) FROM subjects", null).use { cursor ->
+            check(cursor.moveToFirst()) { "Could not read seeded subject count" }
+            cursor.getInt(0)
+        }
 
     private fun ensureRoomSchema(context: Context, db: SQLiteDatabase) {
         val schemaJson = context.assets.open("9.json")

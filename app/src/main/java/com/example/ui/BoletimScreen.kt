@@ -660,9 +660,7 @@ fun SubjectBimesterCard(
                             text = model.cleanName,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
                         val labelSmallStyle = MaterialTheme.typography.labelSmall
@@ -1031,9 +1029,7 @@ fun SubjectDetailsSheet(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        lineHeight = 17.sp,
-                        overflow = TextOverflow.Ellipsis
+                        lineHeight = 17.sp
                     )
                     Text(
                         text = "Avaliações e Notas Detalhadas",
