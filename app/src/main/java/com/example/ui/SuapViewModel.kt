@@ -2640,9 +2640,13 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     var textContent = ""
                     val contentMain = doc.select(".richtext").first()
                     if (contentMain != null) {
-                        contentMain.select("br").append("\\n")
-                        contentMain.select("p").prepend("\\n\\n")
-                        textContent = contentMain.text().replace("\\n", "\n").trim()
+                        val lineBreakMarker = "__SUAP_MESSAGE_LINE_BREAK__"
+                        contentMain.select("br").forEach { it.after(lineBreakMarker) }
+                        contentMain.select("p").forEach { it.prependText(lineBreakMarker + lineBreakMarker) }
+                        textContent = contentMain.text()
+                            .replace(lineBreakMarker, "\n")
+                            .replace(Regex("\\n{3,}"), "\n\n")
+                            .trim()
                     } else {
                         textContent = doc.body().text()
                     }

@@ -661,7 +661,7 @@ fun SubjectBimesterCard(
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                         val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant

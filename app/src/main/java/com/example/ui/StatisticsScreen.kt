@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -77,7 +78,7 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
     var minimumAttendance by rememberSaveable { mutableFloatStateOf(StatisticsCalculator.DEFAULT_MINIMUM_ATTENDANCE.toFloat()) }
     var targetAverage by rememberSaveable { mutableFloatStateOf(AcademicCalculator.PASSING_AVERAGE.toFloat()) }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().statusBarsPadding()) {
         PrimaryTabRow(selectedTabIndex = selectedTab) {
             statisticTabs.forEachIndexed { index, title ->
                 Tab(
@@ -421,7 +422,7 @@ private fun NoteSubjectCard(row: SubjectStatistics, selectedStage: Int) {
     CardPanel {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             Icon(Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
-            Text(row.subject.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.subject.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(gradeText(grade), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
         Text("Média calculada: ${gradeText(row.average)} · ${statusLabel(row.status)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -474,10 +475,12 @@ private fun CompareSubjectCard(row: SubjectStatistics, stage: Int) {
     val classroom = row.classGrades[stage - 1]
     val difference = if (student != null && classroom != null) student - classroom else null
     CardPanel {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(row.subject.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("Você ${gradeText(student)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-            Text("Turma ${gradeText(classroom)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(row.subject.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Você ${gradeText(student)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("Turma ${gradeText(classroom)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            }
         }
         Text(
             difference?.let { if (it == 0.0) "Na média da turma" else "${if (it > 0) "Acima" else "Abaixo"} da turma em ${gradeText(abs(it))} ponto(s)" }

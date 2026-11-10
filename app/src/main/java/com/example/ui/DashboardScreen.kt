@@ -263,16 +263,27 @@ fun DashboardScreen(
                 com.example.ui.components.AppPageHeader(
                     eyebrow = campusName,
                     title = "Olá, $studentName",
+                    titleMaxLines = 3,
                     subtitle = "Veja seu resumo acadêmico e os próximos compromissos.",
                     supportingContent = {
-                        com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
+                            if (!isWide) {
+                                XpRankHeaderWidget(
+                                    subjects = subjects,
+                                    onClick = { showLevelsDialog = true }
+                                )
+                            }
+                        }
                     },
-                    trailingContent = {
-                        XpRankHeaderWidget(
-                            subjects = subjects,
-                            onClick = { showLevelsDialog = true }
-                        )
-                    }
+                    trailingContent = if (isWide) {
+                        {
+                            XpRankHeaderWidget(
+                                subjects = subjects,
+                                onClick = { showLevelsDialog = true }
+                            )
+                        }
+                    } else null
                 )
 
             // Animated Sync Status Card (Replaces the raw loading spinner)

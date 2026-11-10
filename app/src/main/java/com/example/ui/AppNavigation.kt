@@ -361,10 +361,11 @@ fun AppNavigation(viewModel: SuapViewModel) {
                         }
                     }
                 }
-            ) { _ ->
+            ) { innerPadding ->
                 NavHost(
                     navController = navController,
                     startDestination = NavRoute.Dashboard,
+                    modifier = Modifier.padding(innerPadding),
                     enterTransition = {
                         slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> width / 3 } + fadeIn(animationSpec = tween(240))
                     },

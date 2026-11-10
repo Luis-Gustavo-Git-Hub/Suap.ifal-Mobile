@@ -670,9 +670,9 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
+                        maxLines = if (isExpanded) Int.MAX_VALUE else 2,
                         overflow = if (isExpanded) androidx.compose.ui.text.style.TextOverflow.Clip else androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        lineHeight = 18.sp
+                        lineHeight = 20.sp
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -680,7 +680,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                         fontWeight = FontWeight.Medium,
-                        maxLines = 1,
+                        maxLines = if (isExpanded) 2 else 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
@@ -733,7 +733,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                         // Content card
                         Surface(
                             shape = MaterialTheme.shapes.large,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -741,9 +741,9 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                 Text(
                                     text = messageDetail?.content ?: "Não foi possível carregar o conteúdo.",
                                     style = MaterialTheme.typography.bodyMedium.copy(
-                                        lineHeight = 20.sp
+                                        lineHeight = 24.sp
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
 
                                 Spacer(modifier = Modifier.height(12.dp))
