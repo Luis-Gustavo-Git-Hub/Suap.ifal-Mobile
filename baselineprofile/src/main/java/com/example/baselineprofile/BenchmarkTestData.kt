@@ -2,7 +2,6 @@ package com.example.baselineprofile
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
@@ -14,12 +13,14 @@ internal object BenchmarkTestData {
     const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
     private const val MAIN_ACTIVITY = "$TARGET_PACKAGE/com.example.MainActivity"
     private const val READY_TIMEOUT_MS = 15_000L
+    private const val ROOM_SCHEMA_VERSION = 9
+    private const val ROOM_IDENTITY_HASH = "5177fbbabb116780cb91fe1358527de9"
 
     fun prepare(device: UiDevice) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val databaseFile = context.getDatabasePath("suap_database")
-        if (appPrefs.getInt("benchmark_data_version", 0) >= 3 && databaseFile.exists()) {
+        if (appPrefs.getInt("benchmark_data_version", 0) >= 4 && databaseFile.exists()) {
             device.executeShellCommand("am force-stop $TARGET_PACKAGE")
             return
         }
@@ -41,17 +42,12 @@ internal object BenchmarkTestData {
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
         launchApp(device)
 
-        // Give the dashboard's Room flow time to run before stopping the app. The database is
-        // opened lazily by its first query, so force-stopping as soon as the first frame appears
-        // can kill initialization before Room creates the file.
-        val databaseReadyDeadline = SystemClock.uptimeMillis() + READY_TIMEOUT_MS
-        while (!databaseFile.exists() && SystemClock.uptimeMillis() < databaseReadyDeadline) {
-            Thread.sleep(100L)
-        }
-        check(databaseFile.exists()) { "SUAP database was not initialized" }
+        // Room opens the database lazily, and the initial screen does not guarantee a query in
+        // this instrumented setup. Create the exact exported Room schema before seeding data.
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-        val db = SQLiteDatabase.openDatabase(databaseFile.absolutePath, null, SQLiteDatabase.OPEN_READWRITE)
+        val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
+            ensureRoomSchema(db)
             db.execSQL(
                 """
                 INSERT OR REPLACE INTO subjects (
@@ -99,9 +95,57 @@ internal object BenchmarkTestData {
             db.close()
         }
         launchApp(device)
-        appPrefs.edit().putInt("benchmark_data_version", 3).commit()
+        appPrefs.edit().putInt("benchmark_data_version", 4).commit()
         device.pressHome()
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
+    }
+
+    private fun ensureRoomSchema(db: SQLiteDatabase) {
+        db.beginTransaction()
+        try {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS subjects (
+                    id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL,
+                    grade1 TEXT NOT NULL, grade2 TEXT NOT NULL, rec1 TEXT NOT NULL,
+                    grade3 TEXT NOT NULL, grade4 TEXT NOT NULL, classGrade1 TEXT NOT NULL,
+                    classGrade2 TEXT NOT NULL, classGrade3 TEXT NOT NULL, classGrade4 TEXT NOT NULL,
+                    rec2 TEXT NOT NULL, recFinal TEXT NOT NULL, finalGrade TEXT NOT NULL,
+                    absences TEXT NOT NULL, status TEXT NOT NULL, isFavorite INTEGER NOT NULL,
+                    detailUrl TEXT NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS academic_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, dateInfo TEXT NOT NULL,
+                    description TEXT NOT NULL, color TEXT NOT NULL, startDateStr TEXT,
+                    endDateStr TEXT
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS aulas_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, subjectUrl TEXT NOT NULL,
+                    date TEXT NOT NULL, etapa TEXT NOT NULL, numAulas TEXT NOT NULL,
+                    numFaltas TEXT NOT NULL, conteudo TEXT NOT NULL, professor TEXT NOT NULL,
+                    attachmentUrl TEXT NOT NULL, attachmentTitle TEXT NOT NULL,
+                    rawHtml TEXT NOT NULL, linksJson TEXT NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT)")
+            db.execSQL(
+                "INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, ?)",
+                arrayOf(ROOM_IDENTITY_HASH)
+            )
+            db.version = ROOM_SCHEMA_VERSION
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun waitForDashboard(device: UiDevice) {
