@@ -13,8 +13,6 @@ internal object BenchmarkTestData {
     const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
     private const val MAIN_ACTIVITY = "$TARGET_PACKAGE/com.example.MainActivity"
     private const val READY_TIMEOUT_MS = 15_000L
-    private const val ROOM_SCHEMA_VERSION = 9
-    private const val ROOM_IDENTITY_HASH = "5177fbbabb116780cb91fe1358527de9"
 
     fun prepare(device: UiDevice) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -39,7 +37,7 @@ internal object BenchmarkTestData {
         // does not reliably trigger Room's lazy database creation in this instrumented setup.
         val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
-            ensureRoomSchema(db)
+            ensureRoomSchema(context, db)
             db.delete("subjects", null, null)
             db.delete("aulas_history", null, null)
             db.execSQL(
@@ -93,48 +91,25 @@ internal object BenchmarkTestData {
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
     }
 
-    private fun ensureRoomSchema(db: SQLiteDatabase) {
+    private fun ensureRoomSchema(context: Context, db: SQLiteDatabase) {
+        val schemaJson = context.assets.open("com.example.data.AppDatabase/9.json")
+            .bufferedReader()
+            .use { it.readText() }
+        val databaseSchema = org.json.JSONObject(schemaJson).getJSONObject("database")
         db.beginTransaction()
         try {
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS subjects (
-                    id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL,
-                    grade1 TEXT NOT NULL, grade2 TEXT NOT NULL, rec1 TEXT NOT NULL,
-                    grade3 TEXT NOT NULL, grade4 TEXT NOT NULL, classGrade1 TEXT NOT NULL,
-                    classGrade2 TEXT NOT NULL, classGrade3 TEXT NOT NULL, classGrade4 TEXT NOT NULL,
-                    rec2 TEXT NOT NULL, recFinal TEXT NOT NULL, finalGrade TEXT NOT NULL,
-                    absences TEXT NOT NULL, status TEXT NOT NULL, isFavorite INTEGER NOT NULL,
-                    detailUrl TEXT NOT NULL
+            val entities = databaseSchema.getJSONArray("entities")
+            for (index in 0 until entities.length()) {
+                val entity = entities.getJSONObject(index)
+                db.execSQL(
+                    entity.getString("createSql").replace("\${TABLE_NAME}", entity.getString("tableName"))
                 )
-                """.trimIndent()
-            )
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS academic_events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, dateInfo TEXT NOT NULL,
-                    description TEXT NOT NULL, color TEXT NOT NULL, startDateStr TEXT,
-                    endDateStr TEXT
-                )
-                """.trimIndent()
-            )
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS aulas_history (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, subjectUrl TEXT NOT NULL,
-                    date TEXT NOT NULL, etapa TEXT NOT NULL, numAulas TEXT NOT NULL,
-                    numFaltas TEXT NOT NULL, conteudo TEXT NOT NULL, professor TEXT NOT NULL,
-                    attachmentUrl TEXT NOT NULL, attachmentTitle TEXT NOT NULL,
-                    rawHtml TEXT NOT NULL, linksJson TEXT NOT NULL
-                )
-                """.trimIndent()
-            )
-            db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT)")
-            db.execSQL(
-                "INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, ?)",
-                arrayOf(ROOM_IDENTITY_HASH)
-            )
-            db.version = ROOM_SCHEMA_VERSION
+            }
+            val setupQueries = databaseSchema.getJSONArray("setupQueries")
+            for (index in 0 until setupQueries.length()) {
+                db.execSQL(setupQueries.getString(index))
+            }
+            db.version = databaseSchema.getInt("version")
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
