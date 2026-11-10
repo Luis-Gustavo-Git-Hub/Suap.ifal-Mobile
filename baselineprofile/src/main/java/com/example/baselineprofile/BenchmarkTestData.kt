@@ -40,6 +40,11 @@ internal object BenchmarkTestData {
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
         // Create the exact exported Room schema before launching the app. The initial dashboard
         // does not reliably trigger Room's lazy database creation in this instrumented setup.
+        val databasePath = context.getDatabasePath("suap_database")
+        val databaseDirectory = databasePath.parentFile
+        check(databaseDirectory != null && (databaseDirectory.isDirectory || databaseDirectory.mkdirs())) {
+            "Could not create SUAP database directory: $databaseDirectory"
+        }
         val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
         try {
             ensureRoomSchema(testContext, db)
