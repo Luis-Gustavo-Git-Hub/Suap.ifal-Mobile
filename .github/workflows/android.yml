@@ -70,6 +70,39 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Add local-only Firebase config for the signed-out Friends benchmark
+        run: |
+          if [ ! -f app/google-services.json ]; then
+            cat > app/google-services.json <<'JSON'
+            {
+              "project_info": {
+                "project_number": "123456789012",
+                "project_id": "suap-offline-benchmark",
+                "storage_bucket": "suap-offline-benchmark.appspot.com"
+              },
+              "client": [
+                {
+                  "client_info": {
+                    "mobilesdk_app_id": "1:123456789012:android:00000000000000000000000000000000",
+                    "android_client_info": {
+                      "package_name": "com.aistudio.suap.xkcdz"
+                    }
+                  },
+                  "api_key": [
+                    { "current_key": "benchmark-only-no-network-key" }
+                  ],
+                  "services": {
+                    "appinvite_service": {
+                      "other_platform_oauth_client": []
+                    }
+                  }
+                }
+              ],
+              "configuration_version": "1"
+            }
+          JSON
+          fi
+
       - name: Enable KVM access for the emulator
         run: |
           if [ -e /dev/kvm ]; then
@@ -89,6 +122,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           script: |
+            set -e
             ./gradlew :app:generateBaselineProfile --no-daemon --max-workers=2
             ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark --no-daemon --max-workers=2
 
