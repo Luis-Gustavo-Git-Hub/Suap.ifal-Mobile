@@ -2,6 +2,7 @@ package com.example.network
 
 import android.content.Context
 import com.example.util.AppLog
+import com.example.util.CrashLogger
 import com.example.util.CredentialStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ sealed class NetworkResult<out T> {
 }
 
 class SuapAuthRepository internal constructor(
-    context: Context,
+    private val context: Context,
     private val client: OkHttpClient = SuapClient.okHttpClient,
     private val credentialsProvider: () -> Pair<String, String> = {
         val store = CredentialStore.getInstance(context.applicationContext)
@@ -62,14 +63,17 @@ class SuapAuthRepository internal constructor(
         return try {
             val (username, password) = credentialsProvider()
             if (username.isBlank() || password.isBlank()) {
+                diagnostic("Login SUAP interrompido: credenciais ausentes.")
                 return NetworkResult.Error("Credenciais do SUAP não configuradas.")
             }
             val loginPage = fetchPage(Request.Builder().url(LOGIN_URL).get().build())
+            diagnostic("Login SUAP GET: status=${loginPage.code}, rota=${loginPage.safeRoute()}, csrf=${hasCsrf(loginPage.html)}.")
             if (!loginPage.isSuccessful) {
                 return NetworkResult.Error("Falha ao carregar página de login do SUAP. Código: ${loginPage.code}")
             }
             val csrfToken = Jsoup.parse(loginPage.html).select("input[name=csrfmiddlewaretoken]").`val`()
             if (csrfToken.isBlank()) {
+                diagnostic("Login SUAP falhou: token CSRF ausente na página.")
                 return NetworkResult.Error("Token de segurança (CSRF) não encontrado na página do SUAP.")
             }
 
@@ -83,6 +87,7 @@ class SuapAuthRepository internal constructor(
             val page = fetchPage(
                 Request.Builder().url(LOGIN_URL).post(formBody).header("Referer", LOGIN_URL).build()
             )
+            diagnostic("Login SUAP POST: status=${page.code}, rota=${page.safeRoute()}, formularioLogin=${page.requiresLogin()}.")
             if (!page.isSuccessful) {
                 return NetworkResult.Error("Falha ao entrar no SUAP. Código: ${page.code}")
             }
@@ -91,13 +96,16 @@ class SuapAuthRepository internal constructor(
                 return NetworkResult.Error("Usuário ou senha incorretos no SUAP.")
             }
             if (page.requiresLogin() || page.html.isBlank()) {
+                diagnostic("Login SUAP não confirmado: resposta permaneceu na tela de login ou veio vazia.")
                 return NetworkResult.Error("O SUAP não confirmou o login. Verifique suas credenciais ou conclua a verificação na tela de login.")
             }
 
+            diagnostic("Login SUAP confirmado pelo fluxo HTTP.")
             AppLog.d("SuapAuthRepository", "Sessão autenticada com sucesso no SUAP")
             NetworkResult.Success(true)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
+            diagnostic("Exceção no login SUAP: ${e.javaClass.simpleName}.")
             AppLog.e("SuapAuthRepository", "Erro durante login no SUAP", e)
             NetworkResult.Error("Erro de conexão com o SUAP: ${e.message}", e)
         }
@@ -112,6 +120,7 @@ class SuapAuthRepository internal constructor(
             }
             val page = fetchPage(request)
             if (page.requiresLogin()) {
+                diagnostic("Sessão SUAP recusada: status=${page.code}, rotaSolicitada=${safeRoute(request.url)}, rotaFinal=${page.safeRoute()}.")
                 return@withContext NetworkResult.Error("Sessão do SUAP expirada. Entre novamente no app para continuar.")
             }
             when {
@@ -130,7 +139,28 @@ class SuapAuthRepository internal constructor(
         Page(response.body?.string().orEmpty(), response.request.url, response.code, response.isSuccessful)
     }
 
+    private fun diagnostic(message: String) {
+        CrashLogger.log(context.applicationContext, "INFO", "SUAP_AUTH: $message")
+    }
+
+    private fun hasCsrf(html: String): Boolean =
+        Jsoup.parse(html).selectFirst("input[name=csrfmiddlewaretoken]") != null
+
+    private fun safeRoute(url: HttpUrl): String = when {
+        url.host != "suap.ifal.edu.br" -> "host-nao-oficial"
+        url.encodedPath.startsWith("/accounts/login") -> "/accounts/login"
+        url.encodedPath.matches(Regex("/edu/aluno/\\d+/?")) -> "/edu/aluno/{matricula}"
+        else -> "/outra-rota"
+    }
+
     private data class Page(val html: String, val url: HttpUrl, val code: Int, val isSuccessful: Boolean) {
+        fun safeRoute(): String = when {
+            url.host != "suap.ifal.edu.br" -> "host-nao-oficial"
+            url.encodedPath.startsWith("/accounts/login") -> "/accounts/login"
+            url.encodedPath.matches(Regex("/edu/aluno/\\d+/?")) -> "/edu/aluno/{matricula}"
+            else -> "/outra-rota"
+        }
+
         fun requiresLogin(): Boolean = code == 401 || url.encodedPath.startsWith("/accounts/login") ||
             LOGIN_FORM_FIELD.containsMatchIn(html) ||
             (LOGIN_USERNAME_FIELD.containsMatchIn(html) && LOGIN_PASSWORD_FIELD.containsMatchIn(html))

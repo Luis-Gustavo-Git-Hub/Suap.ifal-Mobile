@@ -107,17 +107,19 @@ fun LoginScreen(
 
     fun startLogin() {
         if (!canSubmit) return
+        com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: início do login por matrícula/senha; abrindo portal para autenticação.")
         focusManager.clearFocus()
         errorMessage = null
         onSaveCredentials(inputMatricula.trim(), inputSenha)
         isProcessingHtml = false
         loginMethod = LoginMethod.CREDENTIALS
-        isLoading = false
-        hiddenWebView = false
-        showWebView = true
+        isLoading = true
+        hiddenWebView = true
+        showWebView = false
     }
 
     fun startGovBrLogin() {
+        com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: início do login gov.br.")
         errorMessage = null
         loginMethod = LoginMethod.GOV_BR
         isLoading = false
@@ -126,6 +128,7 @@ fun LoginScreen(
     }
 
     fun reportFailure(reason: SyncFailureReason, message: String) {
+        com.example.util.CrashLogger.log(context, "WARN", "SUAP_LOGIN_UI: falha reason=$reason, modo=${if (isSilentSync) "silencioso" else loginMethod.name}.")
         isLoading = false
         isProcessingHtml = false
         hiddenWebView = false
@@ -208,6 +211,7 @@ fun LoginScreen(
                         @JavascriptInterface
                         fun processHTML(html: String) {
                             if (!hasDeliveredHtml.compareAndSet(false, true)) return
+                            com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: HTML do boletim recebido para leitura; bytes=${html.length}.")
                             com.example.util.AppLog.d("SUAP_HTML", "HTML scraped length: ${html.length}")
                             post {
                                 isProcessingHtml = true
@@ -219,6 +223,7 @@ fun LoginScreen(
                         
                         @JavascriptInterface
                         fun showCaptcha() {
+                            com.example.util.CrashLogger.log(context, "WARN", "SUAP_LOGIN_UI: verificação CAPTCHA detectada na página de login.")
                             post {
                                 if (isSilentSync) {
                                     reportFailure(SyncFailureReason.CAPTCHA_REQUIRED, "Conclua a verificação do SUAP para continuar.")
@@ -231,8 +236,20 @@ fun LoginScreen(
                         }
                         @JavascriptInterface
                         fun loginFailed() {
+                            com.example.util.CrashLogger.log(context, "WARN", "SUAP_LOGIN_UI: portal exibiu erro no formulário de login.")
                             post {
                                 reportFailure(SyncFailureReason.INVALID_CREDENTIALS, "Não foi possível entrar. Confira sua matrícula e senha.")
+                            }
+                        }
+                        @JavascriptInterface
+                        fun autoLoginSubmitted() {
+                            com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: credenciais preenchidas e formulário enviado automaticamente.")
+                        }
+                        @JavascriptInterface
+                        fun loginFormUnavailable() {
+                            com.example.util.CrashLogger.log(context, "ERROR", "SUAP_LOGIN_UI: campos do formulário não encontrados após aguardar o carregamento.")
+                            post {
+                                reportFailure(SyncFailureReason.GENERIC, "Não foi possível localizar o formulário de login do SUAP. Tente novamente.")
                             }
                         }
 
@@ -243,6 +260,7 @@ fun LoginScreen(
                             view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?
                         ) {
                             if (request?.isForMainFrame == true) {
+                                com.example.util.CrashLogger.log(context, "ERROR", "SUAP_WEBVIEW: falha de rede no documento principal; código=${error?.errorCode ?: -1}.")
                                 val reason = when (error?.errorCode) {
                                     ERROR_HOST_LOOKUP, ERROR_CONNECT -> SyncFailureReason.NO_INTERNET
                                     ERROR_TIMEOUT -> SyncFailureReason.TIMEOUT
@@ -256,6 +274,7 @@ fun LoginScreen(
                             view: WebView?, request: WebResourceRequest?, errorResponse: android.webkit.WebResourceResponse?
                         ) {
                             if (request?.isForMainFrame == true) {
+                                com.example.util.CrashLogger.log(context, "ERROR", "SUAP_WEBVIEW: resposta HTTP não-success no documento principal; status=${errorResponse?.statusCode ?: -1}.")
                                 reportFailure(SyncFailureReason.SUAP_UNAVAILABLE, "O SUAP está indisponível no momento. Tente novamente em instantes.")
                             }
                         }
@@ -275,9 +294,21 @@ fun LoginScreen(
                             if (!com.example.util.UrlSecurityUtils.isAllowedLoginUrl(url)) return
                             val pageUri = android.net.Uri.parse(url)
                             val pagePath = pageUri.path.orEmpty()
-                            if (isSilentSync && pagePath.contains("/accounts/login")) {
-                                reportFailure(SyncFailureReason.SESSION_EXPIRED, "Sua sessão do SUAP expirou. Entre novamente para sincronizar.")
+                            val safeRoute = when {
+                                pageUri.host != "suap.ifal.edu.br" -> "host-nao-oficial"
+                                pagePath.startsWith("/accounts/login") -> "/accounts/login"
+                                Regex("^/edu/aluno/\\d+/?$").matches(pagePath) -> "/edu/aluno/{matricula}"
+                                else -> "/outra-rota"
+                            }
+                            com.example.util.CrashLogger.log(context, "INFO", "SUAP_WEBVIEW: página carregada; rota=$safeRoute, modo=${if (isSilentSync) "silencioso" else loginMethod.name}.")
+                            if (isSilentSync && pagePath.contains("/accounts/login") &&
+                                (inputMatricula.isBlank() || inputSenha.isBlank())
+                            ) {
+                                com.example.util.CrashLogger.log(context, "WARN", "SUAP_LOGIN_UI: sessão expirou e não há credenciais para renovação automática.")
+                                reportFailure(SyncFailureReason.NO_CREDENTIALS, "Entre com sua matrícula e senha para renovar a sessão do SUAP.")
                                 return
+                            } else if (isSilentSync && pagePath.contains("/accounts/login")) {
+                                com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: sessão expirada; tentando renovar automaticamente com credenciais salvas.")
                             }
                             if (pagePath.contains("/accounts/login") && loginMethod == LoginMethod.CREDENTIALS) {
                                 view.evaluateJavascript(
@@ -295,8 +326,43 @@ fun LoginScreen(
                                     "})();",
                                     null
                                 )
+                                val username = org.json.JSONObject.quote(inputMatricula.trim())
+                                val password = org.json.JSONObject.quote(inputSenha)
+                                view.evaluateJavascript(
+                                    "(function(){" +
+                                        "if(window.__suapAutoLoginRunning||window.__suapAutoLoginSubmitted)return 'already_running';" +
+                                        "window.__suapAutoLoginRunning=true;var attempts=0;" +
+                                        "var timer=setInterval(function(){" +
+                                            "var err=document.querySelector('.errornote,.alert-danger,.alert-error,.errorlist');" +
+                                            "if(err&&err.innerText&&err.innerText.trim()){clearInterval(timer);window.HTMLOUT.loginFailed();return;}" +
+                                            "var captcha=document.querySelector('.g-recaptcha')||document.getElementById('g-recaptcha-response');" +
+                                            "if(captcha&&captcha.offsetParent!==null){clearInterval(timer);window.HTMLOUT.showCaptcha();return;}" +
+                                            "var u=document.querySelector('input[name=username],#id_username');" +
+                                            "var p=document.querySelector('input[name=password],#id_password');" +
+                                            "if(u&&p){var f=u.form||p.form;if(!f){clearInterval(timer);window.HTMLOUT.loginFormUnavailable();return;}" +
+                                                "u.value=$username;p.value=$password;" +
+                                                "u.dispatchEvent(new Event('input',{bubbles:true}));" +
+                                                "p.dispatchEvent(new Event('input',{bubbles:true}));" +
+                                                "window.__suapAutoLoginSubmitted=true;clearInterval(timer);" +
+                                                "window.HTMLOUT.autoLoginSubmitted();" +
+                                                "var b=f.querySelector('input[type=submit],button[type=submit],button.primary,button.btn-primary');" +
+                                                "if(b)b.click();else if(f.requestSubmit)f.requestSubmit();else f.submit();return;}" +
+                                            "if(++attempts>=20){clearInterval(timer);window.HTMLOUT.loginFormUnavailable();}" +
+                                        "},100);return 'polling';" +
+                                    "})()"
+                                ) { result ->
+                                    val outcome = result?.trim('"') ?: "sem_resposta"
+                                    com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: verificação automática do formulário iniciada; resultado=$outcome.")
+                                }
                             }
                             val studentPath = Regex("""^/edu/aluno/(\d+)/?""").find(pagePath)
+                            val isPostLoginLanding = pagePath == "/" || pagePath.contains("/dashboard") ||
+                                (pagePath.startsWith("/") && !pagePath.contains("/login") && !pagePath.startsWith("/edu/aluno/"))
+                            if (isPostLoginLanding && inputMatricula.isNotBlank()) {
+                                com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: login redirecionou para área autenticada; abrindo boletim automaticamente.")
+                                view.loadUrl("https://suap.ifal.edu.br/edu/aluno/${inputMatricula.trim()}/?tab=boletim")
+                                return
+                            }
                             if (studentPath != null && pageUri.getQueryParameter("tab") != "boletim") {
                                 inputMatricula = studentPath.groupValues[1]
                                 view.loadUrl("https://suap.ifal.edu.br/edu/aluno/${studentPath.groupValues[1]}/?tab=boletim")
@@ -676,12 +742,11 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-            TextButton(onClick = { errorMessage = null; loginMethod = LoginMethod.CREDENTIALS; showWebView = true }, enabled = termsAccepted && !isLoading) {
-                    Text("Entrar com matrícula e senha")
-                }
-                TextButton(onClick = { startGovBrLogin() }, enabled = termsAccepted && !isLoading) {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { startGovBrLogin() },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    enabled = termsAccepted && !isLoading
+                ) {
                     Text("Entrar com gov.br")
                 }
                 
