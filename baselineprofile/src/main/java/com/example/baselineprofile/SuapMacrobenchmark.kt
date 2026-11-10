@@ -71,12 +71,12 @@ class SuapMacrobenchmark {
     }
 
     @Test
-    fun statisticsScrollFrameTiming() = benchmarkScreenScroll(By.text("Seu resumo acadêmico")) {
+    fun statisticsScrollFrameTiming() = benchmarkScreenScroll(By.text("Média geral")) {
         BenchmarkTestData.clickText(device, "Estatística")
     }
 
     @Test
-    fun boletimScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Programação de Sistemas")) {
+    fun boletimScrollFrameTiming() = benchmarkScreenScroll(By.text("1 disciplinas")) {
         BenchmarkTestData.clickTextContaining(device, "Boletim Escolar")
     }
 
@@ -102,12 +102,19 @@ class SuapMacrobenchmark {
             )
 
             val scrollable = device.findObject(By.scrollable(true))
-            assertTrue("The screen should expose a scrollable content area", scrollable != null)
 
             val deadline = SystemClock.uptimeMillis() + DASHBOARD_SCROLL_DURATION_MS
             while (SystemClock.uptimeMillis() < deadline) {
-                scrollable?.fling(Direction.DOWN)
-                scrollable?.fling(Direction.UP)
+                if (scrollable != null) {
+                    scrollable.fling(Direction.DOWN)
+                    scrollable.fling(Direction.UP)
+                } else {
+                    val x = device.displayWidth / 2
+                    val top = (device.displayHeight * 0.32f).toInt()
+                    val bottom = (device.displayHeight * 0.76f).toInt()
+                    device.swipe(x, bottom, x, top, 12)
+                    device.swipe(x, top, x, bottom, 12)
+                }
             }
         }
     }

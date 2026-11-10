@@ -159,6 +159,21 @@ internal object BenchmarkTestData {
 
     fun clickTextContaining(device: UiDevice, text: String) = click(device, By.textContains(text), text)
 
+    fun scrollScreen(device: UiDevice) {
+        val scrollable = device.findObject(By.scrollable(true))
+        if (scrollable != null) {
+            scrollable.fling(Direction.DOWN)
+            scrollable.fling(Direction.UP)
+            return
+        }
+
+        val x = device.displayWidth / 2
+        val top = (device.displayHeight * 0.32f).toInt()
+        val bottom = (device.displayHeight * 0.76f).toInt()
+        device.swipe(x, bottom, x, top, 12)
+        device.swipe(x, top, x, bottom, 12)
+    }
+
     private fun click(device: UiDevice, selector: androidx.test.uiautomator.BySelector, label: String) {
         for (attempt in 0 until 8) {
             device.findObject(selector)?.let { target ->

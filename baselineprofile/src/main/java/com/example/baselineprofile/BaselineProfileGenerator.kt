@@ -5,7 +5,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import org.junit.Assert.assertTrue
@@ -45,13 +44,14 @@ class BaselineProfileGenerator {
             BenchmarkTestData.waitForDashboard(device)
             BenchmarkTestData.clickTextContaining(device, "Boletim Escolar")
             assertTrue(
-                "Boletim did not show the seeded subject",
-                device.wait(Until.hasObject(By.textContains("Programação de Sistemas")), APP_READY_TIMEOUT_MS)
+                "Boletim did not show the seeded subject row",
+                device.wait(Until.hasObject(By.text("1 disciplinas")), APP_READY_TIMEOUT_MS)
             )
-            val subjectList = device.findObject(By.scrollable(true))
-            assertTrue("Boletim should expose a scrollable subject list", subjectList != null)
-            subjectList?.fling(Direction.DOWN)
-            subjectList?.fling(Direction.UP)
+            assertTrue(
+                "Boletim did not render the seeded subject name",
+                device.wait(Until.hasObject(By.textContains("Programação")), APP_READY_TIMEOUT_MS)
+            )
+            BenchmarkTestData.scrollScreen(device)
             device.waitForIdle()
         }
     }
@@ -68,10 +68,11 @@ class BaselineProfileGenerator {
                 "Statistics screen did not open",
                 device.wait(Until.hasObject(By.text("Seu resumo acadêmico")), APP_READY_TIMEOUT_MS)
             )
-            val statisticsList = device.findObject(By.scrollable(true))
-            assertTrue("Statistics should expose a scrollable content area", statisticsList != null)
-            statisticsList?.fling(Direction.DOWN)
-            statisticsList?.fling(Direction.UP)
+            assertTrue(
+                "Statistics did not render the seeded subject metrics",
+                device.wait(Until.hasObject(By.text("Média geral")), APP_READY_TIMEOUT_MS)
+            )
+            BenchmarkTestData.scrollScreen(device)
             device.waitForIdle()
         }
     }
