@@ -3,9 +3,12 @@ package com.example.baselineprofile
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,64 +18,72 @@ import org.junit.runner.RunWith
 class BaselineProfileGenerator {
 
     private companion object {
-        const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
-        const val APP_READY_TIMEOUT_MS = 5_000L
+        const val APP_READY_TIMEOUT_MS = 10_000L
     }
 
     @get:Rule
     val baselineProfileRule = BaselineProfileRule()
 
     @Test
-    fun generateStartupAndDashboardProfile() = baselineProfileRule.collect(
-        packageName = TARGET_PACKAGE
-    ) {
-        pressHome()
-        startActivityAndWait()
-        device.waitForIdle()
-
-        // Wait for main screen content (login or dashboard)
-        device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE)), APP_READY_TIMEOUT_MS)
+    fun generateStartupAndDashboardProfile() {
+        prepareBenchmarkData()
+        baselineProfileRule.collect(packageName = BenchmarkTestData.TARGET_PACKAGE) {
+            pressHome()
+            startActivityAndWait()
+            BenchmarkTestData.waitForDashboard(device)
+            assertDashboardIsReady()
+            device.waitForIdle()
+        }
     }
 
     @Test
-    fun generateBoletimProfile() = baselineProfileRule.collect(
-        packageName = TARGET_PACKAGE
-    ) {
-        pressHome()
-        startActivityAndWait()
-        device.waitForIdle()
-
-        // Locate and click Boletim button/card if present
-        val boletimEntry = device.findObject(By.textContains("Boletim"))
-        boletimEntry?.click()
-        device.waitForIdle()
-
-        // Fling/scroll the subject list
-        val subjectList = device.findObject(By.scrollable(true))
-        subjectList?.fling(Direction.DOWN)
-        device.waitForIdle()
-        subjectList?.fling(Direction.UP)
-        device.waitForIdle()
+    fun generateBoletimProfile() {
+        prepareBenchmarkData()
+        baselineProfileRule.collect(packageName = BenchmarkTestData.TARGET_PACKAGE) {
+            pressHome()
+            startActivityAndWait()
+            BenchmarkTestData.waitForDashboard(device)
+            BenchmarkTestData.clickTextContaining(device, "Boletim Escolar")
+            assertTrue(
+                "Boletim did not show the seeded subject",
+                device.wait(Until.hasObject(By.textContains("Programação de Sistemas")), APP_READY_TIMEOUT_MS)
+            )
+            val subjectList = device.findObject(By.scrollable(true))
+            assertTrue("Boletim should expose a scrollable subject list", subjectList != null)
+            subjectList?.fling(Direction.DOWN)
+            subjectList?.fling(Direction.UP)
+            device.waitForIdle()
+        }
     }
 
     @Test
-    fun generateStatisticsProfile() = baselineProfileRule.collect(
-        packageName = TARGET_PACKAGE
-    ) {
-        pressHome()
-        startActivityAndWait()
-        device.waitForIdle()
+    fun generateStatisticsProfile() {
+        prepareBenchmarkData()
+        baselineProfileRule.collect(packageName = BenchmarkTestData.TARGET_PACKAGE) {
+            pressHome()
+            startActivityAndWait()
+            BenchmarkTestData.waitForDashboard(device)
+            BenchmarkTestData.clickText(device, "Estatística")
+            assertTrue(
+                "Statistics screen did not open",
+                device.wait(Until.hasObject(By.text("Seu resumo acadêmico")), APP_READY_TIMEOUT_MS)
+            )
+            val statisticsList = device.findObject(By.scrollable(true))
+            assertTrue("Statistics should expose a scrollable content area", statisticsList != null)
+            statisticsList?.fling(Direction.DOWN)
+            statisticsList?.fling(Direction.UP)
+            device.waitForIdle()
+        }
+    }
 
-        device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE)), APP_READY_TIMEOUT_MS)
-        val statisticsEntry = device.findObject(By.textContains("Estatística"))
-        statisticsEntry?.click()
-        device.waitForIdle()
+    private fun prepareBenchmarkData() {
+        BenchmarkTestData.prepare(UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()))
+    }
 
-        val statisticsList = device.findObject(By.scrollable(true))
-        statisticsList?.fling(Direction.DOWN)
-        device.waitForIdle()
-        statisticsList?.fling(Direction.UP)
-        device.waitForIdle()
+    private fun androidx.benchmark.macro.MacrobenchmarkScope.assertDashboardIsReady() {
+        assertTrue(
+            "SUAP app did not reach the Dashboard",
+            device.wait(Until.hasObject(By.text("Início")), APP_READY_TIMEOUT_MS)
+        )
     }
 }
-

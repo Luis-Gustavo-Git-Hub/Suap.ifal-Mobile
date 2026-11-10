@@ -338,9 +338,9 @@ fun AulasScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = subjectName,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(

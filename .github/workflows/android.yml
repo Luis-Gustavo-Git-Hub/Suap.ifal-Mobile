@@ -80,7 +80,7 @@ jobs:
             echo "KVM is unavailable on this runner; the emulator will use software acceleration."
           fi
 
-      - name: Generate Baseline Profile on an API 35 emulator
+      - name: Generate Baseline Profile and measure release screens
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
           api-level: 35
@@ -88,7 +88,9 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: ./gradlew :app:generateBaselineProfile --no-daemon --max-workers=2
+          script: |
+            ./gradlew :app:generateBaselineProfile --no-daemon --max-workers=2
+            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark --no-daemon --max-workers=2
 
       - name: Upload generated profile and benchmark reports
         if: always()
@@ -98,4 +100,5 @@ jobs:
           path: |
             app/src/main/generated/baselineProfiles/
             baselineprofile/build/reports/androidTests/connected/
+            baselineprofile/build/outputs/connected_android_test_additional_output/
           if-no-files-found: warn
