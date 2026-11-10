@@ -43,6 +43,15 @@ import java.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+private val SUBJECT_PREFIX_PATTERN = Regex("(?i)^INT[\\.\\s0-9]*\\s*-\\s*")
+private val SUBJECT_FALLBACK_PREFIX_PATTERN = Regex("(?i)^INT[\\.\\s0-9]*")
+private val EVENT_RANGE_PATTERN = Regex(
+    """(\d{1,2})(?:/(\d{1,2}))?(?:/(\d{2,4}))?\s*(?:a|à|-|até)\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?""",
+    RegexOption.IGNORE_CASE
+)
+private val EVENT_SINGLE_DATE_PATTERN = Regex("""(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?""")
+private val EVENT_ISO_DATE_PATTERN = Regex("""\d{4}-\d{2}-\d{2}""")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HorariosScreen(
@@ -253,7 +262,7 @@ fun HorariosScreen(
 }
 
 private fun cleanSubjectName(name: String): String {
-    return name.replace(Regex("(?i)^INT[\\.\\s0-9]*\\s*-\\s*"), "").replace(Regex("(?i)^INT[\\.\\s0-9]*"), "").trim()
+    return name.replace(SUBJECT_PREFIX_PATTERN, "").replace(SUBJECT_FALLBACK_PREFIX_PATTERN, "").trim()
 }
 
 private fun parseStartTime(timeSlot: String): String {
@@ -928,8 +937,7 @@ private fun resolveEventRange(
     val clean = dateInfo.trim()
     if (clean.isBlank()) return null
 
-    val rangeRegex = Regex("""(\d{1,2})(?:/(\d{1,2}))?(?:/(\d{2,4}))?\s*(?:a|à|-|até)\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?""", RegexOption.IGNORE_CASE)
-    val rangeMatch = rangeRegex.find(clean)
+    val rangeMatch = EVENT_RANGE_PATTERN.find(clean)
     if (rangeMatch != null) {
         try {
             val d1 = rangeMatch.groupValues[1].toInt()
@@ -949,8 +957,7 @@ private fun resolveEventRange(
         }
     }
 
-    val singleRegex = Regex("""(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?""")
-    val singleMatch = singleRegex.find(clean)
+    val singleMatch = EVENT_SINGLE_DATE_PATTERN.find(clean)
     if (singleMatch != null) {
         try {
             val d = singleMatch.groupValues[1].toInt()
@@ -963,7 +970,7 @@ private fun resolveEventRange(
         }
     }
 
-    val isoMatch = Regex("""\d{4}-\d{2}-\d{2}""").find(clean)?.value
+    val isoMatch = EVENT_ISO_DATE_PATTERN.find(clean)?.value
     if (isoMatch != null) {
         try {
             val d = java.time.LocalDate.parse(isoMatch)

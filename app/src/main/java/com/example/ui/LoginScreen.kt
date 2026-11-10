@@ -1,5 +1,6 @@
 package com.example.ui
-import com.example.BuildConfig
+
+import com.example.util.configureAppWebSettings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
 
@@ -196,17 +197,7 @@ fun LoginScreen(
                 val hasDeliveredHtml = java.util.concurrent.atomic.AtomicBoolean(false)
             WebView(context).apply {
                     activeWebView = this
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                    settings.allowFileAccess = false
-                    settings.allowFileAccessFromFileURLs = false
-                    settings.allowUniversalAccessFromFileURLs = false
-                    settings.allowContentAccess = false
-                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        settings.safeBrowsingEnabled = true
-                    }
-                    android.webkit.WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+                    configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                     CookieManager.getInstance().setAcceptThirdPartyCookies(
                         this,
                         loginMethod == LoginMethod.CREDENTIALS

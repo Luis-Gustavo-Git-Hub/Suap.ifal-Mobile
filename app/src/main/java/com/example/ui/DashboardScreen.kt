@@ -73,6 +73,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+private val FREQUENCY_NUMBER_PATTERN = Regex("\\d+([.,]\\d+)?")
+
 @Composable
 fun XpRankHeaderWidget(
     subjects: List<Subject>,
@@ -820,7 +822,7 @@ fun FrequenciaCard(
     }
     
     val freqFloat = run {
-        val numberMatch = Regex("""\d+([.,]\d+)?""").find(globalFrequency)
+        val numberMatch = FREQUENCY_NUMBER_PATTERN.find(globalFrequency)
         val parsed = numberMatch?.value?.replace(",", ".")?.toFloatOrNull()
         if (parsed != null && parsed > 0f) {
             parsed.coerceIn(0f, 100f)
@@ -929,7 +931,7 @@ fun FrequenciaCard(
                             strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                         )
                         val displayText = run {
-                            val numberMatch = Regex("""\d+([.,]\d+)?""").find(globalFrequency)
+                            val numberMatch = FREQUENCY_NUMBER_PATTERN.find(globalFrequency)
                             val parsed = numberMatch?.value?.replace(",", ".")?.toFloatOrNull()
                             when {
                                 parsed != null -> {

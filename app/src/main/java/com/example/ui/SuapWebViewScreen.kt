@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.util.configureAppWebSettings
+
 import android.annotation.SuppressLint
 import android.webkit.WebView
 import android.webkit.WebSettings
@@ -43,12 +45,7 @@ fun SuapWebViewScreen(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
                     WebView(context).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.allowFileAccess = false
-                        settings.allowFileAccessFromFileURLs = false
-                        settings.allowUniversalAccessFromFileURLs = false
-                        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(view: WebView?, request: android.webkit.WebResourceRequest?): Boolean {
                                 val urlStr = request?.url?.toString()

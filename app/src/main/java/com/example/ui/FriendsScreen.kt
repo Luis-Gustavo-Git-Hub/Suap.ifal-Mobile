@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.imageLoader
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.launch
@@ -48,6 +49,13 @@ import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private fun cachedFriendDateFormat(pattern: String) = object : ThreadLocal<SimpleDateFormat>() {
+    override fun initialValue() = SimpleDateFormat(pattern, Locale.forLanguageTag("pt-BR"))
+}
+
+private val FRIEND_TIME_FORMATTER = cachedFriendDateFormat("HH:mm")
+private val FRIEND_DATE_FORMATTER = cachedFriendDateFormat("dd/MM 'às' HH:mm")
 
 val cardColorPresets = listOf(
     "" to ("Padrão M3" to Color.Unspecified),
@@ -69,15 +77,15 @@ fun formatLastUpdate(timestamp: Long): String {
     val diffHours = diffMinutes / 60
     val diffDays = diffHours / 24
 
-    val sdfTime = SimpleDateFormat("HH:mm", Locale("pt", "BR"))
-    val sdfDate = SimpleDateFormat("dd/MM 'às' HH:mm", Locale("pt", "BR"))
+    val date = Date(timestamp)
+    val timeFormatter = checkNotNull(FRIEND_TIME_FORMATTER.get())
 
     return when {
         diffMinutes < 2 -> "Notas atualizadas agora"
         diffMinutes < 60 -> "Notas atualizadas há ${diffMinutes} min"
-        diffHours < 24 -> "Notas atualizadas hoje às ${sdfTime.format(Date(timestamp))}"
-        diffDays == 1L -> "Notas atualizadas ontem às ${sdfTime.format(Date(timestamp))}"
-        else -> "Notas atualizadas em ${sdfDate.format(Date(timestamp))}"
+        diffHours < 24 -> "Notas atualizadas hoje às ${timeFormatter.format(date)}"
+        diffDays == 1L -> "Notas atualizadas ontem às ${timeFormatter.format(date)}"
+        else -> "Notas atualizadas em ${checkNotNull(FRIEND_DATE_FORMATTER.get()).format(date)}"
     }
 }
 
@@ -170,6 +178,7 @@ fun FriendsScreen(
                     try {
                         val request = coil.request.ImageRequest.Builder(context)
                             .data(savedPhotoUrl)
+                            .size(96, 96)
                             .apply {
                                 if (com.example.util.UrlSecurityUtils.isAllowedSuapUrl(savedPhotoUrl)) {
                                     addHeader("Cookie", android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br") ?: "")
@@ -177,8 +186,7 @@ fun FriendsScreen(
                                 }
                             }
                             .build()
-                        val imageLoader = coil.ImageLoader(context)
-                        val result = imageLoader.execute(request)
+                        val result = context.imageLoader.execute(request)
                         val drawable = result.drawable
                         if (drawable is android.graphics.drawable.BitmapDrawable) {
                             val bitmap = drawable.bitmap

@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.util.configureAppWebSettings
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
@@ -140,13 +142,8 @@ fun SigaaWebViewScreen(
                 factory = { ctx ->
                     WebView(ctx).apply {
                         webViewInstance = this
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
+                        configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                         settings.databaseEnabled = false
-                        settings.allowFileAccess = false
-                        settings.allowFileAccessFromFileURLs = false
-                        settings.allowUniversalAccessFromFileURLs = false
-                        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
                         settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 

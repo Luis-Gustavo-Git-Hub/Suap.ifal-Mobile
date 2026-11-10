@@ -10,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -142,16 +143,27 @@ fun LogsScreen(onBack: () -> Unit) {
     }
 
     fun shareLogs() {
-        try {
-            val shareText = logs.takeLast(400).joinToString("\n")
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_SUBJECT, "Logs e Relatório do SUAP")
-                putExtra(Intent.EXTRA_TEXT, shareText)
+        coroutineScope.launch {
+            try {
+                val report = withContext(Dispatchers.IO) {
+                    CrashLogger.createShareableReport(context)
+                }
+                val reportUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    report
+                )
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_SUBJECT, "Relatório de diagnóstico SUAP")
+                    putExtra(Intent.EXTRA_STREAM, reportUri)
+                    clipData = android.content.ClipData.newUri(context.contentResolver, "Relatório SUAP", reportUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Compartilhar relatório"))
+            } catch (e: Exception) {
+                com.example.util.AppSnackbarManager.show("Não foi possível preparar o relatório para compartilhamento.")
             }
-            context.startActivity(Intent.createChooser(shareIntent, "Compartilhar Logs"))
-        } catch (e: Exception) {
-            com.example.util.AppSnackbarManager.show("Erro ao compartilhar logs: ${e.message}")
         }
     }
 

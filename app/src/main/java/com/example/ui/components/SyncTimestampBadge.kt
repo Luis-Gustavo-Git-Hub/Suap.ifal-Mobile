@@ -23,6 +23,25 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private data class LocaleDateFormatter(val locale: Locale, val formatter: SimpleDateFormat)
+
+private val SYNC_TIMESTAMP_FORMATTER = object : ThreadLocal<LocaleDateFormatter>() {
+    override fun initialValue(): LocaleDateFormatter {
+        val locale = Locale.getDefault()
+        return LocaleDateFormatter(locale, SimpleDateFormat("dd/MM/yy HH:mm", locale))
+    }
+}
+
+private fun syncTimestampFormatter(): SimpleDateFormat {
+    val locale = Locale.getDefault()
+    val cached = checkNotNull(SYNC_TIMESTAMP_FORMATTER.get())
+    if (cached.locale == locale) return cached.formatter
+
+    return SimpleDateFormat("dd/MM/yy HH:mm", locale).also {
+        SYNC_TIMESTAMP_FORMATTER.set(LocaleDateFormatter(locale, it))
+    }
+}
+
 @Composable
 fun SyncTimestampBadge(
     rawTimestamp: String,
@@ -67,8 +86,7 @@ fun SyncTimestampBadge(
 fun formatRelativeSyncTime(rawTime: String): String {
     if (rawTime.isBlank()) return "Não sincronizado"
     return try {
-        val sdf = SimpleDateFormat("dd/MM/yy HH:mm", Locale.getDefault())
-        val date = sdf.parse(rawTime) ?: return "Atualizado em $rawTime"
+        val date = syncTimestampFormatter().parse(rawTime) ?: return "Atualizado em $rawTime"
         val diffMs = System.currentTimeMillis() - date.time
         if (diffMs < 0) return "Atualizado agora"
         val diffMinutes = diffMs / (1000 * 60)

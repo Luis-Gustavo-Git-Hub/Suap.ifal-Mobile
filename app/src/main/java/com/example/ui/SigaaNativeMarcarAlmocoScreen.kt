@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.util.configureAppWebSettings
+
 import com.example.ui.theme.rememberAppFlingBehavior
 
 import android.annotation.SuppressLint
@@ -79,12 +81,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                     var loginAttempts = 0
                     var triedPortal = false
                     WebView(ctx).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.allowFileAccess = false
-                        settings.allowFileAccessFromFileURLs = false
-                        settings.allowUniversalAccessFromFileURLs = false
-                        settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                        configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                         settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
                         addJavascriptInterface(object {

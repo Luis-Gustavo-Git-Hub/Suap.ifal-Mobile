@@ -14,24 +14,29 @@ import org.junit.runner.RunWith
 @LargeTest
 class BaselineProfileGenerator {
 
+    private companion object {
+        const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
+        const val APP_READY_TIMEOUT_MS = 5_000L
+    }
+
     @get:Rule
     val baselineProfileRule = BaselineProfileRule()
 
     @Test
     fun generateStartupAndDashboardProfile() = baselineProfileRule.collect(
-        packageName = "com.aistudio.suap.xkcdz"
+        packageName = TARGET_PACKAGE
     ) {
         pressHome()
         startActivityAndWait()
         device.waitForIdle()
 
         // Wait for main screen content (login or dashboard)
-        device.wait(Until.hasObject(By.pkg("com.aistudio.suap.xkcdz")), 5_000)
+        device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE)), APP_READY_TIMEOUT_MS)
     }
 
     @Test
     fun generateBoletimProfile() = baselineProfileRule.collect(
-        packageName = "com.aistudio.suap.xkcdz"
+        packageName = TARGET_PACKAGE
     ) {
         pressHome()
         startActivityAndWait()
@@ -47,6 +52,26 @@ class BaselineProfileGenerator {
         subjectList?.fling(Direction.DOWN)
         device.waitForIdle()
         subjectList?.fling(Direction.UP)
+        device.waitForIdle()
+    }
+
+    @Test
+    fun generateStatisticsProfile() = baselineProfileRule.collect(
+        packageName = TARGET_PACKAGE
+    ) {
+        pressHome()
+        startActivityAndWait()
+        device.waitForIdle()
+
+        device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE)), APP_READY_TIMEOUT_MS)
+        val statisticsEntry = device.findObject(By.textContains("Estatística"))
+        statisticsEntry?.click()
+        device.waitForIdle()
+
+        val statisticsList = device.findObject(By.scrollable(true))
+        statisticsList?.fling(Direction.DOWN)
+        device.waitForIdle()
+        statisticsList?.fling(Direction.UP)
         device.waitForIdle()
     }
 }

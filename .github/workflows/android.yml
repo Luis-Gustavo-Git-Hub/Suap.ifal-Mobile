@@ -8,6 +8,21 @@ permissions:
   contents: read
 
 jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Scan locked dependencies with OSV
+        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        with:
+          scan-args: |-
+            -r
+            ./
+
   verify:
     runs-on: ubuntu-latest
     steps:
