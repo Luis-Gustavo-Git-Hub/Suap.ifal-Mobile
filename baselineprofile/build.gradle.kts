@@ -15,6 +15,10 @@ android {
     }
 
     targetProjectPath = ":app"
+
+    sourceSets {
+        getByName("main").assets.srcDir("../app/src/main/assets/com.example.data.AppDatabase")
+    }
 }
 
 dependencies {
