@@ -16,4 +16,18 @@ allprojects {
   dependencyLocking {
     lockAllConfigurations()
   }
+
+  configurations.configureEach {
+    resolutionStrategy.eachDependency {
+      when ("${requested.group}:${requested.name}") {
+        "com.google.guava:guava" -> {
+          val variant = if (requested.version.orEmpty().endsWith("-android")) "android" else "jre"
+          useVersion("33.7.2-$variant")
+        }
+        "org.bouncycastle:bcprov-jdk18on" -> useVersion("1.85")
+        "com.squareup.wire:wire-runtime",
+        "com.squareup.wire:wire-runtime-jvm" -> useVersion("6.4.5")
+      }
+    }
+  }
 }
