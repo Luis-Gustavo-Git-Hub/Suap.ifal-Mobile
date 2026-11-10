@@ -21,6 +21,7 @@ internal object BenchmarkTestData {
         check(context.packageName == TARGET_PACKAGE) {
             "Benchmark app context points to ${context.packageName}, expected $TARGET_PACKAGE"
         }
+        prepareTargetPackageStorage(device)
         val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
         context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE).edit()
@@ -119,6 +120,16 @@ internal object BenchmarkTestData {
             check(cursor.moveToFirst()) { "Could not read seeded subject count" }
             cursor.getInt(0)
         }
+
+    private fun prepareTargetPackageStorage(device: UiDevice) {
+        // Android creates the target package's private data directory on its first launch.
+        // Prime it once so the instrumentation process can seed the target app's database.
+        val result = device.executeShellCommand("am start -W -n $MAIN_ACTIVITY")
+        check(result.contains("Status: ok")) {
+            "Could not initialize SUAP package storage before benchmark setup: $result"
+        }
+        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
+    }
 
     private fun ensureRoomSchema(context: Context, db: SQLiteDatabase) {
         val schemaJson = context.assets.open("9.json")
