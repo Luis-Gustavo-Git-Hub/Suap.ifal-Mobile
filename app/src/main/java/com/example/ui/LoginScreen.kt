@@ -198,6 +198,7 @@ fun LoginScreen(
             AndroidView(
             factory = { context ->
                 val hasDeliveredHtml = java.util.concurrent.atomic.AtomicBoolean(false)
+                val credentialPostSubmitted = java.util.concurrent.atomic.AtomicBoolean(false)
             WebView(context).apply {
                     activeWebView = this
                     configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
@@ -243,6 +244,7 @@ fun LoginScreen(
                         }
                         @JavascriptInterface
                         fun autoLoginSubmitted() {
+                            credentialPostSubmitted.set(true)
                             com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: credenciais preenchidas e formulário enviado automaticamente.")
                         }
                         @JavascriptInterface
@@ -250,6 +252,13 @@ fun LoginScreen(
                             com.example.util.CrashLogger.log(context, "ERROR", "SUAP_LOGIN_UI: campos do formulário não encontrados após aguardar o carregamento.")
                             post {
                                 reportFailure(SyncFailureReason.GENERIC, "Não foi possível localizar o formulário de login do SUAP. Tente novamente.")
+                            }
+                        }
+                        @JavascriptInterface
+                        fun loginNotConfirmed() {
+                            com.example.util.CrashLogger.log(context, "ERROR", "SUAP_LOGIN_UI: formulário enviado, mas o portal não confirmou a autenticação.")
+                            post {
+                                reportFailure(SyncFailureReason.GENERIC, "O SUAP não confirmou o login. Confira suas credenciais e tente novamente.")
                             }
                         }
 
@@ -311,30 +320,20 @@ fun LoginScreen(
                                 com.example.util.CrashLogger.log(context, "INFO", "SUAP_LOGIN_UI: sessão expirada; tentando renovar automaticamente com credenciais salvas.")
                             }
                             if (pagePath.contains("/accounts/login") && loginMethod == LoginMethod.CREDENTIALS) {
-                                view.evaluateJavascript(
-                                    "(function() {" +
-
-                                    "    var err = document.querySelector('.errornote') || document.querySelector('.alert-danger');" +
-                                    "    if(err && err.innerText.trim().length > 0) {" +
-                                    "        window.HTMLOUT.loginFailed();" +
-                                    "        return;" +
-                                    "    }" +
-                                    "    var captcha = document.querySelector('.g-recaptcha') || document.getElementById('g-recaptcha-response');" +
-                                    "    if(captcha && captcha.offsetParent !== null) {" +
-                                    "        window.HTMLOUT.showCaptcha();" +
-                                    "    }" +
-                                    "})();",
-                                    null
-                                )
                                 val username = org.json.JSONObject.quote(inputMatricula.trim())
                                 val password = org.json.JSONObject.quote(inputSenha)
+                                val submittedBefore = credentialPostSubmitted.get()
                                 view.evaluateJavascript(
                                     "(function(){" +
-                                        "if(window.__suapAutoLoginRunning||window.__suapAutoLoginSubmitted)return 'already_running';" +
+                                        "var alreadySubmitted=$submittedBefore;" +
+                                        "if(alreadySubmitted){" +
+                                            "var err=document.querySelector('.errornote,.alert-danger,.alert-error,.errorlist');" +
+                                            "var message=err&&err.innerText?err.innerText:'';" +
+                                            "if(/inválid|incorret|usuário|senha|credencial|invalid|incorrect/i.test(message)){window.HTMLOUT.loginFailed();return 'credentials_rejected';}" +
+                                            "window.HTMLOUT.loginNotConfirmed();return 'login_not_confirmed';}" +
+                                        "if(window.__suapAutoLoginRunning)return 'already_running';" +
                                         "window.__suapAutoLoginRunning=true;var attempts=0;" +
                                         "var timer=setInterval(function(){" +
-                                            "var err=document.querySelector('.errornote,.alert-danger,.alert-error,.errorlist');" +
-                                            "if(err&&err.innerText&&err.innerText.trim()){clearInterval(timer);window.HTMLOUT.loginFailed();return;}" +
                                             "var captcha=document.querySelector('.g-recaptcha')||document.getElementById('g-recaptcha-response');" +
                                             "if(captcha&&captcha.offsetParent!==null){clearInterval(timer);window.HTMLOUT.showCaptcha();return;}" +
                                             "var u=document.querySelector('input[name=username],#id_username');" +
