@@ -135,9 +135,9 @@ internal object BenchmarkTestData {
     }
 
     private fun launchApp(device: UiDevice) {
-        device.executeShellCommand("am start -n $MAIN_ACTIVITY")
-        check(device.wait(Until.hasObject(By.pkg(TARGET_PACKAGE)), READY_TIMEOUT_MS)) {
-            "SUAP app did not open for benchmark setup"
+        val launchResult = device.executeShellCommand("am start -W -n $MAIN_ACTIVITY")
+        check(launchResult.contains("Status: ok")) {
+            "SUAP app did not start for benchmark setup: $launchResult"
         }
         waitForDashboard(device)
     }
