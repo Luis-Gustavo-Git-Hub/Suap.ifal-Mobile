@@ -123,8 +123,8 @@ jobs:
           disable-animations: true
           script: |
             set -e
-            ./gradlew :app:generateBaselineProfile --no-daemon --max-workers=2
-            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark --no-daemon --max-workers=2
+            ./gradlew :app:generateBaselineProfile -PbenchmarkSeedEnabled=true --no-daemon --max-workers=2
+            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -PbenchmarkSeedEnabled=true -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark --no-daemon --max-workers=2
 
       - name: Upload generated profile and benchmark reports
         if: always()

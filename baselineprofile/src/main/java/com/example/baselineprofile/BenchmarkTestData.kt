@@ -1,7 +1,5 @@
 package com.example.baselineprofile
 
-import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
@@ -12,148 +10,19 @@ import androidx.test.uiautomator.Until
 internal object BenchmarkTestData {
     const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
     private const val MAIN_ACTIVITY = "$TARGET_PACKAGE/com.example.MainActivity"
+    private const val SEED_ACTION = "$TARGET_PACKAGE.action.SEED_BENCHMARK"
     private const val READY_TIMEOUT_MS = 15_000L
 
     fun prepare(device: UiDevice) {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val testContext = instrumentation.context
-        val context = testContext.createPackageContext(TARGET_PACKAGE, 0)
-        check(context.packageName == TARGET_PACKAGE) {
-            "Benchmark app context points to ${context.packageName}, expected $TARGET_PACKAGE"
-        }
-        prepareTargetPackageStorage(device)
-        val appPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-
-        context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE).edit()
-            .putString("username", "benchmark-user")
-            .putString("password", "benchmark-only-password")
-            .putString("saved_student_name", "Usuário de Teste")
-            .putString("saved_avisos_json", benchmarkAvisosJson())
-            .putString("offline_schedule_json", benchmarkScheduleJson())
-            .putString("offline_diarios_json", "[]")
-            .putBoolean("auto_login", false)
-            .putBoolean("suap_tutorial_completed", true)
-            .commit()
-        appPrefs.edit()
-            .putBoolean("terms_accepted", true)
-            .commit()
-
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-        // Create the exact exported Room schema before launching the app. The initial dashboard
-        // does not reliably trigger Room's lazy database creation in this instrumented setup.
-        val databasePath = context.getDatabasePath("suap_database")
-        val databaseDirectory = databasePath.parentFile
-        check(databaseDirectory != null && (databaseDirectory.isDirectory || databaseDirectory.mkdirs())) {
-            "Could not create SUAP database directory: $databaseDirectory"
+        val seedResult = device.executeShellCommand("am start -W -n $MAIN_ACTIVITY -a $SEED_ACTION")
+        check(seedResult.contains("Status: ok")) {
+            "SUAP benchmark data seeding did not complete: $seedResult"
         }
-        val db = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
-        try {
-            ensureRoomSchema(testContext, db)
-            db.delete("subjects", null, null)
-            db.delete("aulas_history", null, null)
-            db.execSQL(
-                """
-                INSERT OR REPLACE INTO subjects (
-                    id, name, url, grade1, grade2, rec1, grade3, grade4,
-                    classGrade1, classGrade2, classGrade3, classGrade4, rec2,
-                    recFinal, finalGrade, absences, status, isFavorite, detailUrl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                arrayOf<Any?>(
-                    "benchmark-subject-1",
-                    "Programação de Sistemas Distribuídos",
-                    "/edu/aluno_disciplina/12345/",
-                    "8", "8", "", "8", "8",
-                    "7", "7", "7", "7", "",
-                    "", "8", "0", "Em andamento", 0,
-                    "/edu/disciplina/12345/"
-                )
-            )
-            val subjectUrl = "https://suap.ifal.edu.br/edu/aluno_disciplina/12345/"
-            db.execSQL("DELETE FROM aulas_history WHERE subjectUrl = ?", arrayOf(subjectUrl))
-            repeat(30) { index ->
-                db.execSQL(
-                    """
-                    INSERT INTO aulas_history (
-                        subjectUrl, date, etapa, numAulas, numFaltas, conteudo,
-                        professor, attachmentUrl, attachmentTitle, rawHtml, linksJson
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """.trimIndent(),
-                    arrayOf(
-                        subjectUrl,
-                        "${(index % 28) + 1}/01/2026",
-                        "1",
-                        "1",
-                        "0",
-                        "Conteúdo de teste de desempenho ${index + 1}",
-                        "Professor de Teste",
-                        "",
-                        "",
-                        "",
-                        ""
-                    )
-                )
-            }
-            check(subjectCount(db) == 1) {
-                "Benchmark subject was not seeded in ${context.packageName}:${context.getDatabasePath("suap_database")}; " +
-                    "subjects=${subjectCount(db)}"
-            }
-        } finally {
-            db.close()
-        }
+        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
         launchApp(device)
-        val appDb = context.openOrCreateDatabase("suap_database", Context.MODE_PRIVATE, null)
-        try {
-            check(subjectCount(appDb) == 1) {
-                "Benchmark subject disappeared after app launch from ${context.packageName}:" +
-                    "${context.getDatabasePath("suap_database")}; subjects=${subjectCount(appDb)}"
-            }
-        } finally {
-            appDb.close()
-        }
         device.pressHome()
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-    }
-
-    private fun subjectCount(db: SQLiteDatabase): Int =
-        db.rawQuery("SELECT COUNT(*) FROM subjects", null).use { cursor ->
-            check(cursor.moveToFirst()) { "Could not read seeded subject count" }
-            cursor.getInt(0)
-        }
-
-    private fun prepareTargetPackageStorage(device: UiDevice) {
-        // Android creates the target package's private data directory on its first launch.
-        // Prime it once so the instrumentation process can seed the target app's database.
-        val result = device.executeShellCommand("am start -W -n $MAIN_ACTIVITY")
-        check(result.contains("Status: ok")) {
-            "Could not initialize SUAP package storage before benchmark setup: $result"
-        }
-        device.executeShellCommand("am force-stop $TARGET_PACKAGE")
-    }
-
-    private fun ensureRoomSchema(context: Context, db: SQLiteDatabase) {
-        val schemaJson = context.assets.open("9.json")
-            .bufferedReader()
-            .use { it.readText() }
-        val databaseSchema = org.json.JSONObject(schemaJson).getJSONObject("database")
-        db.beginTransaction()
-        try {
-            val entities = databaseSchema.getJSONArray("entities")
-            for (index in 0 until entities.length()) {
-                val entity = entities.getJSONObject(index)
-                db.execSQL(
-                    entity.getString("createSql").replace("\${TABLE_NAME}", entity.getString("tableName"))
-                )
-            }
-            val setupQueries = databaseSchema.getJSONArray("setupQueries")
-            for (index in 0 until setupQueries.length()) {
-                db.execSQL(setupQueries.getString(index))
-            }
-            db.version = databaseSchema.getInt("version")
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
-        }
     }
 
     fun waitForDashboard(device: UiDevice) {
@@ -209,38 +78,4 @@ internal object BenchmarkTestData {
         waitForDashboard(device)
     }
 
-    private fun benchmarkAvisosJson(): String {
-        val notices = org.json.JSONArray()
-        repeat(30) { index ->
-            notices.put(
-                org.json.JSONObject()
-                    .put("sender", "Professor de Teste")
-                    .put("subject", "Aviso de teste de desempenho ${index + 1}")
-                    .put("date", "10/11/2026")
-                    .put("isRead", index % 2 == 0)
-                    .put("detailUrl", "")
-            )
-        }
-        return notices.toString()
-    }
-
-    private fun benchmarkScheduleJson(): String {
-        val schedule = org.json.JSONArray()
-        val weekdays = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta")
-        repeat(8) { index ->
-            weekdays.forEach { weekday ->
-                val startHour = 7 + index
-                schedule.put(
-                    org.json.JSONObject()
-                        .put("dayOfWeek", weekday)
-                        .put("timeSlot", "%02d:00 - %02d:50".format(startHour, startHour))
-                        .put("shift", "Matutino")
-                        .put("subjectCode", "BENCH${index + 1}")
-                        .put("subjectName", "Disciplina de teste ${index + 1}")
-                        .put("teacher", "Professor de Teste")
-                )
-            }
-        }
-        return schedule.toString()
-    }
 }

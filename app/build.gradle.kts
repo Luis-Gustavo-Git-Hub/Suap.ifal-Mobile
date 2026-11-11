@@ -22,6 +22,11 @@ android {
     versionCode = 15
     versionName = "2.5.5"
 
+    val benchmarkSeedEnabled = providers.gradleProperty("benchmarkSeedEnabled")
+      .map { it.toBoolean() }
+      .getOrElse(false)
+    buildConfigField("boolean", "BENCHMARK_SEED_ENABLED", benchmarkSeedEnabled.toString())
+
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 

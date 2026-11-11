@@ -24,6 +24,8 @@ import com.example.ui.theme.MyApplicationTheme
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 @OptIn(androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
 @SuppressLint("InvalidFragmentVersionForActivityResult")
@@ -31,6 +33,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (BuildConfig.BENCHMARK_SEED_ENABLED && intent?.action == BenchmarkDataSeeder.ACTION) {
+            runBlocking {
+                withContext(Dispatchers.IO) {
+                    BenchmarkDataSeeder.seed(applicationContext)
+                }
+            }
+            finish()
+            return
+        }
         
         val app = application as SuapApplication
         val sharedPrefs = getSharedPreferences("suap_credentials", android.content.Context.MODE_PRIVATE)
