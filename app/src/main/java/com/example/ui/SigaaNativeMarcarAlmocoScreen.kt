@@ -1,5 +1,9 @@
 package com.example.ui
 
+import com.example.util.configureAppWebSettings
+
+import com.example.ui.theme.rememberAppFlingBehavior
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.CookieManager
@@ -25,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.delay
 
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,9 +38,9 @@ fun SigaaNativeMarcarAlmocoScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val sharedPrefs = context.getSharedPreferences("sigaa_prefs", Context.MODE_PRIVATE)
-    val savedUsername = sharedPrefs.getString("username", "") ?: ""
-    val savedPassword = sharedPrefs.getString("password", "") ?: ""
+    val credentialStore = remember { com.example.util.CredentialStore.getInstance(context) }
+    val savedUsername = remember { credentialStore.getSigaaUsername().ifBlank { credentialStore.getSuapUsername() } }
+    val savedPassword = remember { credentialStore.getSigaaPassword().ifBlank { credentialStore.getSuapPassword() } }
 
     var webView by remember { mutableStateOf<WebView?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -44,6 +49,18 @@ fun SigaaNativeMarcarAlmocoScreen(
     var confirmMessage by remember { mutableStateOf("") }
     var loadError by remember { mutableStateOf("") }
     var loadingStatus by remember { mutableStateOf("Acessando o SIGAA...") }
+    var retryKey by remember { mutableStateOf(0) }
+
+    // Watchdog: se o SIGAA parar de responder, mostra erro em vez de girar para sempre
+    LaunchedEffect(retryKey, step, loadingStatus, isLoading) {
+        if (isLoading) {
+            delay(45_000)
+            if (isLoading && loadError.isEmpty()) {
+                loadError = "O SIGAA demorou demais para responder. Verifique sua conexão e tente novamente."
+                isLoading = false
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -58,11 +75,13 @@ fun SigaaNativeMarcarAlmocoScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            key(retryKey) {
             AndroidView(
                 factory = { ctx ->
+                    var loginAttempts = 0
+                    var triedPortal = false
                     WebView(ctx).apply {
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
+                        configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                         settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
                         addJavascriptInterface(object {
@@ -122,6 +141,28 @@ fun SigaaNativeMarcarAlmocoScreen(
                             }
 
                             @JavascriptInterface
+                            fun onSigaaMessage(msg: String) {
+                                (context as? android.app.Activity)?.runOnUiThread {
+                                    loadError = "O SIGAA informou: " + msg.trim().take(300)
+                                    isLoading = false
+                                }
+                            }
+
+                            @JavascriptInterface
+                            fun onNoMenu() {
+                                (context as? android.app.Activity)?.runOnUiThread {
+                                    if (!triedPortal) {
+                                        triedPortal = true
+                                        loadingStatus = "Abrindo portal do discente..."
+                                        webView?.loadUrl("https://sigaa.ifal.edu.br/sigaa/portais/discente/discente.jsf")
+                                    } else {
+                                        loadError = "Não encontrei o menu do discente no SIGAA. Entre pelo módulo SIGAA e tente de novo."
+                                        isLoading = false
+                                    }
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun onActionNotFound() {
                                 (context as? android.app.Activity)?.runOnUiThread {
                                     loadError = "Opção de marcar almoço não encontrada no menu do SIGAA."
@@ -131,99 +172,144 @@ fun SigaaNativeMarcarAlmocoScreen(
                         }, "AndroidBridge")
 
                         webViewClient = object : WebViewClient() {
+                            private fun blocked(url: String?) {
+                                loadError = "O SIGAA tentou abrir um endereço não permitido (${url?.take(80) ?: "?"})."
+                                isLoading = false
+                            }
+
                             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                val urlStr = request?.url?.toString()
+                                if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(urlStr)) {
+                                    blocked(urlStr)
+                                    return true
+                                }
                                 return false
+                            }
+
+                            @Deprecated("Deprecated in Java")
+                            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(url)) {
+                                    blocked(url)
+                                    return true
+                                }
+                                return false
+                            }
+
+                            override fun onReceivedError(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                                error: android.webkit.WebResourceError?
+                            ) {
+                                super.onReceivedError(view, request, error)
+                                if (request?.isForMainFrame == true) {
+                                    loadError = "Não foi possível conectar ao SIGAA. Verifique sua internet."
+                                    isLoading = false
+                                }
                             }
 
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
-                                if (url == null) return
+                                if (url == null || loadError.isNotEmpty()) return
 
-                                if (url.contains("logar.do") || url.contains("verTelaLogin.do")) {
-                                    (context as? android.app.Activity)?.runOnUiThread {
+                                // Detecta a tela de login pela presença do formulário (não só pela URL)
+                                val detectJs = "(function(){return !!document.querySelector('input[name=\"user.login\"]');})()"
+                                view?.evaluateJavascript(detectJs) { isLogin ->
+                                    if (isLogin == "true") {
+                                        if (loginAttempts >= 2) {
+                                            loadError = "O SIGAA recusou o login. Verifique usuário e senha nas credenciais."
+                                            isLoading = false
+                                            return@evaluateJavascript
+                                        }
+                                        loginAttempts++
                                         loadingStatus = "Realizando login automático..."
-                                    }
-                                    val js = """
-                                        javascript:(function() {
-                                            var userField = document.querySelector('input[name="user.login"]');
-                                            var passField = document.querySelector('input[name="user.senha"]');
-                                            if (userField && passField) {
-                                                userField.value = '${savedUsername.replace("\\", "\\\\").replace("'", "\\'")}';
-                                                passField.value = '${savedPassword.replace("\\", "\\\\").replace("'", "\\'")}';
-                                                var form = document.querySelector('form');
-                                                if (form) {
-                                                    form.submit();
-                                                    return;
-                                                }
-                                            }
-                                            AndroidBridge.onNotLoggedIn();
-                                        })()
-                                    """.trimIndent()
-                                    view?.evaluateJavascript(js, null)
-                                } else {
-                                    val js = """
-                                        javascript:(function() {
-                                            var step = $step;
-                                            var hasMenu = (document.forms['menu:form_menu_discente'] || document.getElementById('menu:form_menu_discente')) !== null;
-                                            var hasConfirmButton = document.querySelector('input[type="submit"][value="Confirmar"]') !== null;
-                                            var isMealsPage = document.querySelector('table.formulario') !== null && hasConfirmButton;
-                                            var isMealsEmpty = document.body.innerHTML.indexOf('Nenhum') !== -1 || document.body.innerHTML.indexOf('Nenhuma') !== -1;
-                                            var isTitleCorrect = document.body.innerHTML.indexOf('Informar Dias de Comparecimento') !== -1;
-                                            
-                                            if (hasMenu && step === 0) {
-                                                var form = document.getElementById('menu:form_menu_discente') || document.forms['menu:form_menu_discente'];
-                                                if (form) {
-                                                    var action = null;
-                                                    var scripts = document.getElementsByTagName('script');
-                                                    for (var i = 0; i < scripts.length; i++) {
-                                                        var match = scripts[i].innerHTML.match(/'([^']+#\{\s*comparecimentoRefeitorioMBean\.iniciar\s*\})/);
-                                                        if (match) { action = match[1]; break; }
-                                                    }
-                                                    if (action) {
-                                                        AndroidBridge.onStepChanged(1, "Acessando menu de refeitório...");
-                                                        form.elements['jscook_action'].value = action;
+                                        val js = """
+                                            (function() {
+                                                var userField = document.querySelector('input[name="user.login"]');
+                                                var passField = document.querySelector('input[name="user.senha"]');
+                                                if (userField && passField) {
+                                                    userField.value = '${savedUsername.replace("\\", "\\\\").replace("'", "\\'")}';
+                                                    passField.value = '${savedPassword.replace("\\", "\\\\").replace("'", "\\'")}';
+                                                    var form = userField.form || document.querySelector('form');
+                                                    if (form) {
                                                         form.submit();
-                                                    } else {
-                                                        AndroidBridge.onActionNotFound();
+                                                        return;
                                                     }
                                                 }
-                                            } else if (isMealsPage) {
-                                                var result = [];
-                                                var rows = document.querySelectorAll('table.formulario tbody tr');
-                                                for(var i=0; i<rows.length; i++) {
-                                                    var cols = rows[i].querySelectorAll('td');
-                                                    if(cols.length >= 2) {
-                                                        var date = cols[0].innerText;
-                                                        if (!date) date = cols[0].textContent;
-                                                        if (date) date = date.trim();
-                                                        var checkbox = cols[1].querySelector('input[type="checkbox"]');
-                                                        if(checkbox) {
-                                                            result.push({
-                                                                id: checkbox.id,
-                                                                name: checkbox.name,
-                                                                date: date,
-                                                                checked: checkbox.checked,
-                                                                disabled: checkbox.disabled
-                                                            });
+                                                AndroidBridge.onNotLoggedIn();
+                                            })()
+                                        """.trimIndent()
+                                        view?.evaluateJavascript(js, null)
+                                    } else {
+                                        val js = """
+                                            (function() {
+                                                var step = $step;
+                                                var hasMenu = (document.forms['menu:form_menu_discente'] || document.getElementById('menu:form_menu_discente')) !== null;
+                                                var hasConfirmButton = document.querySelector('input[type="submit"][value="Confirmar"]') !== null;
+                                                var isMealsPage = document.querySelector('table.formulario') !== null && hasConfirmButton;
+                                                var isMealsEmpty = document.body.innerHTML.indexOf('Nenhum') !== -1 || document.body.innerHTML.indexOf('Nenhuma') !== -1;
+                                                var isTitleCorrect = document.body.innerHTML.indexOf('Informar Dias de Comparecimento') !== -1;
+                                                var errEls = document.querySelectorAll('ul.erros li, .erros li');
+                                                var errMsg = errEls.length ? errEls[0].innerText.trim() : '';
+
+                                                if (errMsg && (step === 1 || step === 4)) {
+                                                    AndroidBridge.onSigaaMessage(errMsg);
+                                                } else if (hasMenu && step === 0) {
+                                                    var form = document.getElementById('menu:form_menu_discente') || document.forms['menu:form_menu_discente'];
+                                                    if (form) {
+                                                        var action = null;
+                                                        var scripts = document.getElementsByTagName('script');
+                                                        for (var i = 0; i < scripts.length; i++) {
+                                                            var match = scripts[i].innerHTML.match(/'([^']+#\{\s*comparecimentoRefeitorioMBean\.iniciar\s*\})/);
+                                                            if (match) { action = match[1]; break; }
+                                                        }
+                                                        if (action) {
+                                                            AndroidBridge.onStepChanged(1, "Acessando menu de refeitório...");
+                                                            form.elements['jscook_action'].value = action;
+                                                            form.submit();
+                                                        } else {
+                                                            AndroidBridge.onActionNotFound();
                                                         }
                                                     }
+                                                } else if (isMealsPage) {
+                                                    var result = [];
+                                                    var rows = document.querySelectorAll('table.formulario tbody tr');
+                                                    for (var i = 0; i < rows.length; i++) {
+                                                        var cols = rows[i].querySelectorAll('td');
+                                                        if (cols.length >= 2) {
+                                                            var date = cols[0].innerText;
+                                                            if (!date) date = cols[0].textContent;
+                                                            if (date) date = date.trim();
+                                                            var checkbox = cols[1].querySelector('input[type="checkbox"]');
+                                                            if (checkbox) {
+                                                                result.push({
+                                                                    id: checkbox.id,
+                                                                    name: checkbox.name,
+                                                                    date: date,
+                                                                    checked: checkbox.checked,
+                                                                    disabled: checkbox.disabled
+                                                                });
+                                                            }
+                                                        }
+                                                    }
+                                                    AndroidBridge.onMealsParsed(JSON.stringify(result));
+                                                } else if (isTitleCorrect && isMealsEmpty && step === 1) {
+                                                    AndroidBridge.onMealsParsed('[]');
+                                                } else if (step === 4) {
+                                                    AndroidBridge.onMealsParsed('[]');
+                                                } else if (step === 0 && !hasMenu) {
+                                                    AndroidBridge.onNoMenu();
                                                 }
-                                                AndroidBridge.onMealsParsed(JSON.stringify(result));
-                                            } else if (isTitleCorrect && isMealsEmpty && step === 1) {
-                                                AndroidBridge.onMealsParsed('[]');
-                                            } else if (step === 4) {
-                                                AndroidBridge.onMealsParsed('[]');
-                                            }
-                                        })()
-                                    """.trimIndent()
-                                    view?.evaluateJavascript(js, null)
+                                            })()
+                                        """.trimIndent()
+                                        view?.evaluateJavascript(js, null)
+                                    }
                                 }
                             }
                         }
 
                         val cookieManager = CookieManager.getInstance()
                         cookieManager.setAcceptCookie(true)
-                        cookieManager.setAcceptThirdPartyCookies(this, true)
+                        cookieManager.setAcceptThirdPartyCookies(this, false)
 
                         if (savedUsername.isBlank() || savedPassword.isBlank()) {
                             loadError = "Credenciais não encontradas. Salve-as na tela de Login primeiro."
@@ -237,6 +323,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                 },
                 modifier = Modifier.size(1.dp) // Hide webview
             )
+            }
 
             if (isLoading) {
                 Column(
@@ -256,7 +343,17 @@ fun SigaaNativeMarcarAlmocoScreen(
                 ) {
                     Text(loadError, color = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onNavigateBack) { Text("Voltar") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(onClick = onNavigateBack) { Text("Voltar") }
+                        Button(onClick = {
+                            loadError = ""
+                            step = 0
+                            mealOptions = emptyList()
+                            loadingStatus = "Acessando o SIGAA..."
+                            isLoading = true
+                            retryKey++
+                        }) { Text("Tentar novamente") }
+                    }
                 }
             } else if (step == 5) {
                 Column(
@@ -280,12 +377,18 @@ fun SigaaNativeMarcarAlmocoScreen(
                         Button(onClick = onNavigateBack) { Text("Voltar") }
                     }
                 } else {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(16.dp)
-                        ) {
-                            items(mealOptions) { option ->
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+                            LazyColumn(
+                flingBehavior = rememberAppFlingBehavior(),
+modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(16.dp)
+                            ) {
+                            items(
+                                items = mealOptions,
+                                key = { it.id },
+                                contentType = { "meal_option" }
+                            ) { option ->
                                 val (dayOfWeek, formattedDate) = getDayOfWeekAndDate(option.date)
                                 val isChecked = option.checked
                                 Card(
@@ -304,7 +407,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                                                 }
                                             } else Modifier
                                         ),
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = MaterialTheme.shapes.large,
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (isChecked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                                                          else MaterialTheme.colorScheme.surfaceVariant
@@ -319,7 +422,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                                             if (dayOfWeek.isNotEmpty()) {
                                                 Surface(
                                                     color = MaterialTheme.colorScheme.primary,
-                                                    shape = RoundedCornerShape(8.dp),
+                                                    shape = MaterialTheme.shapes.small,
                                                     modifier = Modifier.padding(bottom = 6.dp)
                                                 ) {
                                                     Text(
@@ -413,6 +516,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

@@ -6,13 +6,14 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.data.SubjectRepository
 
 class SuapViewModelFactory(
+    private val applicationContext: android.content.Context,
     private val repository: SubjectRepository,
     private val sharedPreferences: SharedPreferences
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SuapViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SuapViewModel(repository, sharedPreferences) as T
+            return SuapViewModel(applicationContext, repository, sharedPreferences) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

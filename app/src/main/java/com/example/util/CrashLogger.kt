@@ -1,27 +1,42 @@
 package com.example.util
 
-import android.content.ContentValues
 import android.content.Context
-import android.os.Build
 import android.os.Environment
-import android.provider.MediaStore
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.regex.Pattern
 
 object CrashLogger {
     private const val TAG = "CrashLogger"
     private const val INTERNAL_LOG_FILE = "suap_crash_logs.txt"
     private const val AUTO_SAVE_FILE_NAME = "suap_app_logs_auto_saved.txt"
+    private const val MAX_INTERNAL_LOG_BYTES = 1024L * 1024L
+    private const val RETAINED_LOG_BYTES = 768 * 1024
+    private const val MAX_SHARE_REPORT_BYTES = 128 * 1024
+    private const val MAX_CRASH_CAUSES = 5
+    private const val MAX_CRASH_FRAMES_PER_CAUSE = 8
+    private const val MAX_CRASH_TRACE_CHARS = 4_000
+    private val fileLock = Any()
     private var isInitialized = false
+    private val emailPattern = Pattern.compile("(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b")
+    private val urlPattern = Pattern.compile("(?i)https?://[^\\s)]+")
+    private val authHeaderPattern = Pattern.compile("(?im)\\b(cookie|set-cookie|authorization)[\"']?\\s*[:=].*$")
+    private val quotedSecretPattern = Pattern.compile(
+        "(?i)([\"']?\\b(?:csrfmiddlewaretoken|csrftoken|sessionid|access_token|refresh_token|token|password|senha)\\b[\"']?\\s*[:=]\\s*)([\"'])(.*?)\\2"
+    )
+    private val secretPattern = Pattern.compile(
+        "(?i)([\"']?\\b(?:csrfmiddlewaretoken|csrftoken|sessionid|access_token|refresh_token|token|password|senha)\\b[\"']?\\s*[:=]\\s*[\"']?)[^\"'\\s,;}]+"
+    )
+    private val identifierPattern = Pattern.compile("\\b\\d{8,14}\\b")
+    private val cpfPattern = Pattern.compile("\\b\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}\\b")
+    private val htmlPattern = Pattern.compile("(?is)<\\s*(html|body|script|table|form|div|input|textarea)\\b")
 
     fun init(context: Context) {
         if (isInitialized) return
@@ -33,8 +48,6 @@ object CrashLogger {
             oldHandler?.uncaughtException(thread, throwable)
         }
 
-        log(context, "INFO", "CrashLogger ativado. Gravando erros e logs automaticamente.")
-        
         // Auto save logs upon initialization
         // autoSaveFullLogToDownloads(context)
     }
@@ -43,39 +56,53 @@ object CrashLogger {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())
         val logLine = StringBuilder()
             .append("[$timestamp] [$level] ")
-            .append(message)
+            .append(sanitizeDiagnosticText(message).take(2_000))
 
         if (throwable != null) {
-            val sw = StringWriter()
-            val pw = PrintWriter(sw)
-            throwable.printStackTrace(pw)
-            logLine.append("\nStacktrace:\n").append(sw.toString())
+            // Keep type and source locations for diagnosis, but never record messages or values.
+            logLine.append("\nException type: ")
+                .append(throwable.javaClass.name.take(160))
+                .append(diagnosticThrowableSummary(throwable))
         }
         logLine.append("\n")
 
         val logText = logLine.toString()
-        Log.e(TAG, logText)
+        AppLog.e(TAG, logText)
 
         try {
             val file = File(context.filesDir, INTERNAL_LOG_FILE)
-            FileOutputStream(file, true).use { stream ->
-                stream.write(logText.toByteArray())
+            val bytes = logText.toByteArray()
+            synchronized(fileLock) {
+                if (file.length() + bytes.size > MAX_INTERNAL_LOG_BYTES) {
+                    val tail = if (file.exists()) {
+                        java.io.RandomAccessFile(file, "r").use { input ->
+                            val length = input.length().coerceAtMost(RETAINED_LOG_BYTES.toLong()).toInt()
+                            ByteArray(length).also { buffer ->
+                                input.seek((input.length() - length).coerceAtLeast(0L))
+                                input.readFully(buffer)
+                            }
+                        }
+                    } else byteArrayOf()
+                    FileOutputStream(file, false).use { it.write(tail) }
+                }
+                FileOutputStream(file, true).use { stream -> stream.write(bytes) }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLog.printStackTrace(e)
         }
 
         /*
         try {
             appendDirectToDownloads(context, logText)
         } catch (e: Exception) {
-            e.printStackTrace()
+            AppLog.printStackTrace(e)
         }
         */
     }
 
     private fun logCrash(context: Context, thread: Thread, throwable: Throwable) {
-        val message = "CRASH INESPERADO na Thread '${thread.name}': ${throwable.localizedMessage ?: throwable.message}"
+        // Throwable messages may contain credentials, request data or page content.
+        val message = "Falha inesperada na thread '${thread.name}'."
         log(context, "FATAL", message, throwable)
         // Flush full log immediately on crash
         try {
@@ -83,25 +110,36 @@ object CrashLogger {
         } catch (_: Throwable) {}
     }
 
-    private fun appendDirectToDownloads(context: Context, text: String) {
-        try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs()
+    /** Safe crash detail: exception types and source locations only, never exception messages. */
+    internal fun diagnosticThrowableSummary(throwable: Throwable): String {
+        val summary = StringBuilder("\nStack trace (exception messages omitted):")
+        val seen = java.util.Collections.newSetFromMap(
+            java.util.IdentityHashMap<Throwable, Boolean>()
+        )
+        var current: Throwable? = throwable
+        var causeIndex = 0
+
+        while (current != null && causeIndex < MAX_CRASH_CAUSES && seen.add(current)) {
+            if (causeIndex > 0) {
+                summary.append("\nCaused by: ").append(current.javaClass.name.take(160))
             }
-            val logFile = File(downloadsDir, AUTO_SAVE_FILE_NAME)
-            FileOutputStream(logFile, true).use { stream ->
-                stream.write(text.toByteArray())
-            }
-        } catch (_: Throwable) {
-            try {
-                val extDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
-                val file = File(extDir, AUTO_SAVE_FILE_NAME)
-                FileOutputStream(file, true).use { stream ->
-                    stream.write(text.toByteArray())
+            current.stackTrace.take(MAX_CRASH_FRAMES_PER_CAUSE).forEach { frame ->
+                summary.append("\n at ")
+                    .append(frame.className.take(160))
+                    .append('.')
+                    .append(frame.methodName.take(120))
+                frame.fileName?.let { fileName ->
+                    summary.append('(').append(fileName.take(80))
+                    if (frame.lineNumber >= 0) summary.append(':').append(frame.lineNumber)
+                    summary.append(')')
                 }
-            } catch (_: Throwable) {}
+            }
+            current = current.cause
+                ?: (current as? ExceptionInInitializerError)?.exception
+            causeIndex++
         }
+
+        return sanitizeDiagnosticText(summary.toString()).take(MAX_CRASH_TRACE_CHARS)
     }
 
     fun autoSaveFullLogToDownloads(context: Context) {
@@ -109,7 +147,7 @@ object CrashLogger {
             try {
                 saveFullLogSync(context)
             } catch (e: Exception) {
-                Log.e(TAG, "Erro ao auto-salvar logs em Downloads: ${e.message}")
+                Log.e(TAG, "Erro ao exportar relatório de diagnóstico")
             }
         }
     }
@@ -117,36 +155,6 @@ object CrashLogger {
     private fun saveFullLogSync(context: Context) {
         val fullLogText = getAllLogs(context)
         val fileName = AUTO_SAVE_FILE_NAME
-
-        // 1. MediaStore API for Android 10+ Downloads folder
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val resolver = context.contentResolver
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                }
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-                if (uri != null) {
-                    resolver.openOutputStream(uri)?.use { stream ->
-                        stream.write(fullLogText.toByteArray())
-                    }
-                }
-            } catch (_: Throwable) {}
-        }
-
-        // 2. Direct File API in Downloads directory
-        try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            if (!downloadsDir.exists()) downloadsDir.mkdirs()
-            val file = File(downloadsDir, fileName)
-            FileOutputStream(file, false).use { stream ->
-                stream.write(fullLogText.toByteArray())
-            }
-        } catch (_: Throwable) {}
-
-        // 3. Fallback to app External Documents
         try {
             val extDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
             if (!extDir.exists()) extDir.mkdirs()
@@ -161,6 +169,7 @@ object CrashLogger {
         val sb = StringBuilder()
         sb.append("=== REGISTRO DE ERROS E LOGS DA APLICAÇÃO SUAP ===\n")
         sb.append("Data do relatório: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n\n")
+        sb.append("Dados pessoais, conteúdo de páginas e valores de autenticação são removidos deste relatório.\n\n")
 
         try {
             val file = File(context.filesDir, INTERNAL_LOG_FILE)
@@ -172,26 +181,31 @@ object CrashLogger {
                 sb.append("Nenhum crash registrado anteriormente.\n\n")
             }
         } catch (e: Exception) {
-            sb.append("Erro ao ler arquivo local: ${e.message}\n\n")
+            sb.append("Não foi possível ler os registros locais.\n\n")
         }
 
-        try {
-            val process = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-t", "500"))
-            val bufferedReader = process.inputStream.bufferedReader()
-            sb.append("--- MENSAGENS DE LOGCAT DO SISTEMA ---\n")
-            var count = 0
-            bufferedReader.forEachLine { line ->
-                if (count < 600) {
-                    sb.append(line).append("\n")
-                    count++
-                }
-            }
-            try { process.destroy() } catch (_: Throwable) {}
-        } catch (e: Exception) {
-            sb.append("Logcat indisponível: ${e.message}\n")
-        }
+        return sanitizeDiagnosticText(sb.toString())
+    }
 
-        return sb.toString()
+    /** Creates a size-limited report in the only FileProvider-exposed cache directory. */
+    fun createShareableReport(context: Context): File {
+        val directory = File(context.cacheDir, "diagnostics")
+        if (directory.exists()) directory.listFiles()?.forEach { it.delete() }
+        directory.mkdirs()
+        val report = File(directory, "suap-diagnostic-report.txt")
+        val safeText = getAllLogs(context)
+        val bytes = safeText.toByteArray(Charsets.UTF_8)
+        val header = "Relatório limitado aos últimos registros.\n"
+        val headerBytes = header.toByteArray(Charsets.UTF_8)
+        val bounded = if (bytes.size <= MAX_SHARE_REPORT_BYTES) {
+            bytes
+        } else {
+            var start = (bytes.size - (MAX_SHARE_REPORT_BYTES - headerBytes.size)).coerceAtLeast(0)
+            while (start < bytes.size && (bytes[start].toInt() and 0xC0) == 0x80) start++
+            headerBytes + bytes.copyOfRange(start, bytes.size)
+        }
+        report.writeBytes(bounded)
+        return report
     }
 
     fun clearLogs(context: Context) {
@@ -199,5 +213,18 @@ object CrashLogger {
             val file = File(context.filesDir, INTERNAL_LOG_FILE)
             if (file.exists()) file.delete()
         } catch (_: Throwable) {}
+    }
+
+    internal fun sanitizeDiagnosticText(value: String): String {
+        if (htmlPattern.matcher(value).find()) {
+            return "[conteúdo de página omitido]"
+        }
+        var sanitized = emailPattern.matcher(value).replaceAll("[email removido]")
+        sanitized = urlPattern.matcher(sanitized).replaceAll("[URL removida]")
+        sanitized = authHeaderPattern.matcher(sanitized).replaceAll("\$1=[cabeçalho removido]")
+        sanitized = quotedSecretPattern.matcher(sanitized).replaceAll("\$1\$2[removido]\$2")
+        sanitized = secretPattern.matcher(sanitized).replaceAll("\$1[removido]")
+        sanitized = cpfPattern.matcher(sanitized).replaceAll("[CPF removido]")
+        return identifierPattern.matcher(sanitized).replaceAll("[identificador removido]")
     }
 }

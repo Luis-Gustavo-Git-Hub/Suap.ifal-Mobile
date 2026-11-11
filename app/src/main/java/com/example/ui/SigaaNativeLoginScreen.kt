@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.util.configureAppWebSettings
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.CookieManager
@@ -10,6 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,11 +35,11 @@ fun SigaaNativeLoginScreen(
     onLoginSuccessAction: () -> Unit
 ) {
     val context = LocalContext.current
-    val sharedPrefs = context.getSharedPreferences("sigaa_prefs", Context.MODE_PRIVATE)
+    val credentialStore = remember { com.example.util.CredentialStore.getInstance(context) }
 
-    var username by remember { mutableStateOf(sharedPrefs.getString("username", "") ?: "") }
-    var password by remember { mutableStateOf(sharedPrefs.getString("password", "") ?: "") }
-    var saveCredentials by remember { mutableStateOf(sharedPrefs.getBoolean("save_credentials", false)) }
+    var username by remember { mutableStateOf(credentialStore.getSigaaUsername()) }
+    var password by remember { mutableStateOf(credentialStore.getSigaaPassword()) }
+    var saveCredentials by remember { mutableStateOf(credentialStore.isSigaaSaveCredentialsEnabled()) }
 
     var isLoggingIn by remember { mutableStateOf(false) }
     var loginSuccess by remember { mutableStateOf(false) }
@@ -66,21 +70,38 @@ fun SigaaNativeLoginScreen(
                 AndroidView(
                     factory = { ctx ->
                         WebView(ctx).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
+                            configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                             settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
                             webViewClient = object : WebViewClient() {
+                                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                    val urlStr = request?.url?.toString()
+                                    if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(urlStr)) {
+                                        return true
+                                    }
+                                    return false
+                                }
+
+                                @Deprecated("Deprecated in Java")
+                                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                    if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(url)) {
+                                        return true
+                                    }
+                                    return false
+                                }
+
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     super.onPageFinished(view, url)
-                                    if (url != null) {
+                                    if (url != null && com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(url)) {
                                         if (url.contains("logar.do") || url.endsWith("sigaa/") || url.contains("modo=classico") || url.contains("verTelaLogin.do")) {
+                                            val safeUsername = org.json.JSONObject.quote(username)
+                                            val safePassword = org.json.JSONObject.quote(password)
                                             val js = """
                                                 javascript:(function() {
                                                     var userField = document.querySelector('input[name="user.login"]');
                                                     var passField = document.querySelector('input[name="user.senha"]');
-                                                    if (userField && userField.value === '') { userField.value = '${username.replace("\\", "\\\\").replace("'", "\\'")}'; }
-                                                    if (passField && passField.value === '') { passField.value = '${password.replace("\\", "\\\\").replace("'", "\\'")}'; }
+                                                    if (userField && userField.value === '') { userField.value = $safeUsername; }
+                                                    if (passField && passField.value === '') { passField.value = $safePassword; }
                                                     var form = document.querySelector('form');
                                                     if (form && userField && passField && userField.value !== '' && passField.value !== '') {
                                                         form.submit();
@@ -101,7 +122,7 @@ fun SigaaNativeLoginScreen(
 
                             val cookieManager = CookieManager.getInstance()
                             cookieManager.setAcceptCookie(true)
-                            cookieManager.setAcceptThirdPartyCookies(this, true)
+                            cookieManager.setAcceptThirdPartyCookies(this, false)
 
                             loadUrl("https://sigaa.ifal.edu.br/sigaa/verTelaLogin.do")
                         }
@@ -113,8 +134,7 @@ fun SigaaNativeLoginScreen(
                 AndroidView(
                     factory = { ctx ->
                         WebView(ctx).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
+                            configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
                             settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 
                             webViewClient = object : WebViewClient() {
@@ -122,20 +142,37 @@ fun SigaaNativeLoginScreen(
                                     view: WebView?,
                                     request: WebResourceRequest?
                                 ): Boolean {
+                                    val urlStr = request?.url?.toString()
+                                    if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(urlStr)) {
+                                        return true
+                                    }
+                                    return false
+                                }
+
+                                @Deprecated("Deprecated in Java")
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    url: String?
+                                ): Boolean {
+                                    if (!com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(url)) {
+                                        return true
+                                    }
                                     return false
                                 }
 
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     super.onPageFinished(view, url)
-                                    if (url != null) {
+                                    if (url != null && com.example.util.UrlSecurityUtils.isAllowedSigaaUrl(url)) {
                                         if (url.contains("logar.do") || url.endsWith("sigaa/") || url.contains("modo=classico") || url.contains("verTelaLogin.do")) {
                                             // Inject JS to login
+                                            val safeUsername = org.json.JSONObject.quote(username)
+                                            val safePassword = org.json.JSONObject.quote(password)
                                             val js = """
                                                 javascript:(function() {
                                                     var userField = document.querySelector('input[name="user.login"]');
                                                     var passField = document.querySelector('input[name="user.senha"]');
-                                                    if (userField) { userField.value = '${username.replace("\\", "\\\\").replace("'", "\\'")}'; }
-                                                    if (passField) { passField.value = '${password.replace("\\", "\\\\").replace("'", "\\'")}'; }
+                                                    if (userField) { userField.value = $safeUsername; }
+                                                    if (passField) { passField.value = $safePassword; }
                                                     var form = document.querySelector('form');
                                                     if (form && userField && passField) {
                                                         form.submit();
@@ -159,7 +196,7 @@ fun SigaaNativeLoginScreen(
 
                             val cookieManager = CookieManager.getInstance()
                             cookieManager.setAcceptCookie(true)
-                            cookieManager.setAcceptThirdPartyCookies(this, true)
+                            cookieManager.setAcceptThirdPartyCookies(this, false)
 
                             loadUrl("https://sigaa.ifal.edu.br/sigaa/verTelaLogin.do")
                         }
@@ -244,8 +281,14 @@ fun SigaaNativeLoginScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             trailingIcon = {
-                                androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
-                                    androidx.compose.material3.Text(text = if (showPassword) "🙈" else "👁️")
+                                IconButton(
+                                    onClick = { showPassword = !showPassword },
+                                    modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
+                                    )
                                 }
                             }
                         )
@@ -267,16 +310,14 @@ fun SigaaNativeLoginScreen(
 
                         Button(
                             onClick = {
-                                if (saveCredentials) {
-                                    sharedPrefs.edit()
-                                        .putString("username", username)
-                                        .putString("password", password)
-                                        .putBoolean("save_credentials", true)
-                                        .apply()
+                                val credentialsSaved = !saveCredentials ||
+                                    credentialStore.setSigaaCredentials(username, password, true)
+                                if (!credentialsSaved) {
+                                    com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
                                 } else {
-                                    sharedPrefs.edit().clear().apply()
+                                    if (!saveCredentials) credentialStore.clearSigaaCredentials()
+                                    isLoggingIn = true
                                 }
-                                isLoggingIn = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -290,16 +331,14 @@ fun SigaaNativeLoginScreen(
 
                         OutlinedButton(
                             onClick = {
-                                if (saveCredentials) {
-                                    sharedPrefs.edit()
-                                        .putString("username", username)
-                                        .putString("password", password)
-                                        .putBoolean("save_credentials", true)
-                                        .apply()
+                                val credentialsSaved = !saveCredentials ||
+                                    credentialStore.setSigaaCredentials(username, password, true)
+                                if (!credentialsSaved) {
+                                    com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
                                 } else {
-                                    sharedPrefs.edit().clear().apply()
+                                    if (!saveCredentials) credentialStore.clearSigaaCredentials()
+                                    showWebView = true
                                 }
-                                showWebView = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
