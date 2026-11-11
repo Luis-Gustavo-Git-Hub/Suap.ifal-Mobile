@@ -91,17 +91,71 @@ fun formatLastUpdate(timestamp: Long): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun FriendsUnavailableScreen(onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Rede Acadêmica") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Rede Acadêmica indisponível",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Amigos não está configurado nesta instalação. Você ainda pode usar o boletim, as aulas e os outros recursos do app.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(20.dp))
+            OutlinedButton(onClick = onBack) { Text("Voltar ao app") }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun FriendsScreen(
     viewModel: SuapViewModel,
     onBack: () -> Unit
 ) {
-    val localSubjects by viewModel.subjects.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    if (!FriendsManager.isFirebaseConfigured(context)) {
+        FriendsUnavailableScreen(onBack)
+        return
+    }
+
+    val localSubjects by viewModel.subjects.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     
     var isSignedIn by remember { mutableStateOf(FriendsManager.isUserSignedIn()) }
     var signedInUserUid by remember {
-        mutableStateOf(com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid)
+        mutableStateOf(FriendsManager.currentUserId())
     }
     var isSigningIn by remember { mutableStateOf(false) }
     

@@ -7,5 +7,5 @@ import kotlinx.coroutines.flow.StateFlow
 
 class FriendsViewModel(application: Application) : AndroidViewModel(application) {
     val currentUserId: String?
-        get() = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        get() = FriendsManager.currentUserId()
 }

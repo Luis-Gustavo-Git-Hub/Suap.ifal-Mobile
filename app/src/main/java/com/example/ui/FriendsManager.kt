@@ -7,6 +7,7 @@ import androidx.credentials.GetCredentialRequest
 
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
@@ -37,11 +38,18 @@ data class BoletimShared(
 )
 
 object FriendsManager {
-    private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance()
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private val db by lazy { FirebaseFirestore.getInstance() }
+
+    fun isFirebaseConfigured(context: Context): Boolean = runCatching {
+        FirebaseApp.getApps(context.applicationContext)
+            .any { it.name == FirebaseApp.DEFAULT_APP_NAME }
+    }.getOrDefault(false)
+
+    fun currentUserId(): String? = runCatching { auth.currentUser?.uid }.getOrNull()
 
     fun isUserSignedIn(): Boolean {
-        return auth.currentUser != null
+        return runCatching { auth.currentUser != null }.getOrDefault(false)
     }
 
     suspend fun signInWithGoogle(context: Context, forceAccountPicker: Boolean = true): Boolean {
