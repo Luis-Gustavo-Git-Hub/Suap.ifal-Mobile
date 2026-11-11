@@ -124,7 +124,7 @@ jobs:
           script: |
             set -e
             ./gradlew :app:generateBaselineProfile -PbenchmarkSeedEnabled=true --no-daemon --max-workers=2
-            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -PbenchmarkSeedEnabled=true -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark --no-daemon --max-workers=2
+            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -PbenchmarkSeedEnabled=true -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR --no-daemon --max-workers=2
 
       - name: Upload generated profile and benchmark reports
         if: always()
