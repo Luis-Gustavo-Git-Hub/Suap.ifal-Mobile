@@ -39,4 +39,29 @@ class CrashLoggerSanitizationTest {
 
         assertTrue(sanitized.length > 2_000)
     }
+
+    @Test
+    fun crashTraceShowsSourceLocationAndCauseWithoutExceptionMessages() {
+        val rootCause = IllegalStateException(
+            "matricula=202512345678 senha=segredo aluno@ifal.edu.br"
+        ).apply {
+            stackTrace = arrayOf(
+                StackTraceElement("com.example.parser.SuapParser", "parseSubject", "SuapParser.kt", 42)
+            )
+        }
+        val crash = ExceptionInInitializerError(rootCause).apply {
+            stackTrace = arrayOf(
+                StackTraceElement("com.example.ui.MainActivity", "onCreate", "MainActivity.kt", 87)
+            )
+        }
+
+        val summary = CrashLogger.diagnosticThrowableSummary(crash)
+
+        assertTrue(summary.contains("com.example.ui.MainActivity.onCreate(MainActivity.kt:87)"))
+        assertTrue(summary.contains("java.lang.IllegalStateException"))
+        assertTrue(summary.contains("com.example.parser.SuapParser.parseSubject(SuapParser.kt:42)"))
+        assertFalse(summary.contains("202512345678"))
+        assertFalse(summary.contains("segredo"))
+        assertFalse(summary.contains("aluno@ifal.edu.br"))
+    }
 }

@@ -20,6 +20,9 @@ object CrashLogger {
     private const val MAX_INTERNAL_LOG_BYTES = 1024L * 1024L
     private const val RETAINED_LOG_BYTES = 768 * 1024
     private const val MAX_SHARE_REPORT_BYTES = 128 * 1024
+    private const val MAX_CRASH_CAUSES = 5
+    private const val MAX_CRASH_FRAMES_PER_CAUSE = 8
+    private const val MAX_CRASH_TRACE_CHARS = 4_000
     private val fileLock = Any()
     private var isInitialized = false
     private val emailPattern = Pattern.compile("(?i)\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b")
@@ -56,9 +59,10 @@ object CrashLogger {
             .append(sanitizeDiagnosticText(message).take(2_000))
 
         if (throwable != null) {
-            // Exception messages and stack traces can contain request URLs or page data.
+            // Keep type and source locations for diagnosis, but never record messages or values.
             logLine.append("\nException type: ")
-                .append(throwable.javaClass.simpleName.take(80))
+                .append(throwable.javaClass.name.take(160))
+                .append(diagnosticThrowableSummary(throwable))
         }
         logLine.append("\n")
 
@@ -104,6 +108,38 @@ object CrashLogger {
         try {
             saveFullLogSync(context)
         } catch (_: Throwable) {}
+    }
+
+    /** Safe crash detail: exception types and source locations only, never exception messages. */
+    internal fun diagnosticThrowableSummary(throwable: Throwable): String {
+        val summary = StringBuilder("\nStack trace (exception messages omitted):")
+        val seen = java.util.Collections.newSetFromMap(
+            java.util.IdentityHashMap<Throwable, Boolean>()
+        )
+        var current: Throwable? = throwable
+        var causeIndex = 0
+
+        while (current != null && causeIndex < MAX_CRASH_CAUSES && seen.add(current)) {
+            if (causeIndex > 0) {
+                summary.append("\nCaused by: ").append(current.javaClass.name.take(160))
+            }
+            current.stackTrace.take(MAX_CRASH_FRAMES_PER_CAUSE).forEach { frame ->
+                summary.append("\n at ")
+                    .append(frame.className.take(160))
+                    .append('.')
+                    .append(frame.methodName.take(120))
+                frame.fileName?.let { fileName ->
+                    summary.append('(').append(fileName.take(80))
+                    if (frame.lineNumber >= 0) summary.append(':').append(frame.lineNumber)
+                    summary.append(')')
+                }
+            }
+            current = current.cause
+                ?: (current as? ExceptionInInitializerError)?.exception
+            causeIndex++
+        }
+
+        return sanitizeDiagnosticText(summary.toString()).take(MAX_CRASH_TRACE_CHARS)
     }
 
     fun autoSaveFullLogToDownloads(context: Context) {
