@@ -12,6 +12,8 @@ import org.json.JSONObject
 /** Seeds synthetic, local-only data when the CI explicitly enables benchmark preparation. */
 internal object BenchmarkDataSeeder {
     const val ACTION = "com.aistudio.suap.xkcdz.action.SEED_BENCHMARK"
+    const val NAVIGATE_ACTION = "com.aistudio.suap.xkcdz.action.BENCHMARK_NAVIGATE"
+    const val ROUTE_EXTRA = "benchmark_route"
 
     suspend fun seed(context: Context) = withContext(Dispatchers.IO) {
         val credentials = context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE)

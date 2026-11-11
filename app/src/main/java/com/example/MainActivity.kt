@@ -51,6 +51,10 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+        val benchmarkRoute = intent?.takeIf {
+            BuildConfig.BENCHMARK_SEED_ENABLED && it.action == BenchmarkDataSeeder.NAVIGATE_ACTION
+        }?.getStringExtra(BenchmarkDataSeeder.ROUTE_EXTRA)
+
         setContent {
             val windowSizeClass = androidx.compose.material3.windowsizeclass.calculateWindowSizeClass(this)
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
@@ -64,7 +68,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        AppNavigation(viewModel = viewModel)
+                        AppNavigation(viewModel = viewModel, benchmarkRoute = benchmarkRoute)
                     }
                 }
             }

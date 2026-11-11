@@ -23,7 +23,7 @@ import org.junit.runner.RunWith
 class SuapMacrobenchmark {
     private companion object {
         const val APP_READY_TIMEOUT_MS = 30_000L
-        const val DASHBOARD_SCROLL_DURATION_MS = 10_000L
+        const val SCREEN_SCROLL_DURATION_MS = 10_000L
         const val FRAME_ITERATIONS = 5
     }
 
@@ -47,42 +47,32 @@ class SuapMacrobenchmark {
     }
 
     @Test
-    fun dashboardScrollFrameTiming() = benchmarkScreenScroll(By.text("Início")) { }
+    fun dashboardScrollFrameTiming() = benchmarkScreenScroll(By.text("Início"))
 
     @Test
-    fun aulasScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Conteúdo de teste de desempenho")) {
-        BenchmarkTestData.clickTextContaining(device, "Materiais e Aulas")
-        BenchmarkTestData.clickText(device, "Aulas")
-    }
+    fun aulasScrollFrameTiming() = benchmarkScreenScroll(
+        By.textContains("Conteúdo de teste de desempenho"),
+        route = "aulas"
+    )
 
     @Test
-    fun friendsScrollFrameTiming() = benchmarkScreenScroll(By.text("Rede Acadêmica")) {
-        BenchmarkTestData.clickText(device, "Amigos")
-    }
+    fun friendsScrollFrameTiming() = benchmarkScreenScroll(By.text("Rede Acadêmica"), route = "friends")
 
     @Test
-    fun horariosScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Disciplina de teste")) {
-        BenchmarkTestData.clickText(device, "Horários")
-    }
+    fun horariosScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Disciplina de teste"), route = "horarios")
 
     @Test
-    fun avisosScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Aviso de teste de desempenho")) {
-        BenchmarkTestData.clickText(device, "Avisos")
-    }
+    fun avisosScrollFrameTiming() = benchmarkScreenScroll(By.textContains("Aviso de teste de desempenho"), route = "avisos")
 
     @Test
-    fun statisticsScrollFrameTiming() = benchmarkScreenScroll(By.text("Média geral")) {
-        BenchmarkTestData.clickText(device, "Estatística")
-    }
+    fun statisticsScrollFrameTiming() = benchmarkScreenScroll(By.text("Média geral"), route = "statistics")
 
     @Test
-    fun boletimScrollFrameTiming() = benchmarkScreenScroll(By.text("1 disciplinas")) {
-        BenchmarkTestData.clickTextContaining(device, "Boletim Escolar")
-    }
+    fun boletimScrollFrameTiming() = benchmarkScreenScroll(By.text("1 disciplinas"), route = "boletim")
 
     private fun benchmarkScreenScroll(
         expectedScreenContent: androidx.test.uiautomator.BySelector,
-        navigateToScreen: MacrobenchmarkScope.() -> Unit
+        route: String? = null
     ) {
         prepareBenchmarkData()
         benchmarkRule.measureRepeated(
@@ -92,10 +82,13 @@ class SuapMacrobenchmark {
             startupMode = StartupMode.COLD,
             setupBlock = { pressHome() }
         ) {
-            startActivityAndWait()
-            BenchmarkTestData.waitForDashboard(device)
-            assertDashboardIsReady()
-            navigateToScreen()
+            if (route == null) {
+                startActivityAndWait()
+                BenchmarkTestData.waitForDashboard(device)
+                assertDashboardIsReady()
+            } else {
+                startActivityAndWait(BenchmarkTestData.routeIntent(route))
+            }
             assertTrue(
                 "Expected screen content was not found after navigation",
                 device.wait(Until.hasObject(expectedScreenContent), APP_READY_TIMEOUT_MS)
@@ -103,7 +96,7 @@ class SuapMacrobenchmark {
 
             val scrollable = device.findObject(By.scrollable(true))
 
-            val deadline = SystemClock.uptimeMillis() + DASHBOARD_SCROLL_DURATION_MS
+            val deadline = SystemClock.uptimeMillis() + SCREEN_SCROLL_DURATION_MS
             while (SystemClock.uptimeMillis() < deadline) {
                 if (scrollable != null) {
                     scrollable.fling(Direction.DOWN)

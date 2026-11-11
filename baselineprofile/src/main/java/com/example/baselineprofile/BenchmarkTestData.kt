@@ -1,5 +1,6 @@
 package com.example.baselineprofile
 
+import android.content.Intent
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
@@ -11,6 +12,8 @@ internal object BenchmarkTestData {
     const val TARGET_PACKAGE = "com.aistudio.suap.xkcdz"
     private const val MAIN_ACTIVITY = "$TARGET_PACKAGE/com.example.MainActivity"
     private const val SEED_ACTION = "$TARGET_PACKAGE.action.SEED_BENCHMARK"
+    private const val NAVIGATE_ACTION = "$TARGET_PACKAGE.action.BENCHMARK_NAVIGATE"
+    private const val ROUTE_EXTRA = "benchmark_route"
     private const val READY_TIMEOUT_MS = 15_000L
 
     fun prepare(device: UiDevice) {
@@ -23,6 +26,12 @@ internal object BenchmarkTestData {
         launchApp(device)
         device.pressHome()
         device.executeShellCommand("am force-stop $TARGET_PACKAGE")
+    }
+
+    fun routeIntent(route: String): Intent = Intent().apply {
+        setClassName(TARGET_PACKAGE, "com.example.MainActivity")
+        action = NAVIGATE_ACTION
+        putExtra(ROUTE_EXTRA, route)
     }
 
     fun waitForDashboard(device: UiDevice) {
