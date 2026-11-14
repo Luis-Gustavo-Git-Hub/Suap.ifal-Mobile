@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Suap.ifal Mobile</string>
+    <string name="back">Voltar</string>
+    <string name="close">Fechar</string>
+    <string name="terms_title">Termos de uso</string>
+    <string name="accept_terms">Aceito os termos de uso</string>
+    <string name="read_terms">Ler termos de uso</string>
+    <string name="loading">Carregando…</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="tab_home">Início</string>
+    <string name="tab_statistics">Estatísticas</string>
+    <string name="tab_notices">Avisos</string>
+    <string name="tab_profile">Perfil</string>
+    <string name="subjects_title">Disciplinas</string>
+    <string name="show_password">Mostrar senha</string>
+    <string name="hide_password">Ocultar senha</string>
 </resources>

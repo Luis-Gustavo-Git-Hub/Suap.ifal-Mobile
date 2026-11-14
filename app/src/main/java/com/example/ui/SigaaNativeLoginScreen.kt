@@ -1,5 +1,13 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import androidx.compose.material3.MaterialTheme
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.CookieManager
@@ -9,7 +17,7 @@ import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.delay
@@ -45,8 +52,8 @@ fun SigaaNativeLoginScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(if (showWebView) "Navegador SIGAA" else "Login SIGAA", fontWeight = FontWeight.Bold) },
+            AppTopBar(
+                title = { Text(if (showWebView) "Navegador SIGAA" else "Almoço • Entrar no SIGAA") },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (showWebView) {
@@ -55,7 +62,7 @@ fun SigaaNativeLoginScreen(
                             onNavigateBack()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                     }
                 }
             )
@@ -175,8 +182,8 @@ fun SigaaNativeLoginScreen(
                     ) {
                         Text("Login realizado com sucesso!", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text("Voltar")
+                        PrimaryButton(onClick = onNavigateBack) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.back))
                         }
                     }
                 } else {
@@ -189,7 +196,7 @@ fun SigaaNativeLoginScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Conectando ao SIGAA em 2º plano...")
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = { isLoggingIn = false }) {
+                        SecondaryButton(onClick = { isLoggingIn = false }) {
                             Text("Cancelar")
                         }
                     }
@@ -203,27 +210,27 @@ fun SigaaNativeLoginScreen(
                     ) {
                         Text("Login realizado com sucesso!", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text("Voltar")
+                        PrimaryButton(onClick = onNavigateBack) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.back))
                         }
                     }
                 } else {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(24.dp),
+                            .padding(Spacing.ScreenPadding),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Acesso ao SIGAA",
+                            text = "Almoço • Entrar no SIGAA",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        OutlinedTextField(
+                        AppTextField(
                             value = username,
                             onValueChange = { username = it },
                             label = { Text("Usuário") },
@@ -233,21 +240,13 @@ fun SigaaNativeLoginScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        var showPassword by remember { mutableStateOf(false) }
                         
-                        OutlinedTextField(
+                        AppTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Senha") },
-                            visualTransformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            trailingIcon = {
-                                androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
-                                    androidx.compose.material3.Text(text = if (showPassword) "🙈" else "👁️")
-                                }
-                            }
+                            password = true, modifier = Modifier.fillMaxWidth(), singleLine = true,
+keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -265,7 +264,7 @@ fun SigaaNativeLoginScreen(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        Button(
+                        PrimaryButton(
                             onClick = {
                                 if (saveCredentials) {
                                     sharedPrefs.edit()
@@ -283,12 +282,12 @@ fun SigaaNativeLoginScreen(
                                 .height(56.dp),
                             enabled = username.isNotBlank() && password.isNotBlank()
                         ) {
-                            Text("Entrar (Oculto)", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                            Text("Entrar", style = MaterialTheme.typography.titleMedium)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedButton(
+                        SecondaryButton(
                             onClick = {
                                 if (saveCredentials) {
                                     sharedPrefs.edit()
@@ -305,7 +304,7 @@ fun SigaaNativeLoginScreen(
                                 .fillMaxWidth()
                                 .height(56.dp)
                         ) {
-                            Text("Login via Navegador (Clássico)")
+                            Text("Entrar pelo navegador")
                         }
                     }
                 }

@@ -35,3 +35,8 @@ Um cliente não oficial moderno e ágil para o SUAP e SIGAA do Instituto Federal
 
 ## ⚠️ Isenção de Responsabilidade
 Este é um aplicativo **não oficial**, criado por estudantes para a comunidade, sem vínculos com a reitoria do IFAL, SUAP ou SIGAA. As informações trafegam e são obtidas diretamente entre o dispositivo do usuário e os servidores institucionais, preservando a privacidade das credenciais.
+
+
+## Padronização visual
+
+A auditoria, os componentes compartilhados, as alterações por tela e a validação estão em [docs/UI_REFACTOR.md](docs/UI_REFACTOR.md).

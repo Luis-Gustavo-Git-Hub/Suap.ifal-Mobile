@@ -1,5 +1,18 @@
 package com.example.ui
 
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,14 +22,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,7 +64,7 @@ fun CustomThemeCreatorDialog(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(24.dp),
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp
         ) {
@@ -61,13 +73,13 @@ fun CustomThemeCreatorDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
+                        .padding(start = Spacing.large, end = Spacing.normal, top = Spacing.normal, bottom = Spacing.normal),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Palette,
+                            imageVector = Icons.Rounded.Palette,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp)
@@ -79,7 +91,7 @@ fun CustomThemeCreatorDialog(
                         )
                     }
                     IconButton(onClick = onDismissRequest) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        Icon(Icons.Rounded.Close, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.close))
                     }
                 }
 
@@ -90,43 +102,43 @@ fun CustomThemeCreatorDialog(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                        .padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.normal),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.large)
                 ) {
-                    OutlinedTextField(
+                    AppTextField(
                         value = themeName,
                         onValueChange = { themeName = it },
                         label = { Text("Nome do Tema") },
                         placeholder = { Text("Ex: Meu Estilo Lindo") },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     // Theme Mode Selector
-                    Card(
+                    AppCard(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(6.dp),
+                                .padding(Spacing.xs),
                             horizontalArrangement = Arrangement.Center
                         ) {
                             ThemeModeButton(
                                 text = "Claro",
-                                icon = Icons.Default.LightMode,
+                                icon = Icons.Rounded.LightMode,
                                 isSelected = !isDark,
                                 onClick = { isDark = false },
                                 modifier = Modifier.weight(1f)
                             )
                             ThemeModeButton(
                                 text = "Escuro",
-                                icon = Icons.Default.DarkMode,
+                                icon = Icons.Rounded.DarkMode,
                                 isSelected = isDark,
                                 onClick = { isDark = true },
                                 modifier = Modifier.weight(1f)
@@ -135,18 +147,18 @@ fun CustomThemeCreatorDialog(
                     }
 
                     // Colors Selector
-                    Card(
+                    AppCard(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                                .padding(Spacing.normal),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.normal)
                         ) {
                             Text(
                                 "Cor da Interface",
@@ -158,7 +170,7 @@ fun CustomThemeCreatorDialog(
                                 onColorSelected = { primaryColor = it }
                             )
 
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
 
                             Text(
                                 "Cor do Ícone do App",
@@ -169,7 +181,7 @@ fun CustomThemeCreatorDialog(
                                 selectedColor = iconColor,
                                 onColorSelected = { iconColor = it }
                             )
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
                             Text(
                                 "Cor do Fundo do Perfil",
                                 style = MaterialTheme.typography.titleMedium,
@@ -189,16 +201,16 @@ fun CustomThemeCreatorDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(Spacing.normal),
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(
                         onClick = onDismissRequest,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = Spacing.small)
                     ) {
                         Text("Cancelar", fontWeight = FontWeight.Bold)
                     }
-                    Button(
+                    PrimaryButton(
                         onClick = {
                             if (themeName.isNotBlank()) {
                                 onSaveTheme(
@@ -214,9 +226,9 @@ fun CustomThemeCreatorDialog(
                             }
                         },
                         enabled = themeName.isNotBlank(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Salvar", fontWeight = FontWeight.Bold)
                     }
@@ -239,13 +251,13 @@ fun ThemeModeButton(
     
     Surface(
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.small,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.small)
             .clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+            modifier = Modifier.padding(vertical = Spacing.medium, horizontal = Spacing.normal),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -263,10 +275,10 @@ fun ColorPickerGrid(
 ) {
     val colors = ThemeColor.values()
     LazyVerticalGrid(
-        columns = GridCells.Fixed(5),
+        columns = GridCells.Adaptive(minSize = 48.dp),
         modifier = Modifier.heightIn(max = 220.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.normal),
+        verticalArrangement = Arrangement.spacedBy(Spacing.normal),
         contentPadding = PaddingValues(4.dp)
     ) {
         items(colors) { color ->
@@ -281,13 +293,14 @@ fun ColorPickerGrid(
                         color = if (selectedColor == color) MaterialTheme.colorScheme.onSurface else Color.Black.copy(alpha = 0.1f),
                         shape = CircleShape
                     )
-                    .clickable { onColorSelected(color) }
+                    .semantics { contentDescription = color.displayName }
+                    .selectable(selected = selectedColor == color, role = Role.RadioButton, onClick = { onColorSelected(color) })
             ) {
                 if (selectedColor == color) {
                     Icon(
-                        imageVector = Icons.Default.Check,
+                        imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = if (colorObj.luminance() > 0.5f) Color.Black else Color.White,
+                        tint = com.example.ui.theme.readableOn(colorObj),
                         modifier = Modifier.align(Alignment.Center).size(24.dp)
                     )
                 }

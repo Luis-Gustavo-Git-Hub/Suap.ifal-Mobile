@@ -1,14 +1,20 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.appColors
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -23,11 +29,7 @@ fun BlinkingSyncDot(isSynced: Boolean, modifier: Modifier = Modifier) {
         ),
         label = "blinkAlpha"
     )
-    val color = if (isSynced) Color(0xFF4CAF50) else Color.Red
+    val color = if (isSynced) MaterialTheme.appColors.success.color else MaterialTheme.appColors.danger.color
     
-    Box(
-        modifier = modifier
-            .size(10.dp)
-            .background(color.copy(alpha = alpha), CircleShape)
-    )
+    StatusDot(color.copy(alpha = alpha), modifier)
 }

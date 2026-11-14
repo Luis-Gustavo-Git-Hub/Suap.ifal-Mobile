@@ -1,5 +1,14 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import com.example.ui.theme.appColors
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.animation.animateContentSize
 import android.content.Intent
 import android.net.Uri
@@ -12,38 +21,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.rounded.Campaign
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.AttachFile
 import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContactMail
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.MarkEmailUnread
-import androidx.compose.material.icons.filled.OfflinePin
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.ContactMail
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.MarkEmailUnread
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import coil.request.ImageRequest
@@ -69,46 +69,15 @@ fun AvisosScreen(viewModel: SuapViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 24.dp)
+            .padding(top = 0.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-                    .padding(10.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MarkEmailUnread,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = "Avisos",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Comunicados do SUAP",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        ScreenHeader("Avisos", "Comunicados do SUAP", Modifier.padding(horizontal = Spacing.ScreenPadding))
         
         if (professorContacts.isNotEmpty()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 0.dp),
+                    .padding(horizontal = Spacing.ScreenPadding, vertical = 0.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -119,15 +88,15 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 )
                 IconButton(onClick = { showProfessorsSheet = true }) {
                     Icon(
-                        imageVector = Icons.Default.Search,
+                        imageVector = Icons.Rounded.Search,
                         contentDescription = "Expandir E-mails",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = Spacing.ScreenPadding),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(professorContacts) { professor ->
@@ -147,52 +116,24 @@ fun AvisosScreen(viewModel: SuapViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        PaddingValues(horizontal = 24.dp).let {
+        PaddingValues(horizontal = Spacing.ScreenPadding).let {
             Text(
                 text = "Avisos Recentes",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.small)
             )
         }
 
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingState(Modifier.fillMaxWidth())
         } else if (avisos.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.MarkEmailUnread,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Tudo limpo por aqui!",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Nenhum aviso encontrado.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            EmptyState("Nenhum aviso encontrado.", Modifier.fillMaxWidth())
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().weight(1f),
-                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 100.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(horizontal = Spacing.ScreenPadding, vertical = Spacing.normal),
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium)
             ) {
                 items(avisos) { aviso ->
                     CompactAvisoCard(aviso = aviso, viewModel = viewModel)
@@ -203,7 +144,7 @@ fun AvisosScreen(viewModel: SuapViewModel) {
 
 
     if (showProfessorsSheet) {
-        ModalBottomSheet(
+        AppBottomSheet(
             onDismissRequest = { showProfessorsSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
@@ -222,14 +163,14 @@ fun CompactProfessorCard(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    Card(
+    AppCard(
         modifier = Modifier.width(280.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ProfessorAvatar(
                     photoUrl = professor.photoUrl,
@@ -258,7 +199,7 @@ fun CompactProfessorCard(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(6.dp))
 
             // Email row with copy button
@@ -269,7 +210,7 @@ fun CompactProfessorCard(
             ) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Email,
+                        imageVector = Icons.Rounded.Email,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -288,7 +229,7 @@ fun CompactProfessorCard(
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ContentCopy,
+                        imageVector = Icons.Rounded.ContentCopy,
                         contentDescription = "Copiar E-mail",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
@@ -314,15 +255,9 @@ fun ProfessorAvatar(
             "P"
         }
     }
-    val backgroundColor = remember(name) {
-        val colors = listOf(
-            Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFD32F2F),
-            Color(0xFF7B1FA2), Color(0xFFE65100), Color(0xFF00796B),
-            Color(0xFF0288D1), Color(0xFFC2185B)
-        )
-        val index = kotlin.math.abs(name.hashCode()) % colors.size
-        colors[index]
-    }
+    val avatarColors = listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.secondaryContainer,
+        MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.appColors.info.container)
+    val backgroundColor = avatarColors[(name.hashCode() and Int.MAX_VALUE) % avatarColors.size]
     val cookie = remember {
         try {
             android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br") ?: ""
@@ -368,9 +303,9 @@ fun ProfessorAvatar(
             ) {
                 Text(
                     text = initials,
-                    color = Color.White,
+                    color = com.example.ui.theme.readableOn(backgroundColor),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         } else {
@@ -386,20 +321,20 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.extraSmall,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
         Column {
             Row(
-                modifier = Modifier.padding(10.dp),
+                modifier = Modifier.padding(Spacing.small),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Campaign,
+                    imageVector = Icons.Rounded.Campaign,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
@@ -416,8 +351,8 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                     )
                     Text(
                         text = aviso.sender,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
@@ -426,7 +361,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = aviso.date.take(10), // Short date format if possible
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
@@ -445,7 +380,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
-                                imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.Visibility,
+                                imageVector = if (isExpanded) Icons.Rounded.Close else Icons.Rounded.Visibility,
                                 contentDescription = if (isExpanded) "Fechar Detalhes" else "Visualizar",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -455,10 +390,10 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                 }
             }
             if (isExpanded) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                Box(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
+                Box(modifier = Modifier.fillMaxWidth().padding(Spacing.medium)) {
                     if (isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).padding(8.dp).size(24.dp))
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).padding(Spacing.small).size(24.dp))
                     } else {
                         Column {
                             Text(
@@ -472,7 +407,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 messageDetail!!.attachments.forEach { attachment ->
                                     val context = LocalContext.current
-                                    OutlinedButton(
+                                    SecondaryButton(
                                         onClick = {
                                             val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(attachment.url))
                                             try {
@@ -481,10 +416,10 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                                 android.widget.Toast.makeText(context, "Erro ao abrir link", android.widget.Toast.LENGTH_SHORT).show()
                                             }
                                         },
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                                        shape = RoundedCornerShape(8.dp)
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.xs),
+                                        shape = MaterialTheme.shapes.extraSmall
                                     ) {
-                                        Icon(androidx.compose.material.icons.Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Icon(androidx.compose.material.icons.Icons.Rounded.AttachFile, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(attachment.name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                     }
@@ -524,7 +459,7 @@ fun ProfessorContactsSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.9f)
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = Spacing.ScreenPadding)
     ) {
         // Top Bar
         Row(
@@ -534,7 +469,7 @@ fun ProfessorContactsSheetContent(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.ContactMail,
+                    imageVector = Icons.Rounded.ContactMail,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
@@ -549,26 +484,26 @@ fun ProfessorContactsSheetContent(
                 }
             }
             IconButton(onClick = onClose) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = "Fechar")
+                Icon(imageVector = Icons.Rounded.Close, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.close))
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         // Search Input
-        OutlinedTextField(
+        AppTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Buscar por professor ou disciplina...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpar busca")
+                        Icon(Icons.Rounded.Close, contentDescription = "Limpar busca")
                     }
                 }
             },
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.medium,
             singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -598,7 +533,7 @@ fun ProfessorContactsSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 items(filteredContacts) { professor ->
@@ -637,14 +572,14 @@ fun ProfessorCardItem(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
-        shape = RoundedCornerShape(18.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(Spacing.normal)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -665,22 +600,22 @@ fun ProfessorCardItem(
                     Spacer(modifier = Modifier.height(2.dp))
                     if (professor.discipline.isNotEmpty()) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Text(
                                 text = professor.discipline,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs)
                             )
                         }
                     }
                 }
             }
             Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
             Spacer(modifier = Modifier.height(10.dp))
 
             // Email Row
@@ -689,9 +624,9 @@ fun ProfessorCardItem(
                     .fillMaxWidth()
                     .background(
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        RoundedCornerShape(12.dp)
+                        MaterialTheme.shapes.small
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = Spacing.medium, vertical = Spacing.small),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -700,7 +635,7 @@ fun ProfessorCardItem(
                     modifier = Modifier.weight(1f).clickable { onCopyEmail(professor.email) }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Email,
+                        imageVector = Icons.Rounded.Email,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -721,7 +656,7 @@ fun ProfessorCardItem(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ContentCopy,
+                            imageVector = Icons.Rounded.ContentCopy,
                             contentDescription = "Copiar E-mail",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -732,7 +667,7 @@ fun ProfessorCardItem(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Email,
+                            imageVector = Icons.Rounded.Email,
                             contentDescription = "Enviar E-mail",
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)

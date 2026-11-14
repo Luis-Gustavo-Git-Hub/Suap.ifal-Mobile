@@ -1,36 +1,40 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import com.example.ui.theme.appColors
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.EtapaDetail
 import com.example.data.Subject
@@ -90,23 +94,23 @@ fun BoletimScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AppTopBar(
                 title = {
                     Column {
-                        Text("Boletim Escolar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("Boletim Escolar", style = MaterialTheme.typography.titleLarge)
                         Text("${subjects.orEmpty().size} disciplinas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                     }
                 },
                 actions = {
                     TextButton(onClick = { viewModel.downloadBoletim(context) }) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("PDF", fontWeight = FontWeight.Bold)
+                        Text("PDF")
                     }
                 }
             )
@@ -118,38 +122,38 @@ fun BoletimScreen(
                 .padding(padding)
         ) {
             // Search Bar
-            OutlinedTextField(
+            AppTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = Spacing.normal, vertical = Spacing.xs),
                 placeholder = { Text("Pesquisar disciplinas...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Pesquisar") },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Limpar")
+                            Icon(Icons.Rounded.Close, contentDescription = "Limpar")
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp)
+                shape = MaterialTheme.shapes.medium
             )
 
             // Filter Chips Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = Spacing.normal, vertical = Spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
             ) {
                 listOf("Todas", "Favoritas", "Aprovado", "Em Andamento").forEach { filter ->
                     FilterChip(
                         selected = selectedFilter == filter,
                         onClick = { selectedFilter = filter },
-                        label = { Text(filter, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(20.dp)
+                        label = { Text(filter, style = MaterialTheme.typography.bodySmall) },
+                        shape = MaterialTheme.shapes.medium
                     )
                 }
             }
@@ -161,25 +165,25 @@ fun BoletimScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium)
             ) {
                 if (filteredSubjects.isEmpty()) {
                     item {
-                        Card(
+                        AppCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            shape = RoundedCornerShape(16.dp),
+                                .padding(vertical = Spacing.large),
+                            shape = MaterialTheme.shapes.medium,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(24.dp),
+                                    .padding(Spacing.ScreenPadding),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Info,
+                                    imageVector = Icons.Rounded.Info,
                                     contentDescription = null,
                                     modifier = Modifier.size(40.dp),
                                     tint = MaterialTheme.colorScheme.primary
@@ -213,7 +217,7 @@ fun BoletimScreen(
 
     if (selectedSubjectForDetails != null) {
         val subject = selectedSubjectForDetails!!
-        ModalBottomSheet(
+        AppBottomSheet(
             onDismissRequest = { selectedSubjectForDetails = null },
             sheetState = sheetState
         ) {
@@ -292,19 +296,19 @@ fun SubjectBimesterCard(
     val isApproved = safeStatus.contains("Aprovado", ignoreCase = true)
     val isReproved = safeStatus.contains("Reprovado", ignoreCase = true)
     val statusColor = when {
-        isApproved -> Color(0xFF2E7D32)
+        isApproved -> MaterialTheme.appColors.success.color
         isReproved -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.primary
     }
 
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
             // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -313,16 +317,16 @@ fun SubjectBimesterCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier.weight(1f).padding(end = Spacing.small)
                 ) {
                     IconButton(
                         onClick = onToggleFavorite,
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            imageVector = if (subject.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                            imageVector = if (subject.isFavorite) Icons.Rounded.Star else Icons.Outlined.StarBorder,
                             contentDescription = "Favoritar",
-                            tint = if (subject.isFavorite) Color(0xFFFFB300) else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (subject.isFavorite) MaterialTheme.appColors.warning.color else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -337,7 +341,7 @@ fun SubjectBimesterCard(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = statusColor.copy(alpha = 0.12f),
                     contentColor = statusColor
                 ) {
@@ -345,7 +349,7 @@ fun SubjectBimesterCard(
                         text = if (safeStatus.isNotBlank()) safeStatus else "Em curso",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs)
                     )
                 }
             }
@@ -388,7 +392,7 @@ fun SubjectBimesterCard(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(10.dp))
 
             // Footer Summary Info: Points, Media, Absences, Details Button
@@ -404,7 +408,7 @@ fun SubjectBimesterCard(
                             text = "${formatGradeDisplay(totalPoints)} / 24.0",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
-                            color = if (totalPoints >= 24.0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
+                            color = if (totalPoints >= 24.0) MaterialTheme.appColors.success.color else MaterialTheme.colorScheme.primary
                         )
                     }
                     if (totalPoints < 24.0) {
@@ -419,31 +423,31 @@ fun SubjectBimesterCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
                 ) {
                     val safeAbsences = subject.absences.orEmpty()
                     if (safeAbsences.isNotBlank() && safeAbsences != "0") {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
                         ) {
                             Text(
                                 text = "$safeAbsences faltas",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs)
                             )
                         }
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = MaterialTheme.shapes.extraSmall,
                         color = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("Média: ", style = MaterialTheme.typography.labelSmall)
@@ -457,11 +461,11 @@ fun SubjectBimesterCard(
 
                     OutlinedIconButton(
                         onClick = { onShowDetails(subject) },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier.size(34.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Book,
+                            imageVector = Icons.Rounded.Book,
                             contentDescription = "Detalhes das Notas",
                             modifier = Modifier.size(18.dp)
                         )
@@ -487,7 +491,7 @@ fun BimesterItem(
     val gradeValue = effectiveGrade ?: origGrade ?: -1.0
 
     val gradeColor = when {
-        gradeValue >= 6.0 -> Color(0xFF2E7D32)
+        gradeValue >= 6.0 -> MaterialTheme.appColors.success.color
         gradeValue in 0.0..5.99 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -496,9 +500,9 @@ fun BimesterItem(
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-            .padding(vertical = 8.dp, horizontal = 4.dp),
+            .padding(vertical = Spacing.small, horizontal = Spacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -513,9 +517,9 @@ fun BimesterItem(
         // Grade Pill
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(gradeColor.copy(alpha = 0.12f))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = Spacing.small, vertical = Spacing.xs),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -530,7 +534,7 @@ fun BimesterItem(
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Era ${formatGradeDisplay(origGrade)}",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textDecoration = TextDecoration.LineThrough
             )
@@ -540,7 +544,7 @@ fun BimesterItem(
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Turma: ${formatGradeDisplay(classGrade)}",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium
             )
@@ -560,7 +564,7 @@ fun SubjectDetailsSheet(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.85f)
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.medium)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -583,7 +587,7 @@ fun SubjectDetailsSheet(
                 )
             }
             IconButton(onClick = onClose) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = "Fechar")
+                Icon(imageVector = Icons.Rounded.Close, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.close))
             }
         }
 
@@ -629,14 +633,14 @@ fun SubjectDetailsSheet(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(etapaDetails) { etapa ->
-                    Card(
+                    AppCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                         )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(Spacing.medium)) {
                             Text(
                                 text = etapa.title,
                                 style = MaterialTheme.typography.titleSmall,
@@ -649,11 +653,11 @@ fun SubjectDetailsSheet(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
+                                        .padding(vertical = Spacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Surface(
-                                        shape = RoundedCornerShape(6.dp),
+                                        shape = MaterialTheme.shapes.extraSmall,
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         modifier = Modifier.width(44.dp)
                                     ) {
@@ -662,7 +666,7 @@ fun SubjectDetailsSheet(
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.Bold,
                                             textAlign = TextAlign.Center,
-                                            modifier = Modifier.padding(vertical = 3.dp)
+                                            modifier = Modifier.padding(vertical = Spacing.xs)
                                         )
                                     }
 
@@ -677,7 +681,7 @@ fun SubjectDetailsSheet(
                                         if (item.tipo.isNotBlank() && item.tipo != item.descricao) {
                                             Text(
                                                 text = item.tipo,
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                                style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -691,7 +695,7 @@ fun SubjectDetailsSheet(
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = when {
-                                            gradeVal != null && gradeVal >= 6.0 -> Color(0xFF2E7D32)
+                                            gradeVal != null && gradeVal >= 6.0 -> MaterialTheme.appColors.success.color
                                             gradeVal != null -> MaterialTheme.colorScheme.error
                                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                                         }

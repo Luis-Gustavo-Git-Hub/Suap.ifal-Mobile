@@ -1,5 +1,14 @@
 package com.example.ui
 
+import com.example.ui.theme.Spacing
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import androidx.compose.material3.MaterialTheme
+
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
@@ -12,13 +21,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.util.CrashLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -169,25 +176,25 @@ fun LogsScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Logs e Erros do App", fontWeight = FontWeight.Bold) },
+            AppTopBar(
+                title = { Text("Logs e Erros do App") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { loadLogs() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar")
+                        Icon(Icons.Rounded.Refresh, contentDescription = "Atualizar")
                     }
                     IconButton(onClick = {
                         CrashLogger.clearLogs(context)
                         loadLogs()
                     }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Limpar Logs Internos")
+                        Icon(Icons.Rounded.Delete, contentDescription = "Limpar Logs Internos")
                     }
                     IconButton(onClick = { shareLogs() }) {
-                        Icon(Icons.Default.Share, contentDescription = "Compartilhar")
+                        Icon(Icons.Rounded.Share, contentDescription = "Compartilhar")
                     }
                 }
             )
@@ -199,25 +206,25 @@ fun LogsScreen(onBack: () -> Unit) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .padding(horizontal = Spacing.normal),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.medium),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
+                    PrimaryButton(
                         onClick = { triggerSaveLogs() },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Baixar Logs (.txt)")
                     }
 
-                    OutlinedButton(
+                    SecondaryButton(
                         onClick = { shareLogs() },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Compartilhar")
                     }
@@ -233,14 +240,14 @@ fun LogsScreen(onBack: () -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                    .padding(horizontal = Spacing.normal, vertical = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 FilterChip(
                     selected = filterOnlyErrors,
                     onClick = { filterOnlyErrors = !filterOnlyErrors },
-                    label = { Text("Apenas Erros/Crashes", fontSize = 12.sp) }
+                    label = { Text("Apenas Erros/Crashes", style = MaterialTheme.typography.bodySmall) }
                 )
                 Text(
                     text = "${displayedLogs.size} linhas",
@@ -256,7 +263,7 @@ fun LogsScreen(onBack: () -> Unit) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp),
+                            .padding(horizontal = Spacing.normal),
                         contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
                         itemsIndexed(displayedLogs, key = { index, _ -> index }) { _, log ->
@@ -264,9 +271,9 @@ fun LogsScreen(onBack: () -> Unit) {
                             val isError = safeLog.contains(" E ") || safeLog.contains("FATAL") || safeLog.contains("Exception") || safeLog.contains("Error", ignoreCase = true) || safeLog.contains("CRASH")
                             Text(
                                 text = safeLog,
-                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                                 color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(vertical = 1.dp)
+                                modifier = Modifier.padding(vertical = Spacing.xs)
                             )
                         }
                     }

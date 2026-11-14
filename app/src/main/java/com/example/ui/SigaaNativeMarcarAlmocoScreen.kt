@@ -1,5 +1,13 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import androidx.compose.material3.MaterialTheme
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.CookieManager
@@ -11,10 +19,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,11 +54,11 @@ fun SigaaNativeMarcarAlmocoScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Marcar Almoço", fontWeight = FontWeight.Bold) },
+            AppTopBar(
+                title = { Text("Almoço") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                     }
                 }
             )
@@ -250,34 +257,34 @@ fun SigaaNativeMarcarAlmocoScreen(
                 }
             } else if (loadError.isNotEmpty()) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    modifier = Modifier.fillMaxSize().padding(Spacing.ScreenPadding),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(loadError, color = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onNavigateBack) { Text("Voltar") }
+                    PrimaryButton(onClick = onNavigateBack) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.back)) }
                 }
             } else if (step == 5) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    modifier = Modifier.fillMaxSize().padding(Spacing.ScreenPadding),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(confirmMessage, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onNavigateBack) { Text("Voltar") }
+                    PrimaryButton(onClick = onNavigateBack) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.back)) }
                 }
             } else if (step == 3) {
                 if (mealOptions.isEmpty()) {
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        modifier = Modifier.fillMaxSize().padding(Spacing.ScreenPadding),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text("Nenhum dia disponível para marcação.")
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) { Text("Voltar") }
+                        PrimaryButton(onClick = onNavigateBack) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.back)) }
                     }
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -288,10 +295,10 @@ fun SigaaNativeMarcarAlmocoScreen(
                             items(mealOptions) { option ->
                                 val (dayOfWeek, formattedDate) = getDayOfWeekAndDate(option.date)
                                 val isChecked = option.checked
-                                Card(
+                                AppCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 6.dp)
+                                        .padding(vertical = Spacing.xs)
                                         .then(
                                             if (!option.disabled) {
                                                 Modifier.clickable {
@@ -304,37 +311,37 @@ fun SigaaNativeMarcarAlmocoScreen(
                                                 }
                                             } else Modifier
                                         ),
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                     colors = CardDefaults.cardColors(
                                         containerColor = if (isChecked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                                                          else MaterialTheme.colorScheme.surfaceVariant
                                     ),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                        modifier = Modifier.padding(Spacing.normal).fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Column(modifier = Modifier.weight(1f)) {
                                             if (dayOfWeek.isNotEmpty()) {
                                                 Surface(
                                                     color = MaterialTheme.colorScheme.primary,
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    modifier = Modifier.padding(bottom = 6.dp)
+                                                    shape = MaterialTheme.shapes.extraSmall,
+                                                    modifier = Modifier.padding(bottom = Spacing.xs)
                                                 ) {
                                                     Text(
                                                         text = dayOfWeek.uppercase(),
                                                         style = MaterialTheme.typography.labelMedium,
                                                         fontWeight = FontWeight.ExtraBold,
                                                         color = MaterialTheme.colorScheme.onPrimary,
-                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                                        modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs)
                                                     )
                                                 }
                                             }
                                             
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(
-                                                    imageVector = Icons.Default.CalendarToday,
+                                                    imageVector = Icons.Rounded.CalendarToday,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(16.dp),
                                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -375,7 +382,7 @@ fun SigaaNativeMarcarAlmocoScreen(
                             }
                         }
                         
-                        Button(
+                        PrimaryButton(
                             onClick = {
                                 step = 4
                                 loadingStatus = "Confirmando no SIGAA..."
@@ -407,9 +414,9 @@ fun SigaaNativeMarcarAlmocoScreen(
                                 """.trimIndent()
                                 webView?.evaluateJavascript(js, null)
                             },
-                            modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp)
+                            modifier = Modifier.fillMaxWidth().padding(Spacing.normal).height(56.dp)
                         ) {
-                            Text("Confirmar no SIGAA", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                            Text("Confirmar no SIGAA", style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }
