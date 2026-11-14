@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "Suap.ifal Mobile"
 
 include(":app")
+include(":baselineprofile")

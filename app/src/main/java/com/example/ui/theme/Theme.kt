@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import android.util.Log
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
 
 private val LightColorScheme =  lightColorScheme(
     primary = PrimaryBlue,
@@ -141,9 +143,31 @@ private val CyberpunkColorScheme = darkColorScheme(
     onSurfaceVariant = Color(0xFF94A3B8)
 )
 
+private val RobinKawaColorScheme = lightColorScheme(
+    primary = Color(0xFFE91E63),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFFCE4EC),
+    onPrimaryContainer = Color(0xFF880E4F),
+    secondary = Color(0xFF0288D1),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE1F5FE),
+    onSecondaryContainer = Color(0xFF01579B),
+    tertiary = Color(0xFF8E24AA),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF3E5F5),
+    onTertiaryContainer = Color(0xFF4A148C),
+    background = Color(0xFFFFF0F5),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFF8BBD0).copy(alpha = 0.4f),
+    onBackground = Color(0xFF1F2937),
+    onSurface = Color(0xFF1F2937),
+    onSurfaceVariant = Color(0xFF4B5563)
+)
+
 @Composable
 fun MyApplicationTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
+    fontOverride: AppFontFamily? = null,
     dynamicColor: Boolean = false, // disabled for strict theme matching
     content: @Composable () -> Unit,
 ) {
@@ -158,15 +182,21 @@ fun MyApplicationTheme(
         is AppTheme.DRACULA -> DraculaColorScheme
         is AppTheme.SUNSET -> SunsetColorScheme
         is AppTheme.CYBERPUNK -> CyberpunkColorScheme
+        is AppTheme.ROBIN_KAWA -> RobinKawaColorScheme
         is AppTheme.Custom -> {
             val primary = Color(appTheme.data.primaryColor.hex)
             val profile = appTheme.data.profileColor?.let { Color(it.hex) }
+            val primaryLuminance = try { primary.luminance() } catch (e: Exception) { 0f }
+            val profileLuminance = try { profile?.luminance() ?: primaryLuminance } catch (e: Exception) { 0f }
+            val onPrimaryColor = if (primaryLuminance > 0.5f) Color.Black else Color.White
+            val onPrimaryContainerColor = if (profileLuminance > 0.5f) Color.Black else Color.White
+
             if (appTheme.data.isDark) {
                 darkColorScheme(
-                    primary = primary,
-                    onPrimary = Color.Black,
-                    primaryContainer = profile ?: primary.copy(alpha = 0.5f),
-                    onPrimaryContainer = profile?.copy(alpha = 0.8f) ?: primary.copy(alpha = 0.8f),
+                    primary = if (primary == Color.Black || primary == Color(0xFF000000)) Color(0xFF333333) else primary,
+                    onPrimary = onPrimaryColor,
+                    primaryContainer = profile ?: (if (primary == Color.Black || primary == Color(0xFF000000)) Color(0xFF222222) else primary.copy(alpha = 0.5f)),
+                    onPrimaryContainer = onPrimaryContainerColor,
                     secondary = primary,
                     background = Color(0xFF121212),
                     surface = Color(0xFF1E1E1E),
@@ -177,10 +207,10 @@ fun MyApplicationTheme(
                 )
             } else {
                 lightColorScheme(
-                    primary = primary,
-                    onPrimary = Color.White,
-                    primaryContainer = profile ?: primary.copy(alpha = 0.2f),
-                    onPrimaryContainer = profile ?: primary,
+                    primary = if (primary == Color.White || primary == Color(0xFFFFFFFF)) Color(0xFFDDDDDD) else primary,
+                    onPrimary = onPrimaryColor,
+                    primaryContainer = profile ?: (if (primary == Color.White || primary == Color(0xFFFFFFFF)) Color(0xFFEEEEEE) else primary.copy(alpha = 0.2f)),
+                    onPrimaryContainer = onPrimaryContainerColor,
                     secondary = primary,
                     background = Color(0xFFF8F9FA),
                     surface = Color(0xFFFFFFFF),
@@ -193,9 +223,32 @@ fun MyApplicationTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+    val typography = getTypographyForTheme(appTheme, fontOverride)
+
+    val semanticColors = when (appTheme) {
+        is AppTheme.AMOLED -> AmoledSemanticColors
+        is AppTheme.DARK, is AppTheme.DRACULA, is AppTheme.CYBERPUNK, is AppTheme.DEEP_BLUE -> DarkSemanticColors
+        is AppTheme.LIGHT, is AppTheme.NATURE, is AppTheme.SUNSET, is AppTheme.ROBIN_KAWA -> LightSemanticColors
+        is AppTheme.SYSTEM -> if (isSystemDark) DarkSemanticColors else LightSemanticColors
+        is AppTheme.Custom -> if (appTheme.data.isDark) DarkSemanticColors else LightSemanticColors
+    }
+
+    val appShapes = androidx.compose.material3.Shapes(
+        extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+        small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        medium = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        large = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     )
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalSemanticColors provides semanticColors
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = typography,
+            shapes = appShapes,
+            content = content
+        )
+    }
 }

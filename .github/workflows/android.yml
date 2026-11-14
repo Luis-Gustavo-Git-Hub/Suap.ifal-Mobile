@@ -1,0 +1,138 @@
+name: Android checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Scan locked dependencies with OSV
+        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        with:
+          scan-args: |-
+            -r
+            ./
+
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-37.0 build-tools;37.0.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, test, and lint
+        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lint
+
+  baseline-profile:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-37.0 build-tools;37.0.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Add local-only Firebase config for the signed-out Friends benchmark
+        run: |
+          if [ ! -f app/google-services.json ]; then
+            cat > app/google-services.json <<'JSON'
+            {
+              "project_info": {
+                "project_number": "123456789012",
+                "project_id": "suap-offline-benchmark",
+                "storage_bucket": "suap-offline-benchmark.appspot.com"
+              },
+              "client": [
+                {
+                  "client_info": {
+                    "mobilesdk_app_id": "1:123456789012:android:00000000000000000000000000000000",
+                    "android_client_info": {
+                      "package_name": "com.aistudio.suap.xkcdz"
+                    }
+                  },
+                  "api_key": [
+                    { "current_key": "benchmark-only-no-network-key" }
+                  ],
+                  "services": {
+                    "appinvite_service": {
+                      "other_platform_oauth_client": []
+                    }
+                  }
+                }
+              ],
+              "configuration_version": "1"
+            }
+          JSON
+          fi
+
+      - name: Enable KVM access for the emulator
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+          else
+            echo "KVM is unavailable on this runner; the emulator will use software acceleration."
+          fi
+
+      - name: Generate Baseline Profile and measure release screens
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            set -e
+            ./gradlew :app:generateBaselineProfile -PbenchmarkSeedEnabled=true --no-daemon --max-workers=2
+            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest -PbenchmarkSeedEnabled=true -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR --no-daemon --max-workers=2
+
+      - name: Upload generated profile and benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suap-baseline-profile
+          path: |
+            app/src/main/generated/baselineProfiles/
+            baselineprofile/build/reports/androidTests/connected/
+            baselineprofile/build/outputs/connected_android_test_additional_output/
+          if-no-files-found: warn

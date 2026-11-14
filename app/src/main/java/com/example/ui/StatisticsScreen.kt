@@ -1,538 +1,570 @@
 package com.example.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.TrendingDown
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.ui.text.style.TextAlign
-import kotlin.math.abs
-
 import com.example.data.Subject
+import com.example.domain.AcademicCalculator
+import com.example.domain.AcademicStatus
+import com.example.domain.StatisticsCalculator
+import com.example.domain.StatisticsSnapshot
+import com.example.domain.SubjectStatistics
+import com.example.ui.theme.AppSemanticColors
+import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+private val statisticTabs = listOf("Resumo", "Notas", "Frequência", "Comparar", "Simulador")
 
 @Composable
 fun StatisticsScreen(viewModel: SuapViewModel) {
-    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-    
-    val scrollState = rememberScrollState()
-    val studentAvgStr by viewModel.studentAverage.collectAsStateWithLifecycle()
-    val classAvgStr by viewModel.classAverage.collectAsStateWithLifecycle()
-
+    val snapshot by viewModel.statisticsSnapshot.collectAsStateWithLifecycle()
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var selectedStage by rememberSaveable { mutableIntStateOf(1) }
+    var minimumAttendance by rememberSaveable { mutableFloatStateOf(StatisticsCalculator.DEFAULT_MINIMUM_ATTENDANCE.toFloat()) }
+    var targetAverage by rememberSaveable { mutableFloatStateOf(AcademicCalculator.PASSING_AVERAGE.toFloat()) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(top = 24.dp, start = 16.dp, end = 16.dp)
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
     ) {
-        Text(
-            text = "Estatísticas Acadêmicas",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-
-        if (subjects.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "Sem dados suficientes para estatísticas.",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            statisticTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title, maxLines = 1, softWrap = false) }
                 )
             }
+        }
+        when (selectedTab) {
+            0 -> SummaryTab(snapshot)
+            1 -> NotesTab(snapshot, selectedStage, { selectedStage = it })
+            2 -> FrequencyTab(snapshot, minimumAttendance, { minimumAttendance = it })
+            3 -> CompareTab(snapshot, selectedStage, { selectedStage = it })
+            else -> SimulatorTab(snapshot, targetAverage, { targetAverage = it })
+        }
+    }
+}
+
+@Composable
+private fun SummaryTab(snapshot: StatisticsSnapshot) {
+    StatisticsList {
+        item { PageHeading(Icons.Default.Insights, "Seu resumo acadêmico", "Notas e dados salvos no dispositivo") }
+        if (!snapshot.hasData) {
+            item { EmptyState("Sincronize para ver suas estatísticas.") }
         } else {
-            val validSubjects = subjects.filter { parseGrade(it.finalGrade) != null || parseGrade(it.grade1) != null }
-            
-            // Compact General Stats Grid
-            GeneralStatsGrid(subjects, validSubjects, studentAvgStr)
-
-            if (validSubjects.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Média por Bimestre
-                    Box(modifier = Modifier.weight(1f)) {
-                        BimesterPerformanceCompact(subjects)
-                    }
-                    // Distribuição de Notas
-                    Box(modifier = Modifier.weight(1f)) {
-                        GradeDistributionCard(validSubjects)
-                    }
-                }
-                
-                ComparisonChartCard(validSubjects)
-
-                // Melhores e Piores em formato de lista compacta
-                ExtremesCard(validSubjects)
+            item {
+                MetricGrid(
+                    listOf(
+                        "Média geral" to gradeText(snapshot.overallAverage),
+                        "Média da turma" to gradeText(snapshot.classAverage),
+                        "Frequência" to percentText(snapshot.globalFrequency),
+                        "Disciplinas acima da turma" to percentText(snapshot.aboveClassPercent)
+                    )
+                )
             }
-
-            // Alertas (Faltas e Recuperação) em um único card compacto
-            AlertsCard(subjects)
-
-            // Fallback for text-only grades
-            if (validSubjects.isEmpty() && subjects.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Notas Detalhadas (Texto)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        subjects.forEach { s ->
-                            Text("${s.name}: ${s.finalGrade.ifEmpty { s.grade1.ifEmpty { "Sem nota" } }}", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
+            item {
+                StatusSummary(snapshot)
             }
-        }
-        Spacer(modifier = Modifier.height(100.dp))
-    }
-}
-
-@Composable
-fun GeneralStatsGrid(subjects: List<Subject>, validSubjects: List<Subject>, studentAvgStr: String) {
-    val totalAbsences = subjects.sumOf { it.absences.toIntOrNull() ?: 0 }
-    val allGrades = validSubjects.mapNotNull { getHighestGrade(it) }
-    val calculatedAverage = if (allGrades.isNotEmpty()) allGrades.average() else 0.0
-    val approvalRate = if (allGrades.isNotEmpty()) {
-        (allGrades.count { it >= 6.0 }.toDouble() / allGrades.size) * 100
-    } else 0.0
-
-    val finalStudentAvg = if (studentAvgStr != "-" && studentAvgStr.isNotEmpty()) studentAvgStr else String.format("%.1f", calculatedAverage)
-    
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            MiniStatCard("Média do Aluno", finalStudentAvg, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
-            MiniStatCard("Faltas Totais", totalAbsences.toString(), MaterialTheme.colorScheme.error, Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            MiniStatCard("Disciplinas", subjects.size.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
-            MiniStatCard("Aproveitamento", "${approvalRate.toInt()}%", MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-fun MiniStatCard(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
-        }
-    }
-}
-
-@Composable
-fun BimesterPerformanceCompact(subjects: List<Subject>) {
-    val b1 = subjects.mapNotNull { parseGrade(it.grade1) }.average().takeIf { !it.isNaN() } ?: 0.0
-    val b2 = subjects.mapNotNull { parseGrade(it.grade2) }.average().takeIf { !it.isNaN() } ?: 0.0
-    val b3 = subjects.mapNotNull { parseGrade(it.grade3) }.average().takeIf { !it.isNaN() } ?: 0.0
-    val b4 = subjects.mapNotNull { parseGrade(it.grade4) }.average().takeIf { !it.isNaN() } ?: 0.0
-    val maxVal = maxOf(b1, b2, b3, b4, 10.0)
-
-    Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text("Por Bimestre", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.weight(1f))
-            Row(
-                modifier = Modifier.fillMaxWidth().height(100.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                CompactBarChartItem("1º", b1, maxVal)
-                CompactBarChartItem("2º", b2, maxVal)
-                CompactBarChartItem("3º", b3, maxVal)
-                CompactBarChartItem("4º", b4, maxVal)
+            item { SectionHeading("Evolução das médias", "Média das notas disponíveis em cada etapa") }
+            item { StageChart(snapshot) }
+            item {
+                InformationCard(
+                    title = "Progresso acadêmico",
+                    body = "${snapshot.totalXp} XP · nível ${snapshot.level}. IRA não está disponível nos dados sincronizados."
+                )
             }
         }
     }
 }
 
 @Composable
-fun CompactBarChartItem(label: String, value: Double, maxVal: Double) {
-    val heightFraction = if (maxVal > 0) (value / maxVal).toFloat() else 0f
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom, modifier = Modifier.fillMaxHeight()) {
-        Text(if (value > 0) String.format("%.1f", value) else "-", style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp))
-        Spacer(modifier = Modifier.height(2.dp))
-        Box(
-            modifier = Modifier
-                .width(16.dp)
-                .fillMaxHeight(heightFraction.coerceIn(0f, 1f))
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
-@Composable
-fun GradeDistributionCard(subjects: List<Subject>) {
-    val grades = subjects.mapNotNull { getHighestGrade(it) }
-    val excellent = grades.count { it >= 9.0 }
-    val good = grades.count { it >= 7.0 && it < 9.0 }
-    val average = grades.count { it >= 5.0 && it < 7.0 }
-    val poor = grades.count { it < 5.0 }
-    val total = grades.size.coerceAtLeast(1)
-
-    Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text("Distribuição", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.weight(1f))
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                DistBar("9-10", excellent, total, Color(0xFF4CAF50))
-                DistBar("7-8.9", good, total, Color(0xFF8BC34A))
-                DistBar("5-6.9", average, total, Color(0xFFFFC107))
-                DistBar("< 5", poor, total, Color(0xFFF44336))
+private fun NotesTab(snapshot: StatisticsSnapshot, selectedStage: Int, onStageSelected: (Int) -> Unit) {
+    val rows = snapshot.subjects.filter { it.grades.any { grade -> grade != null } }
+    StatisticsList {
+        item { PageHeading(Icons.Default.BarChart, "Notas", "Evolução por etapa e disciplina") }
+        if (!snapshot.hasData) {
+            item { EmptyState("Sincronize para ver a evolução das notas.") }
+        } else {
+            item { StagePicker(selectedStage, onStageSelected) }
+            item {
+                val stage = snapshot.stages.getOrNull(selectedStage - 1)
+                MetricGrid(
+                    listOf(
+                        "Média nesta etapa" to gradeText(stage?.studentAverage),
+                        "Média da turma" to gradeText(stage?.classAverage)
+                    )
+                )
             }
-        }
-    }
-}
-
-@Composable
-fun DistBar(label: String, count: Int, total: Int, color: Color) {
-    val fraction = if (total > 0) count.toFloat() / total else 0f
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(label, style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp), modifier = Modifier.width(36.dp))
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(8.dp)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(fraction)
-                    .fillMaxHeight()
-                    .background(color, RoundedCornerShape(4.dp))
-            )
-        }
-        Text(count.toString(), style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp), modifier = Modifier.width(16.dp).padding(start = 4.dp))
-    }
-}
-
-@Composable
-fun ExtremesCard(subjects: List<Subject>) {
-    val sortedSubjects = subjects.sortedByDescending { getHighestGrade(it) ?: 0.0 }
-    val best = sortedSubjects.take(2)
-    val worst = sortedSubjects.takeLast(2).reversed() // Pior primeiro
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Destaques", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                best.forEach { s ->
-                    val g = getHighestGrade(s) ?: 0.0
-                    Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    Text(String.format("%.1f", g), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.TrendingDown, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Atenção", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                worst.forEach { s ->
-                    val g = getHighestGrade(s) ?: 0.0
-                    Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    Text(String.format("%.1f", g), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AlertsCard(subjects: List<Subject>) {
-    val worstAbsences = subjects.filter { (it.absences.toIntOrNull() ?: 0) > 0 }
-        .sortedByDescending { it.absences.toIntOrNull() ?: 0 }
-        .take(2)
-
-    fun getMA(s: Subject): Double? {
-        val grades = listOfNotNull(parseGrade(s.grade1), parseGrade(s.grade2), parseGrade(s.grade3), parseGrade(s.grade4))
-        return if (grades.isNotEmpty()) grades.average() else null
-    }
-
-    val atRiskSubjects = subjects.mapNotNull { s ->
-        val rawMa = getMA(s)
-        if (rawMa != null) {
-            val ma = if (rawMa > 10.0) rawMa / 10.0 else rawMa
-            if (ma < 6.0) Pair(s, ma) else null
-        } else null
-    }.take(2)
-
-    if (worstAbsences.isNotEmpty() || atRiskSubjects.isNotEmpty()) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text("Alertas", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                if (worstAbsences.isNotEmpty()) {
-                    Text("Faltas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f))
-                    worstAbsences.forEach { s ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            Text("${s.absences} faltas", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                if (atRiskSubjects.isNotEmpty()) {
-                    Text("Risco de Recuperação (MA < 6.0)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f))
-                    atRiskSubjects.forEach { (s, ma) ->
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            Text(String.format("MA: %.1f", ma), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-@Composable
-fun ComparisonChartCard(subjects: List<Subject>) {
-    var selectedEtapa by remember { androidx.compose.runtime.mutableStateOf(1) } // 1 to 4
-    var showClassAverage by remember { androidx.compose.runtime.mutableStateOf(true) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { showClassAverage = !showClassAverage },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Gráfico de Desempenho", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                
-                // Dropdown for Etapa
-                var expanded by remember { androidx.compose.runtime.mutableStateOf(false) }
-                Box {
-                    OutlinedButton(onClick = { expanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(32.dp)) {
-                        Text("Etapa: $selectedEtapa", style = MaterialTheme.typography.labelSmall)
-                    }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        (1..4).forEach { etapa ->
-                            DropdownMenuItem(text = { Text("Etapa $etapa") }, onClick = { selectedEtapa = etapa; expanded = false })
-                        }
-                    }
-                }
-            }
-            
-            Text(
-                "Toque no gráfico para ${if (showClassAverage) "ocultar" else "mostrar"} a média da turma", 
-                style = MaterialTheme.typography.labelSmall, 
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Legend
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Nota do Aluno", style = MaterialTheme.typography.labelSmall)
-                if (showClassAverage) {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp)))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Média da Turma", style = MaterialTheme.typography.labelSmall)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            val validSubjects = subjects.filter { 
-                val grade = when(selectedEtapa) {
-                    1 -> it.grade1
-                    2 -> it.grade2
-                    3 -> it.grade3
-                    4 -> it.grade4
-                    else -> ""
-                }
-                parseGrade(grade) != null
-            }
-            
-            if (validSubjects.isEmpty()) {
-                Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
-                    Text("Sem notas para esta etapa.", style = MaterialTheme.typography.bodySmall)
-                }
+            item { StageChart(snapshot) }
+            if (rows.isEmpty()) {
+                item { EmptyState("Ainda não há notas por disciplina para esta etapa.") }
             } else {
-                val maxHeight = if (showClassAverage) 340.dp else 250.dp
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = maxHeight)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    validSubjects.forEach { subject ->
-                        val gradeStr = when(selectedEtapa) {
-                            1 -> subject.grade1
-                            2 -> subject.grade2
-                            3 -> subject.grade3
-                            4 -> subject.grade4
-                            else -> ""
-                        }
-                        val grade = parseGrade(gradeStr) ?: 0.0
-                        
-                        val classGradeStr = when(selectedEtapa) {
-                            1 -> subject.classGrade1
-                            2 -> subject.classGrade2
-                            3 -> subject.classGrade3
-                            4 -> subject.classGrade4
-                            else -> ""
-                        }
-                        val classAvg = classGradeStr.replace(",", ".").toDoubleOrNull() ?: 0.0
-                        
-                        SubjectComparisonHorizontalBars(
-                            subjectName = subject.name.split(" - ").last().trim(),
-                            studentGrade = grade,
-                            classGrade = classAvg,
-                            showClassAverage = showClassAverage
+                item { SectionHeading("Notas por disciplina", "A recuperação segue a regra do boletim") }
+                items(rows, key = { it.subject.id.ifBlank { it.subject.name } }) { row ->
+                    NoteSubjectCard(row, selectedStage)
+                }
+                item { DistributionCard(rows) }
+                item {
+                    val highest = rows.maxByOrNull { it.average ?: -1.0 }
+                    val lowest = rows.filter { it.average != null }.minByOrNull { it.average!! }
+                    InformationCard(
+                        title = "Destaques",
+                        body = "Melhor média: ${highest?.subject?.name ?: "—"} (${gradeText(highest?.average)}). Menor média: ${lowest?.subject?.name ?: "—"} (${gradeText(lowest?.average)})."
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FrequencyTab(snapshot: StatisticsSnapshot, minimumAttendance: Float, onMinimumChange: (Float) -> Unit) {
+    val rows = snapshot.subjects.filter { it.absences > 0 || it.subject.absences.isNotBlank() }
+        .sortedByDescending { it.absences }
+    StatisticsList {
+        item { PageHeading(Icons.Default.CalendarMonth, "Frequência", "Faltas registradas no SUAP") }
+        if (!snapshot.hasData) {
+            item { EmptyState("Sincronize para ver suas faltas e frequência.") }
+        } else {
+            item {
+                MetricGrid(
+                    listOf(
+                        "Frequência global" to percentText(snapshot.globalFrequency),
+                        "Faltas globais" to (snapshot.globalAbsences?.toString() ?: "—"),
+                        "Aulas dadas" to (snapshot.passedClasses?.toString() ?: "—")
+                    )
+                )
+            }
+            item {
+                CardPanel {
+                    Text("Referência mínima de frequência", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Ajuste conforme o regulamento do IFAL. O valor inicial de 75% é uma proposta, não uma regra confirmada.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${minimumAttendance.roundToInt()}%", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Slider(value = minimumAttendance, onValueChange = onMinimumChange, valueRange = 50f..100f, steps = 9)
+                    snapshot.globalFrequency?.let { frequency ->
+                        val enough = frequency >= minimumAttendance
+                        Text(
+                            if (enough) "Acima da referência configurada" else "Abaixo da referência configurada",
+                            color = if (enough) AppSemanticColors.success else AppSemanticColors.danger,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    val total = snapshot.totalClasses
+                    val absences = snapshot.globalAbsences
+                    if (total != null && absences != null) {
+                        val maxAbsences = (total * (1.0 - minimumAttendance / 100.0)).toInt()
+                        val remaining = (maxAbsences - absences).coerceAtLeast(0)
+                        Text(
+                            "Estimativa: até $remaining falta(s) adicional(is) pelo limite configurado, considerando a carga total salva no SUAP.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
+            item { SectionHeading("Faltas por disciplina", "A quantidade está salva; o SUAP não fornece o total de aulas de cada matéria") }
+            if (rows.isEmpty()) item { EmptyState("Não há dados de faltas por disciplina.") }
+            else items(rows, key = { it.subject.id.ifBlank { it.subject.name } }) { AbsenceCard(it) }
+            item {
+                InformationCard(
+                    title = "Histórico diário indisponível",
+                    body = "O app ainda não recebe datas de falta do SUAP. Por isso, não exibe mapa de calor nem distribuição por dia da semana."
+                )
+            }
         }
     }
 }
 
 @Composable
-fun SubjectComparisonHorizontalBars(subjectName: String, studentGrade: Double, classGrade: Double, showClassAverage: Boolean) {
-    val maxGrade = 10.0
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            subjectName,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp))) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth((studentGrade / maxGrade).coerceIn(0.0, 1.0).toFloat())
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+private fun CompareTab(snapshot: StatisticsSnapshot, selectedStage: Int, onStageSelected: (Int) -> Unit) {
+    val rows = snapshot.subjects.filter { it.grades.getOrNull(selectedStage - 1) != null }
+    val stage = snapshot.stages.getOrNull(selectedStage - 1)
+    val stageComparisons = snapshot.subjects.mapNotNull { row ->
+        val student = row.grades.getOrNull(selectedStage - 1)
+        val classroom = row.classGrades.getOrNull(selectedStage - 1)
+        if (student != null && classroom != null) student to classroom else null
+    }
+    val aboveClassPercent = stageComparisons.takeIf { it.isNotEmpty() }
+        ?.let { pairs -> pairs.count { it.first > it.second }.toDouble() * 100.0 / pairs.size }
+    StatisticsList {
+        item { PageHeading(Icons.Default.CompareArrows, "Comparar", "Você e a média da turma") }
+        if (!snapshot.hasData) {
+            item { EmptyState("Sincronize suas notas para comparar com a turma.") }
+        } else {
+            item { StagePicker(selectedStage, onStageSelected) }
+            item {
+                InformationCard(
+                    title = "Etapa ${selectedStage}ª",
+                    body = "Sua média: ${gradeText(stage?.studentAverage)} · média da turma: ${gradeText(stage?.classAverage)} · ${percentText(aboveClassPercent)} das comparações disponíveis acima da turma."
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(String.format(java.util.Locale.US, "%.1f", studentGrade), style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-        }
-        
-        if (showClassAverage) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp))) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth((classGrade / maxGrade).coerceIn(0.0, 1.0).toFloat())
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp))
+            val previous = snapshot.stages.getOrNull(selectedStage - 2)
+            if (previous != null) {
+                val currentAverage = stage?.studentAverage
+                val previousAverage = previous.studentAverage
+                val change = if (currentAverage != null && previousAverage != null) currentAverage - previousAverage else null
+                item {
+                    InformationCard(
+                        title = "Etapa atual x anterior",
+                        body = if (change == null) "Ainda não há notas suficientes nas duas etapas para comparar."
+                        else "Variação da sua média: ${signedText(change)} (${gradeText(previousAverage)} → ${gradeText(currentAverage)})."
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(String.format(java.util.Locale.US, "%.1f", classGrade), style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(28.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+            }
+            item { SectionHeading("Por disciplina", "Valores ausentes não entram na comparação") }
+            if (rows.isEmpty()) item { EmptyState("Ainda não há notas nesta etapa.") }
+            else items(rows, key = { it.subject.id.ifBlank { it.subject.name } }) { CompareSubjectCard(it, selectedStage) }
+        }
+    }
+}
+
+@Composable
+private fun SimulatorTab(snapshot: StatisticsSnapshot, targetAverage: Float, onTargetChange: (Float) -> Unit) {
+    val rows = snapshot.subjects.filter { it.neededAverage != null }
+        .sortedBy { it.neededAverage }
+    StatisticsList {
+        item { PageHeading(Icons.Default.ShowChart, "Simulador", "Cenários calculados pela regra acadêmica existente") }
+        if (!snapshot.hasData) {
+            item { EmptyState("Sincronize para simular suas médias.") }
+        } else {
+            item {
+                CardPanel {
+                    Text("Média final desejada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(gradeText(targetAverage.toDouble()), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Slider(value = targetAverage, onValueChange = onTargetChange, valueRange = 5f..10f, steps = 9)
+                    Text("O cálculo considera os pesos do AcademicCalculator e as notas ainda não lançadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (rows.isEmpty()) item { EmptyState("Não há disciplinas com etapas pendentes para simular.") }
+            else {
+                item { SectionHeading("Quanto falta", "Média necessária nas etapas restantes") }
+                items(rows, key = { it.subject.id.ifBlank { it.subject.name } }) { row ->
+                    SimulatorSubjectCard(row, targetAverage.toDouble())
+                }
             }
         }
     }
 }
-fun parseGrade(gradeStr: String): Double? {
-    return gradeStr.replace(",", ".").toDoubleOrNull()
+
+@Composable
+private fun StatisticsList(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        content = content
+    )
 }
 
-fun getHighestGrade(subject: Subject): Double? {
-    val gFinal = parseGrade(subject.finalGrade)
-    if (gFinal != null) return gFinal
-    val grades = listOfNotNull(
-        parseGrade(subject.grade1),
-        parseGrade(subject.grade2),
-        parseGrade(subject.grade3),
-        parseGrade(subject.grade4)
-    )
-    if (grades.isNotEmpty()) return grades.average()
-    return null
+@Composable
+private fun PageHeading(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+        }
+        Column {
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
+
+@Composable
+private fun StagePicker(selectedStage: Int, onSelect: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        (1..4).forEach { stage ->
+            FilterChip(selected = selectedStage == stage, onClick = { onSelect(stage) }, label = { Text("${stage}ª etapa") })
+        }
+    }
+}
+
+@Composable
+private fun MetricGrid(metrics: List<Pair<String, String>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        metrics.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (title, value) ->
+                    CardPanel(Modifier.weight(1f)) {
+                        Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusSummary(snapshot: StatisticsSnapshot) {
+    CardPanel {
+        Text("Situação das disciplinas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            StatusPill("Aprovadas", snapshot.approvedCount, AppSemanticColors.success, Modifier.weight(1f))
+            StatusPill("Em curso", snapshot.ongoingCount, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            StatusPill("Em risco", snapshot.atRiskCount, AppSemanticColors.danger, Modifier.weight(1f))
+            StatusPill("Recuperação", snapshot.recoveryCount, AppSemanticColors.warning, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun StatusPill(label: String, count: Int, accent: Color, modifier: Modifier = Modifier) {
+    Surface(modifier, shape = RoundedCornerShape(14.dp), color = accent.copy(alpha = 0.12f)) {
+        Column(Modifier.padding(10.dp)) {
+            Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+@Composable
+private fun StageChart(snapshot: StatisticsSnapshot) {
+    val values = snapshot.stages.map { it.studentAverage }
+    val color = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    CardPanel {
+        Text("Notas por etapa", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Canvas(
+            modifier = Modifier.fillMaxWidth().height(150.dp)
+                .semantics { contentDescription = "Gráfico de médias por etapa: ${snapshot.stages.joinToString { "etapa ${it.stage}: ${gradeText(it.studentAverage)}" }}" }
+        ) {
+            val left = 12.dp.toPx()
+            val top = 12.dp.toPx()
+            val bottom = size.height - 24.dp.toPx()
+            val usableHeight = bottom - top
+            val xStep = (size.width - left * 2) / 3f
+            val points = values.mapIndexedNotNull { index, value ->
+                value?.let { androidx.compose.ui.geometry.Offset(left + xStep * index, bottom - usableHeight * (it.coerceIn(0.0, 10.0) / 10.0).toFloat()) }
+            }
+            drawLine(gridColor, androidx.compose.ui.geometry.Offset(left, bottom), androidx.compose.ui.geometry.Offset(size.width - left, bottom), strokeWidth = 1.dp.toPx())
+            for (grade in 0..10 step 5) {
+                val y = bottom - usableHeight * grade / 10f
+                drawLine(gridColor.copy(alpha = 0.45f), androidx.compose.ui.geometry.Offset(left, y), androidx.compose.ui.geometry.Offset(size.width - left, y), strokeWidth = 1.dp.toPx())
+            }
+            if (points.size > 1) {
+                val path = Path().apply { moveTo(points.first().x, points.first().y); points.drop(1).forEach { lineTo(it.x, it.y) } }
+                drawPath(path, color, style = Stroke(width = 3.dp.toPx()))
+            }
+            points.forEach { drawCircle(color, 5.dp.toPx(), it) }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            (1..4).forEach { Text("${it}ª", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
+}
+
+@Composable
+private fun NoteSubjectCard(row: SubjectStatistics, selectedStage: Int) {
+    val grade = row.grades[selectedStage - 1]
+    val previous = if (selectedStage > 1) row.grades[selectedStage - 2] else null
+    val change = if (grade != null && previous != null) grade - previous else null
+    CardPanel {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Icon(Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+            Text(row.subject.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(gradeText(grade), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+        Text("Média calculada: ${gradeText(row.average)} · ${statusLabel(row.status)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            row.grades.forEachIndexed { index, value ->
+                StageGradeChip(index + 1, value, Modifier.weight(1f))
+            }
+        }
+        if (change != null) Text("Variação desde a etapa anterior: ${signedText(change)}", style = MaterialTheme.typography.labelMedium, color = if (change >= 0) AppSemanticColors.success else AppSemanticColors.danger)
+    }
+}
+
+@Composable
+private fun StageGradeChip(stage: Int, grade: Double?, modifier: Modifier = Modifier) {
+    Surface(modifier, shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+        Column(Modifier.padding(vertical = 7.dp, horizontal = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("B$stage", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(gradeText(grade), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun DistributionCard(rows: List<SubjectStatistics>) {
+    val grades = rows.flatMap { it.grades.filterNotNull() }
+    CardPanel {
+        Text("Distribuição das notas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        listOf("9–10" to grades.count { it >= 9 }, "7–8,9" to grades.count { it >= 7 && it < 9 }, "5–6,9" to grades.count { it >= 5 && it < 7 }, "0–4,9" to grades.count { it < 5 }).forEach { (range, count) ->
+            Text("$range: $count", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun AbsenceCard(row: SubjectStatistics) {
+    CardPanel {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(row.subject.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Frequência por disciplina não foi fornecida pelo SUAP", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("${row.absences} faltas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = if (row.absences > 0) AppSemanticColors.warning else MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun CompareSubjectCard(row: SubjectStatistics, stage: Int) {
+    val student = row.grades[stage - 1]
+    val classroom = row.classGrades[stage - 1]
+    val difference = if (student != null && classroom != null) student - classroom else null
+    CardPanel {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(row.subject.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Você ${gradeText(student)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text("Turma ${gradeText(classroom)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+            }
+        }
+        Text(
+            difference?.let { if (it == 0.0) "Na média da turma" else "${if (it > 0) "Acima" else "Abaixo"} da turma em ${gradeText(abs(it))} ponto(s)" }
+                ?: "Média da turma indisponível",
+            style = MaterialTheme.typography.bodySmall,
+            color = difference?.let { if (it >= 0) AppSemanticColors.success else AppSemanticColors.danger } ?: MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun SimulatorSubjectCard(row: SubjectStatistics, target: Double) {
+    val needed = remember(row, target) { StatisticsCalculator.requiredAverage(row.subject, target) }
+    CardPanel {
+        Text(row.subject.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text(
+            needed?.let { if (it > 10) "Meta acima da escala: revise as notas lançadas." else "Precisa de média ${gradeText(it)} nas etapas restantes." }
+                ?: "Todas as etapas já têm nota; média atual ${gradeText(row.average)}.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ForecastPill("Pior cenário", gradeText(row.worstCaseAverage), AppSemanticColors.danger, Modifier.weight(1f))
+            ForecastPill("Melhor cenário", gradeText(row.bestCaseAverage), AppSemanticColors.success, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun ForecastPill(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Surface(modifier, shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.12f)) {
+        Column(Modifier.padding(10.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+        }
+    }
+}
+
+@Composable
+private fun SectionHeading(title: String, subtitle: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun CardPanel(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Card(modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+    }
+}
+
+@Composable
+private fun InformationCard(title: String, body: String) {
+    CardPanel {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun EmptyState(message: String) {
+    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Default.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun statusLabel(status: AcademicStatus): String = when (status) {
+    AcademicStatus.APPROVED -> "Aprovada"
+    AcademicStatus.ONGOING -> "Em andamento"
+    AcademicStatus.AT_RISK -> "Em risco"
+    AcademicStatus.RECOVERY -> "Em recuperação"
+    AcademicStatus.OTHER -> "Sem situação"
+}
+
+private fun gradeText(value: Double?): String = value?.let { String.format(Locale("pt", "BR"), "%.1f", it) } ?: "—"
+private fun percentText(value: Double?): String = value?.let { "${it.roundToInt()}%" } ?: "—"
+private fun signedText(value: Double): String = (if (value > 0) "+" else "") + gradeText(value)

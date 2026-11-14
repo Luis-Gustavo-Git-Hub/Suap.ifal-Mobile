@@ -21,10 +21,13 @@ class ClassReminderReceiver : BroadcastReceiver() {
         if (action == Intent.ACTION_BOOT_COMPLETED ||
             action == Intent.ACTION_MY_PACKAGE_REPLACED ||
             action == "android.intent.action.QUICKBOOT_POWERON" ||
-            action == "com.htc.intent.action.QUICKBOOT_POWERON"
+            action == "com.htc.intent.action.QUICKBOOT_POWERON" ||
+            action == "com.example.ACTION_CLASS_REMINDER"
         ) {
-            scheduleNextClassAlarm(context)
-            return
+            if (action != "com.example.ACTION_CLASS_REMINDER") {
+                scheduleNextClassAlarm(context)
+                return
+            }
         }
 
         val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -86,12 +89,6 @@ class ClassReminderReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_IMMUTABLE
             )
 
-            val iconRes = try {
-                R.drawable.ic_launcher_foreground
-            } catch (e: Exception) {
-                android.R.drawable.ic_popup_reminder
-            }
-
             val bigTextContent = buildString {
                 append("📚 Disciplina: ").append(subjectName).append("\n")
                 append("⏰ Início: ").append(startTime).append(" | Final: ").append(endTime)
@@ -101,7 +98,7 @@ class ClassReminderReceiver : BroadcastReceiver() {
             }
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(iconRes)
+                .setSmallIcon(R.drawable.ic_stat_notification)
                 .setContentTitle("📚 Aula: $subjectName")
                 .setContentText("Início: $startTime | Final: $endTime")
                 .setStyle(NotificationCompat.BigTextStyle().bigText(bigTextContent))
@@ -116,7 +113,7 @@ class ClassReminderReceiver : BroadcastReceiver() {
             try {
                 notificationManager.notify(NOTIFICATION_ID, notification)
             } catch (e: Exception) {
-                e.printStackTrace()
+                com.example.util.AppLog.printStackTrace(e)
             }
         }
 
@@ -135,7 +132,9 @@ class ClassReminderReceiver : BroadcastReceiver() {
             val isEnabled = prefs.getBoolean("class_notification_enabled", false)
 
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-            val intent = Intent(context, ClassReminderReceiver::class.java)
+            val intent = Intent(context, ClassReminderReceiver::class.java).apply {
+                action = "com.example.ACTION_CLASS_REMINDER"
+            }
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
                 2001,
@@ -148,6 +147,10 @@ class ClassReminderReceiver : BroadcastReceiver() {
                 return
             }
 
+            // Replace any earlier reminder before calculating the next class.
+            alarmManager.cancel(pendingIntent)
+
+            val reminderLeadMinutes = prefs.getInt("class_reminder_lead_minutes", 10)
             val classList = loadScheduleItems(context)
             if (classList.isEmpty()) return
 
@@ -164,29 +167,31 @@ class ClassReminderReceiver : BroadcastReceiver() {
 
                 // Find matching classes for this day
                 val dayClasses = classList.filter { matchesDayOfWeek(it.dayOfWeekStr, testDayOfWeek) }
+                if (dayClasses.isEmpty()) continue
 
-                for (cls in dayClasses) {
+                // Schedule reminder before the FIRST class of the day
+                val firstClass = dayClasses.minByOrNull { it.startHour * 60 + it.startMinute }
+                if (firstClass != null) {
                     val classTimeCal = Calendar.getInstance().apply {
                         timeInMillis = testCal.timeInMillis
-                        set(Calendar.HOUR_OF_DAY, cls.startHour)
-                        set(Calendar.MINUTE, cls.startMinute)
+                        set(Calendar.HOUR_OF_DAY, firstClass.startHour)
+                        set(Calendar.MINUTE, firstClass.startMinute)
                         set(Calendar.SECOND, 0)
                         set(Calendar.MILLISECOND, 0)
+                        add(Calendar.MINUTE, -reminderLeadMinutes)
                     }
 
                     if (classTimeCal.after(now)) {
-                        if (targetCal == null || classTimeCal.before(targetCal)) {
-                            targetCal = classTimeCal
-                            selectedClass = cls
-                        }
+                        targetCal = classTimeCal
+                        selectedClass = firstClass
+                        break
                     }
                 }
-
-                if (targetCal != null) break
             }
 
             if (targetCal != null && selectedClass != null) {
                 val alarmIntent = Intent(context, ClassReminderReceiver::class.java).apply {
+                    action = "com.example.ACTION_CLASS_REMINDER"
                     putExtra("subject_name", selectedClass.subjectName)
                     putExtra("start_time", selectedClass.startTimeStr)
                     putExtra("end_time", selectedClass.endTimeStr)
@@ -201,7 +206,21 @@ class ClassReminderReceiver : BroadcastReceiver() {
                 )
 
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (alarmManager.canScheduleExactAlarms()) {
+                            alarmManager.setExactAndAllowWhileIdle(
+                                android.app.AlarmManager.RTC_WAKEUP,
+                                targetCal.timeInMillis,
+                                classPendingIntent
+                            )
+                        } else {
+                            alarmManager.setAndAllowWhileIdle(
+                                android.app.AlarmManager.RTC_WAKEUP,
+                                targetCal.timeInMillis,
+                                classPendingIntent
+                            )
+                        }
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         alarmManager.setExactAndAllowWhileIdle(
                             android.app.AlarmManager.RTC_WAKEUP,
                             targetCal.timeInMillis,
@@ -228,7 +247,9 @@ class ClassReminderReceiver : BroadcastReceiver() {
 
         fun cancelAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-            val intent = Intent(context, ClassReminderReceiver::class.java)
+            val intent = Intent(context, ClassReminderReceiver::class.java).apply {
+                action = "com.example.ACTION_CLASS_REMINDER"
+            }
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
                 2001,
@@ -254,6 +275,7 @@ class ClassReminderReceiver : BroadcastReceiver() {
 
         private fun loadScheduleItems(context: Context): List<ClassInfo> {
             val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            if (prefs.getBoolean("offline_schedule_is_demo", false)) return emptyList()
             val json = prefs.getString("offline_schedule_json", "") ?: ""
             val list = mutableListOf<ClassInfo>()
 
@@ -283,41 +305,7 @@ class ClassReminderReceiver : BroadcastReceiver() {
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-
-            // Fallback demo schedule if no saved schedule items found
-            if (list.isEmpty()) {
-                val demoSchedule = listOf(
-                    Triple("Segunda", "07:30 - 08:20", "TECNOLOGIA DE GRÃOS, RAÍZES E TUBÉRCULOS"),
-                    Triple("Segunda", "10:20 - 11:10", "TECNOLOGIA DA CANA DE AÇÚCAR E SEUS DERIVADOS"),
-                    Triple("Terça", "07:30 - 08:20", "LÍNGUA PORTUGUESA"),
-                    Triple("Terça", "09:10 - 10:00", "TECNOLOGIA DE LEITE E DERIVADOS"),
-                    Triple("Terça", "13:30 - 14:20", "GESTÃO DE RESÍDUOS AGROALIMENTARES"),
-                    Triple("Quarta", "07:30 - 08:20", "MATEMÁTICA"),
-                    Triple("Quarta", "09:10 - 10:00", "FILOSOFIA"),
-                    Triple("Quarta", "13:30 - 14:20", "EDUCAÇÃO FÍSICA"),
-                    Triple("Quinta", "07:30 - 08:20", "MATEMÁTICA"),
-                    Triple("Quinta", "08:20 - 09:10", "QUÍMICA"),
-                    Triple("Sexta", "08:20 - 09:10", "HIGIENE E CONTROLE DA QUALIDADE NA AGROINDÚSTRIA")
-                )
-
-                for ((day, slot, name) in demoSchedule) {
-                    val times = parseTimeSlot(slot)
-                    if (times != null) {
-                        list.add(
-                            ClassInfo(
-                                dayOfWeekStr = day,
-                                startTimeStr = times.first,
-                                endTimeStr = times.second,
-                                startHour = times.third,
-                                startMinute = times.fourth,
-                                subjectName = name,
-                                teacher = ""
-                            )
-                        )
-                    }
+                    com.example.util.AppLog.printStackTrace(e)
                 }
             }
 
@@ -336,7 +324,7 @@ class ClassReminderReceiver : BroadcastReceiver() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                com.example.util.AppLog.printStackTrace(e)
             }
             return null
         }

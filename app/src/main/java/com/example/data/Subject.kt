@@ -2,11 +2,13 @@ package com.example.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Stable
 
+@Stable
 @Entity(tableName = "subjects")
 data class Subject(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val name: String,
+    @PrimaryKey val id: String = "",
+    val name: String = "",
     val url: String = "",
     val grade1: String = "",
     val grade2: String = "",
@@ -24,4 +26,29 @@ data class Subject(
     val status: String = "",
     val isFavorite: Boolean = false,
     val detailUrl: String = ""
+) {
+    companion object {
+        fun generateStableId(name: String, url: String = ""): String {
+            val trimmedUrl = url.trim()
+            if (trimmedUrl.isNotEmpty()) return trimmedUrl
+            return name.trim()
+        }
+    }
+}
+data class AulaLink(
+    val title: String,
+    val url: String
+)
+
+data class AulaHistory(
+    val data: String,
+    val etapa: String,
+    val numAulas: String,
+    val numFaltas: String,
+    val conteudo: String,
+    val professor: String,
+    val attachmentUrl: String = "",
+    val attachmentTitle: String = "",
+    val rawHtml: String = "",
+    val links: List<AulaLink> = emptyList()
 )

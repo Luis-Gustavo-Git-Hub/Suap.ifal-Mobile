@@ -1,21 +1,70 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard / R8 Rules for SUAP / SIGAA Academic Assistant
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve generic signatures, annotations, inner classes, and line numbers for debugging
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,SourceFile,LineNumberTable
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# -------------------------------------------------------------
+# 1. Javascript Interfaces (WebViews)
+# -------------------------------------------------------------
+-keepattributes JavascriptInterface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# -------------------------------------------------------------
+# 2. Room Database
+# -------------------------------------------------------------
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    <init>();
+}
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Dao interface * { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep class * extends androidx.room.migration.Migration { *; }
+-keep class * extends androidx.room.migration.AutoMigrationSpec { *; }
+-dontwarn androidx.room.paging.**
+
+# -------------------------------------------------------------
+# 3. Jsoup HTML Parser
+# -------------------------------------------------------------
+-keep public class org.jsoup.** { public *; }
+-keepclassmembers class org.jsoup.** {
+    *** *(...);
+}
+-dontwarn org.jsoup.**
+
+# -------------------------------------------------------------
+# 4. Firebase & Google Identity / Play Services
+# -------------------------------------------------------------
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+-keep class androidx.credentials.** { *; }
+
+# -------------------------------------------------------------
+# 5. Project Domain Models & Entities
+# -------------------------------------------------------------
+-keep class com.example.data.** { *; }
+-keepclassmembers class com.example.data.** { *; }
+-keep class com.example.ui.** {
+    public <init>(...);
+}
+-keep class com.example.util.CredentialStore { *; }
+-keep class com.example.util.AppLog { *; }
+
+# -------------------------------------------------------------
+# 6. OkHttp & Coroutines & WorkManager
+# -------------------------------------------------------------
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+-dontwarn kotlinx.coroutines.**
+-keepclassmembers class * extends androidx.work.Worker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keepclassmembers class * extends androidx.work.CoroutineWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.CoroutineWorker
