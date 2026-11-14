@@ -1,34 +1,32 @@
 package com.example.ui
 
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import com.example.ui.theme.appColors
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.TrendingUp
-import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.text.style.TextAlign
-import kotlin.math.abs
 
 import com.example.data.Subject
 
@@ -38,27 +36,20 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
     
     val scrollState = rememberScrollState()
     val studentAvgStr by viewModel.studentAverage.collectAsStateWithLifecycle()
-    val classAvgStr by viewModel.classAverage.collectAsStateWithLifecycle()
 
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(top = 24.dp, start = 16.dp, end = 16.dp)
+            .padding(horizontal = Spacing.ScreenPadding)
             .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(Spacing.normal)
     ) {
-        Text(
-            text = "Estatísticas Acadêmicas",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
+        ScreenHeader("Estatísticas", "Seu desempenho acadêmico")
 
         if (subjects.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().padding(Spacing.extraLarge), contentAlignment = Alignment.Center) {
                 Text(
                     text = "Sem dados suficientes para estatísticas.",
                     style = MaterialTheme.typography.titleMedium,
@@ -72,9 +63,13 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
             GeneralStatsGrid(subjects, validSubjects, studentAvgStr)
 
             if (validSubjects.isNotEmpty()) {
+                if (LocalDensity.current.fontScale > 1.3f) {
+                    BimesterPerformanceCompact(subjects)
+                    GradeDistributionCard(validSubjects)
+                } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
                 ) {
                     // Média por Bimestre
                     Box(modifier = Modifier.weight(1f)) {
@@ -85,11 +80,12 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
                         GradeDistributionCard(validSubjects)
                     }
                 }
+                }
                 
                 ComparisonChartCard(validSubjects)
 
                 // Melhores e Piores em formato de lista compacta
-                ExtremesCard(validSubjects)
+
             }
 
             // Alertas (Faltas e Recuperação) em um único card compacto
@@ -97,14 +93,14 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
 
             // Fallback for text-only grades
             if (validSubjects.isEmpty() && subjects.isNotEmpty()) {
-                Card(
+                AppCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Notas Detalhadas (Texto)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Column(modifier = Modifier.padding(Spacing.normal)) {
+                        Text("Notas disponíveis", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
                         subjects.forEach { s ->
                             Text("${s.name}: ${s.finalGrade.ifEmpty { s.grade1.ifEmpty { "Sem nota" } }}", style = MaterialTheme.typography.bodySmall)
@@ -113,7 +109,7 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
                 }
             }
         }
-        Spacer(modifier = Modifier.height(100.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -128,12 +124,12 @@ fun GeneralStatsGrid(subjects: List<Subject>, validSubjects: List<Subject>, stud
 
     val finalStudentAvg = if (studentAvgStr != "-" && studentAvgStr.isNotEmpty()) studentAvgStr else String.format("%.1f", calculatedAverage)
     
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), modifier = Modifier.fillMaxWidth()) {
             MiniStatCard("Média do Aluno", finalStudentAvg, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
             MiniStatCard("Faltas Totais", totalAbsences.toString(), MaterialTheme.colorScheme.error, Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), modifier = Modifier.fillMaxWidth()) {
             MiniStatCard("Disciplinas", subjects.size.toString(), MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
             MiniStatCard("Aproveitamento", "${approvalRate.toInt()}%", MaterialTheme.colorScheme.tertiary, Modifier.weight(1f))
         }
@@ -142,14 +138,14 @@ fun GeneralStatsGrid(subjects: List<Subject>, validSubjects: List<Subject>, stud
 
 @Composable
 fun MiniStatCard(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
+    AppCard(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
@@ -165,14 +161,14 @@ fun BimesterPerformanceCompact(subjects: List<Subject>) {
     val b4 = subjects.mapNotNull { parseGrade(it.grade4) }.average().takeIf { !it.isNaN() } ?: 0.0
     val maxVal = maxOf(b1, b2, b3, b4, 10.0)
 
-    Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(12.dp),
+    AppCard(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
             Text("Por Bimestre", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
             Row(
@@ -193,13 +189,13 @@ fun BimesterPerformanceCompact(subjects: List<Subject>) {
 fun CompactBarChartItem(label: String, value: Double, maxVal: Double) {
     val heightFraction = if (maxVal > 0) (value / maxVal).toFloat() else 0f
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom, modifier = Modifier.fillMaxHeight()) {
-        Text(if (value > 0) String.format("%.1f", value) else "-", style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp))
+        Text(if (value > 0) String.format("%.1f", value) else "-", style = MaterialTheme.typography.bodySmall)
         Spacer(modifier = Modifier.height(2.dp))
         Box(
             modifier = Modifier
                 .width(16.dp)
                 .fillMaxHeight(heightFraction.coerceIn(0f, 1f))
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                .clip(MaterialTheme.shapes.extraSmall)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -216,21 +212,21 @@ fun GradeDistributionCard(subjects: List<Subject>) {
     val poor = grades.count { it < 5.0 }
     val total = grades.size.coerceAtLeast(1)
 
-    Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp),
-        shape = RoundedCornerShape(12.dp),
+    AppCard(
+        modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(Spacing.medium)) {
             Text("Distribuição", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                DistBar("9-10", excellent, total, Color(0xFF4CAF50))
-                DistBar("7-8.9", good, total, Color(0xFF8BC34A))
-                DistBar("5-6.9", average, total, Color(0xFFFFC107))
-                DistBar("< 5", poor, total, Color(0xFFF44336))
+                DistBar("9-10", excellent, total, MaterialTheme.appColors.success.color)
+                DistBar("7-8.9", good, total, MaterialTheme.appColors.info.color)
+                DistBar("5-6.9", average, total, MaterialTheme.appColors.warning.color)
+                DistBar("< 5", poor, total, MaterialTheme.appColors.danger.color)
             }
         }
     }
@@ -240,68 +236,21 @@ fun GradeDistributionCard(subjects: List<Subject>) {
 fun DistBar(label: String, count: Int, total: Int, color: Color) {
     val fraction = if (total > 0) count.toFloat() / total else 0f
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(label, style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp), modifier = Modifier.width(36.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(36.dp))
         Box(
             modifier = Modifier
                 .weight(1f)
                 .height(8.dp)
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), MaterialTheme.shapes.extraSmall)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction)
                     .fillMaxHeight()
-                    .background(color, RoundedCornerShape(4.dp))
+                    .background(color, MaterialTheme.shapes.extraSmall)
             )
         }
-        Text(count.toString(), style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp), modifier = Modifier.width(16.dp).padding(start = 4.dp))
-    }
-}
-
-@Composable
-fun ExtremesCard(subjects: List<Subject>) {
-    val sortedSubjects = subjects.sortedByDescending { getHighestGrade(it) ?: 0.0 }
-    val best = sortedSubjects.take(2)
-    val worst = sortedSubjects.takeLast(2).reversed() // Pior primeiro
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Destaques", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                best.forEach { s ->
-                    val g = getHighestGrade(s) ?: 0.0
-                    Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    Text(String.format("%.1f", g), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.TrendingDown, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Atenção", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                worst.forEach { s ->
-                    val g = getHighestGrade(s) ?: 0.0
-                    Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    Text(String.format("%.1f", g), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
-        }
+        Text(count.toString(), style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(16.dp).padding(start = Spacing.xs))
     }
 }
 
@@ -325,19 +274,19 @@ fun AlertsCard(subjects: List<Subject>) {
     }.take(2)
 
     if (worstAbsences.isNotEmpty() || atRiskSubjects.isNotEmpty()) {
-        Card(
+        AppCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.small,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(Spacing.medium)) {
                 Text("Alertas", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 if (worstAbsences.isNotEmpty()) {
-                    Text("Faltas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f))
+                    Text("Faltas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
                     worstAbsences.forEach { s ->
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -348,7 +297,7 @@ fun AlertsCard(subjects: List<Subject>) {
                 }
 
                 if (atRiskSubjects.isNotEmpty()) {
-                    Text("Risco de Recuperação (MA < 6.0)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f))
+                    Text("Risco de Recuperação (MA < 6.0)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
                     atRiskSubjects.forEach { (s, ma) ->
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(s.name, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -374,21 +323,21 @@ fun ComparisonChartCard(subjects: List<Subject>) {
     var selectedEtapa by remember { androidx.compose.runtime.mutableStateOf(1) } // 1 to 4
     var showClassAverage by remember { androidx.compose.runtime.mutableStateOf(true) }
 
-    Card(
+    AppCard(
         modifier = Modifier.fillMaxWidth().clickable { showClassAverage = !showClassAverage },
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(Spacing.normal)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Gráfico de Desempenho", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 
                 // Dropdown for Etapa
                 var expanded by remember { androidx.compose.runtime.mutableStateOf(false) }
                 Box {
-                    OutlinedButton(onClick = { expanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(32.dp)) {
+                    SecondaryButton(onClick = { expanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), modifier = Modifier.height(32.dp)) {
                         Text("Etapa: $selectedEtapa", style = MaterialTheme.typography.labelSmall)
                     }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -408,12 +357,12 @@ fun ComparisonChartCard(subjects: List<Subject>) {
             
             // Legend
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
+                Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Nota do Aluno", style = MaterialTheme.typography.labelSmall)
                 if (showClassAverage) {
                     Spacer(modifier = Modifier.width(16.dp))
-                    Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp)))
+                    Box(modifier = Modifier.size(12.dp).background(MaterialTheme.colorScheme.secondary, MaterialTheme.shapes.extraSmall))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Média da Turma", style = MaterialTheme.typography.labelSmall)
                 }
@@ -443,7 +392,7 @@ fun ComparisonChartCard(subjects: List<Subject>) {
                         .fillMaxWidth()
                         .heightIn(max = maxHeight)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.normal)
                 ) {
                     validSubjects.forEach { subject ->
                         val gradeStr = when(selectedEtapa) {
@@ -491,12 +440,12 @@ fun SubjectComparisonHorizontalBars(subjectName: String, studentGrade: Double, c
         )
         Spacer(modifier = Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp))) {
+            Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.extraSmall)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth((studentGrade / maxGrade).coerceIn(0.0, 1.0).toFloat())
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), MaterialTheme.shapes.extraSmall)
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
@@ -506,12 +455,12 @@ fun SubjectComparisonHorizontalBars(subjectName: String, studentGrade: Double, c
         if (showClassAverage) {
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(2.dp))) {
+                Box(modifier = Modifier.weight(1f).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.extraSmall)) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth((classGrade / maxGrade).coerceIn(0.0, 1.0).toFloat())
                             .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.secondary, MaterialTheme.shapes.extraSmall)
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))

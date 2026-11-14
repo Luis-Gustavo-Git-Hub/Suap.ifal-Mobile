@@ -1,5 +1,14 @@
 package com.example.ui
 
+import com.example.ui.theme.Spacing
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,32 +16,26 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -41,11 +44,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.Subject
 import androidx.compose.foundation.layout.Row
 
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,11 +64,11 @@ fun AssuntosScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Matérias") },
+            AppTopBar(
+                title = { Text(androidx.compose.ui.res.stringResource(com.example.R.string.subjects_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                     }
                 }
             )
@@ -78,22 +79,22 @@ fun AssuntosScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            OutlinedTextField(
+            AppTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = Spacing.normal, end = Spacing.normal, top = Spacing.small, bottom = Spacing.small),
                 placeholder = { Text("Pesquisar disciplina...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = "Pesquisar") },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.small
             )
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.normal)
             ) {
                 items(filteredSubjects) { subject ->
                     val urlToUse = if ((subject.url ?: "").isNotEmpty()) subject.url.orEmpty() else subject.detailUrl.orEmpty()
@@ -106,18 +107,18 @@ fun AssuntosScreen(
 
 @Composable
 fun AssuntoSubjectCard(subject: Subject, onClick: () -> Unit) {
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
     ) {
         Row(
             modifier = Modifier
-                .padding(20.dp)
+                .padding(Spacing.normal)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -131,7 +132,7 @@ fun AssuntoSubjectCard(subject: Subject, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.MenuBook,
+                    imageVector = Icons.Rounded.MenuBook,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -145,7 +146,7 @@ fun AssuntoSubjectCard(subject: Subject, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Acessar materiais",
+                    text = "Ver materiais",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -160,8 +161,8 @@ fun AssuntoSubjectCard(subject: Subject, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Acessar assuntos",
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = "Ver disciplinas",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(20.dp)
                 )

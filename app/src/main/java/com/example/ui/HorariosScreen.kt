@@ -1,32 +1,32 @@
 package com.example.ui
 
-import androidx.compose.foundation.background
+import com.example.ui.theme.Spacing
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Class
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,17 +60,16 @@ fun HorariosScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AppTopBar(
                 title = {
                     Column {
                         Text(
                             text = "Horário das Aulas",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.CheckCircle,
+                                imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -78,7 +77,7 @@ fun HorariosScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Acesso Offline Ativo",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -87,8 +86,8 @@ fun HorariosScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back)
                         )
                     }
                 },
@@ -252,7 +251,7 @@ private fun DayViewContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 12.dp),
+                .padding(vertical = Spacing.small, horizontal = Spacing.medium),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             daysOfWeek.forEachIndexed { index, dayName ->
@@ -270,13 +269,13 @@ private fun DayViewContent(
                     selected = isSelected,
                     onClick = { onSelectDayIndex(index) },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) else null
                 ) {
                     Box(
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        modifier = Modifier.padding(vertical = Spacing.small),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -294,12 +293,12 @@ private fun DayViewContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
+                    .padding(Spacing.extraLarge),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Default.CalendarMonth,
+                        imageVector = Icons.Rounded.CalendarMonth,
                         contentDescription = null,
                         modifier = Modifier.size(56.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -316,7 +315,7 @@ private fun DayViewContent(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(Spacing.small)
             ) {
                 items(dayClasses) { item ->
                     // Find corresponding diario for room info if matching
@@ -328,21 +327,21 @@ private fun DayViewContent(
                     val displayName = cleanSubjectName(item.subjectName)
 
                     if (item.subjectName.equals("Intervalo", ignoreCase = true)) {
-                        Card(
+                        AppCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.small,
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                             ),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(Spacing.medium),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Schedule,
+                                    imageVector = Icons.Rounded.Schedule,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -359,9 +358,9 @@ private fun DayViewContent(
                         return@items
                     }
 
-                    Card(
+                    AppCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
@@ -369,9 +368,9 @@ private fun DayViewContent(
                             1.dp,
                             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                         ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(Spacing.medium)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -383,14 +382,14 @@ private fun DayViewContent(
                                 ) {
                                     Surface(
                                         color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = RoundedCornerShape(6.dp)
+                                        shape = MaterialTheme.shapes.extraSmall
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                            modifier = Modifier.padding(horizontal = Spacing.small, vertical = Spacing.xs),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Schedule,
+                                                imageVector = Icons.Rounded.Schedule,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(12.dp),
                                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -398,7 +397,7 @@ private fun DayViewContent(
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
                                                 text = item.timeSlot,
-                                                style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                                                style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
@@ -408,13 +407,13 @@ private fun DayViewContent(
                                     if (item.shift.isNotEmpty()) {
                                         Surface(
                                             color = MaterialTheme.colorScheme.secondaryContainer,
-                                            shape = RoundedCornerShape(6.dp)
+                                            shape = MaterialTheme.shapes.extraSmall
                                         ) {
                                             Text(
                                                 text = item.shift,
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = Spacing.xs, vertical = Spacing.xs)
                                             )
                                         }
                                     }
@@ -423,14 +422,14 @@ private fun DayViewContent(
                                 matchingDiario?.room?.takeIf { it.isNotEmpty() }?.let { room ->
                                     Surface(
                                         color = MaterialTheme.colorScheme.tertiaryContainer,
-                                        shape = RoundedCornerShape(6.dp)
+                                        shape = MaterialTheme.shapes.extraSmall
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            modifier = Modifier.padding(horizontal = Spacing.xs, vertical = Spacing.xs),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.LocationOn,
+                                                imageVector = Icons.Rounded.LocationOn,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(12.dp),
                                                 tint = MaterialTheme.colorScheme.onTertiaryContainer
@@ -438,7 +437,7 @@ private fun DayViewContent(
                                             Spacer(modifier = Modifier.width(2.dp))
                                             Text(
                                                 text = room,
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                                             )
@@ -462,7 +461,7 @@ private fun DayViewContent(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = Icons.Default.Person,
+                                        imageVector = Icons.Rounded.Person,
                                         contentDescription = null,
                                         modifier = Modifier.size(14.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -470,7 +469,7 @@ private fun DayViewContent(
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = item.teacher,
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
@@ -500,7 +499,7 @@ private fun FullGridViewContent(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium)
     ) {
         items(shifts) { shift ->
             val shiftItems = mergedScheduleItems.filter { 
@@ -510,9 +509,9 @@ private fun FullGridViewContent(
             }
 
             if (shiftItems.isNotEmpty()) {
-                Card(
+                AppCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = MaterialTheme.shapes.medium,
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                     ),
@@ -521,7 +520,7 @@ private fun FullGridViewContent(
                         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                     )
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(Spacing.medium)) {
                         Text(
                             text = "Turno $shift",
                             style = MaterialTheme.typography.titleMedium,
@@ -535,15 +534,15 @@ private fun FullGridViewContent(
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 3.dp),
+                                    .padding(vertical = Spacing.xs),
                                 color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = MaterialTheme.shapes.small,
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
                                 )
                             ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
+                                Column(modifier = Modifier.padding(Spacing.small)) {
                                     Text(
                                         text = timeSlot,
                                         style = MaterialTheme.typography.labelMedium,
@@ -555,12 +554,12 @@ private fun FullGridViewContent(
                                     val hasInterval = items.any { it.subjectName.equals("Intervalo", ignoreCase = true) }
                                     if (hasInterval && items.all { it.subjectName.equals("Intervalo", ignoreCase = true) }) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
                                             horizontalArrangement = Arrangement.Center,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Schedule,
+                                                imageVector = Icons.Rounded.Schedule,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(14.dp),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -578,7 +577,7 @@ private fun FullGridViewContent(
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(vertical = 2.dp),
+                                                    .padding(vertical = Spacing.xs),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -599,7 +598,7 @@ private fun FullGridViewContent(
                                                     if (item.teacher.isNotEmpty()) {
                                                         Text(
                                                             text = item.teacher,
-                                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                            style = MaterialTheme.typography.labelSmall,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
                                                     }

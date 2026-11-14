@@ -1,5 +1,12 @@
 package com.example.ui
-import androidx.compose.foundation.clickable
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import com.example.ui.components.*
+import com.example.ui.theme.Spacing
+import androidx.compose.material3.MaterialTheme
 
 import android.annotation.SuppressLint
 import android.util.Log
@@ -11,36 +18,26 @@ import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.alpha
 
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.CircularProgressIndicator
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -216,58 +213,45 @@ fun LoginScreen(
                     },
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(top = 48.dp, start = 16.dp),
+                        .padding(top = 48.dp, start = Spacing.normal),
                     containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                     contentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    Icon(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.example.R.string.back))
                 }
             }
         }
         
         if (!showWebView) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            androidx.compose.material3.IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = 48.dp, start = 16.dp)
-            ) {
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
-            }
-
+        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+            AppTopBar("Entrar no SUAP", onBack)
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState()), contentAlignment = Alignment.Center) {
             androidx.compose.foundation.layout.Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(Spacing.ScreenPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.normal)
             ) {
-                Text("Login SUAP", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
                 
-                OutlinedTextField(
+                AppTextField(
                     value = inputMatricula,
                     onValueChange = { inputMatricula = it },
                     label = { Text("Matrícula") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                var showPassword by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
-                OutlinedTextField(
+                AppTextField(
                     value = inputSenha,
                     onValueChange = { inputSenha = it },
                     label = { Text("Senha") },
-                    visualTransformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
-                            androidx.compose.material3.Text(text = if (showPassword) "🙈" else "👁️")
-                        }
-                    }
+                    password = true, modifier = Modifier.fillMaxWidth(), singleLine = true
                 )
                 
                 var termsAccepted by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(prefs.getBoolean("terms_accepted", false)) }
                 var showTermsDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                 
                 if (showTermsDialog) {
-                    androidx.compose.material3.AlertDialog(
+                    AppDialog(
                         onDismissRequest = { showTermsDialog = false },
                         title = { Text("Termos de Uso") },
                         text = {
@@ -312,73 +296,17 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                             androidx.compose.material3.TextButton(
                                 onClick = { showTermsDialog = false }
                             ) {
-                                Text("Fechar")
+                                Text(androidx.compose.ui.res.stringResource(com.example.R.string.close))
                             }
                         }
                     )
                 }
                 
-                androidx.compose.material3.Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(
-                        containerColor = if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
-                ) {
-                    androidx.compose.foundation.layout.Row(
-                        verticalAlignment = Alignment.CenterVertically, 
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { 
-                                termsAccepted = !termsAccepted 
-                                prefs.edit().putBoolean("terms_accepted", termsAccepted).apply()
-                            }
-                            .padding(12.dp)
-                    ) {
-                        androidx.compose.material3.Checkbox(
-                            checked = termsAccepted, 
-                            onCheckedChange = { 
-                                termsAccepted = it 
-                                prefs.edit().putBoolean("terms_accepted", it).apply()
-                            },
-                            colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                checkedColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                uncheckedColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                        androidx.compose.foundation.layout.Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = "Concordo com os termos de uso", 
-                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                color = if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer else androidx.compose.material3.MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Isento o app de responsabilidade", 
-                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                                color = if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha=0.8f) else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Ler Termos de Uso",
-                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
-                                    color = if (termsAccepted) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline
-                                ),
-                                modifier = Modifier
-                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
-                                    .clickable { showTermsDialog = true }
-                                    .padding(vertical = 4.dp, horizontal = 2.dp)
-                            )
-                        }
-                    }
-                }
+                TermsCheckRow(checked = termsAccepted,
+                        onCheckedChange = { termsAccepted = it; prefs.edit().putBoolean("terms_accepted", it).apply() },
+                        onReadTerms = { showTermsDialog = true })
                 
-                Button(
+                PrimaryButton(
                     onClick = { 
                         onSaveCredentials(inputMatricula, inputSenha)
                         isLoading = true
@@ -388,7 +316,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                     enabled = termsAccepted
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(color = androidx.compose.ui.graphics.Color.White)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
                     } else {
                         Text("Entrar")
                     }
@@ -397,59 +325,14 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 TextButton(onClick = { showWebView = true }, enabled = termsAccepted) {
-                    Text("Conectar via navegador")
+                    Text("Entrar pelo navegador")
                 }
                 
 
             }
         }
+        }
     }
 }
 
-}
-
-private fun getDemoHtml(): String {
-    return """
-        <html>
-            <div class="title-container">
-                <h2></h2>
-            </div>
-            <dl class="definition-list">
-                <div class="list-item"><dt>Nome</dt><dd></dd></div>
-                <div class="list-item"><dt>Matrícula</dt><dd></dd></div>
-                <div class="list-item"><dt>Ingresso</dt><dd></dd></div>
-                <div class="list-item"><dt>Curso</dt><dd></dd></div>
-            </dl>
-            <table class="bordered">
-                <tbody>
-                    <tr>
-                        <td></td>
-                        <td>Matemática</td><td></td><td></td><td>5</td><td></td><td>Cursando</td><td>80</td><td></td><td>90</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>85</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Física</td><td></td><td></td><td>2</td><td></td><td>Cursando</td><td>70</td><td></td><td>75</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>72</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Programação I</td><td></td><td></td><td>0</td><td></td><td>Cursando</td><td>95</td><td></td><td>100</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>97</td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td>Redes de Computadores</td><td></td><td></td><td>4</td><td></td><td>Cursando</td><td>60</td><td></td><td>65</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>62</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td headers="th_total_faltas">11</td>
-                        <td headers="th_frequencia">93.5 %</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </html>
-    """.trimIndent()
 }
