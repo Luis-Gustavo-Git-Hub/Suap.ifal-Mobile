@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Scan locked dependencies with OSV
-        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@v2.7.1
         with:
           scan-args: |-
             -r
