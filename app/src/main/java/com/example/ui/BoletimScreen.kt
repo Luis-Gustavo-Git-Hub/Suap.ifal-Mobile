@@ -124,7 +124,6 @@ fun CustomFilterChip(
 fun BoletimScreen(
     viewModel: SuapViewModel,
     onBack: () -> Unit,
-    onNavigateToLogs: () -> Unit = {},
     onSubjectClick: ((String, String) -> Unit)? = null,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {}
@@ -186,9 +185,6 @@ fun BoletimScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToLogs) {
-                        Icon(Icons.Outlined.Terminal, contentDescription = "Ver Logs do Sistema")
-                    }
                     IconButton(onClick = { viewModel.downloadBoletim(context) }) {
                         Icon(Icons.Outlined.Download, contentDescription = "Exportar PDF")
                     }

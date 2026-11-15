@@ -32,7 +32,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -67,7 +66,13 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val statisticTabs = listOf("Resumo", "Notas", "Frequência", "Comparar", "Simulador")
+private val statisticTabs = listOf(
+    "Resumo" to Icons.Outlined.Insights,
+    "Notas" to Icons.Outlined.BarChart,
+    "Frequência" to Icons.Outlined.CalendarMonth,
+    "Comparar" to Icons.Outlined.CompareArrows,
+    "Simulador" to Icons.Outlined.ShowChart
+)
 
 @Composable
 fun StatisticsScreen(viewModel: SuapViewModel) {
@@ -85,13 +90,31 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
             subtitle = "Seu desempenho acadêmico",
             modifier = Modifier.padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
         )
-        PrimaryScrollableTabRow(selectedTabIndex = selectedTab) {
-            statisticTabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
+        ) {
+            statisticTabs.forEachIndexed { index, (title, icon) ->
+                val selected = selectedTab == index
+                Surface(
                     onClick = { selectedTab = index },
-                    text = { Text(title, maxLines = 1, softWrap = false) }
-                )
+                    shape = RoundedCornerShape(18.dp),
+                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1, softWrap = false)
+                    }
+                }
             }
         }
         when (selectedTab) {

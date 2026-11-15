@@ -547,9 +547,6 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                         BoletimScreen(
                             viewModel = viewModel,
                             onBack = { navController.popBackStack() },
-                            onNavigateToLogs = {
-                                try { navController.navigate(NavRoute.Logs) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir logs: ${e.message}", e) }
-                            },
                             onSubjectClick = { name, url ->
                                 viewModel.selectSubject(name, url)
                                 try {

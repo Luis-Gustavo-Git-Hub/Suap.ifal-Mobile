@@ -110,15 +110,6 @@ fun HorariosScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = refreshCurrentTab, enabled = !isRefreshing) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "Atualizar esta aba")
-                        }
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
