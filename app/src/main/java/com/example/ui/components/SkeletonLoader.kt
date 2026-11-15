@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import com.example.ui.theme.AppDimens
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -76,15 +77,15 @@ fun SubjectCardSkeleton(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing4),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(AppDimens.Spacing12),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -102,7 +103,7 @@ fun SubjectCardSkeleton(modifier: Modifier = Modifier) {
                 )
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 SkeletonBox(modifier = Modifier.width(60.dp).height(20.dp), shape = MaterialTheme.shapes.extraSmall)
                 SkeletonBox(modifier = Modifier.width(70.dp).height(20.dp), shape = MaterialTheme.shapes.extraSmall)
@@ -124,20 +125,20 @@ fun AvisoCardSkeleton(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 6.dp),
+            .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(AppDimens.Spacing16),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
         ) {
             SkeletonBox(modifier = Modifier.size(42.dp), shape = CircleShape)
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 SkeletonBox(modifier = Modifier.fillMaxWidth(0.8f).height(16.dp))
                 SkeletonBox(modifier = Modifier.fillMaxWidth(0.45f).height(12.dp))
@@ -152,18 +153,18 @@ fun DashboardBentoSkeleton(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(vertical = AppDimens.Spacing4),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(modifier = Modifier.padding(AppDimens.Spacing16), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                 SkeletonBox(modifier = Modifier.fillMaxWidth(0.5f).height(20.dp))
                 SkeletonBox(modifier = Modifier.fillMaxWidth(0.8f).height(14.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                     SkeletonBox(modifier = Modifier.weight(1f).height(60.dp), shape = MaterialTheme.shapes.medium)
                     SkeletonBox(modifier = Modifier.weight(1f).height(60.dp), shape = MaterialTheme.shapes.medium)
                 }
@@ -177,15 +178,15 @@ fun AulaCardSkeleton(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(AppDimens.Spacing16),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

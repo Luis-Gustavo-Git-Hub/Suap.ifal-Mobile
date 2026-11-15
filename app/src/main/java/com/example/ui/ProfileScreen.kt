@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -31,24 +33,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Title
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -258,7 +242,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
                 .widthIn(max = 600.dp)
         ) {
         // Shared main-tab header with the student-specific identity and privacy controls.
@@ -289,7 +273,7 @@ fun ProfileScreen(
                 ) {
                     if (isCensored) {
                         Icon(
-                            imageVector = Icons.Default.VisibilityOff,
+                            imageVector = Icons.Outlined.VisibilityOff,
                             contentDescription = "Foto oculta",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             modifier = Modifier.size(24.dp)
@@ -335,7 +319,7 @@ fun ProfileScreen(
                         )
                 ) {
                     Icon(
-                        imageVector = if (isCensored) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        imageVector = if (isCensored) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                         contentDescription = if (isCensored) "Revelar informações" else "Ocultar informações",
                         tint = if (isCensored) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
@@ -350,11 +334,11 @@ fun ProfileScreen(
                         contentColor = MaterialTheme.colorScheme.primary
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
-                            Icon(Icons.Default.Badge, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Outlined.Badge, contentDescription = null, modifier = Modifier.size(14.dp))
                             Text(
                                 text = if (isCensored) "••••••••" else "Matrícula $matricula",
                                 style = MaterialTheme.typography.labelSmall,
@@ -375,7 +359,7 @@ fun ProfileScreen(
         }
 
         // 3. Informações Acadêmicas (Compact Bento Card)
-        Card(
+        com.example.ui.components.AppContentCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -385,22 +369,22 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(AppDimens.Spacing12),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 6.dp)
+                        .padding(bottom = AppDimens.Spacing4)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.School,
+                            imageVector = Icons.Outlined.School,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -420,11 +404,11 @@ fun ProfileScreen(
                             contentColor = MaterialTheme.colorScheme.primary
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                             ) {
-                                Icon(Icons.Default.VisibilityOff, contentDescription = null, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Outlined.VisibilityOff, contentDescription = null, modifier = Modifier.size(12.dp))
                                 Text(
                                     text = "Oculto",
                                     style = MaterialTheme.typography.labelSmall,
@@ -435,15 +419,15 @@ fun ProfileScreen(
                     }
                 }
 
-                ProfileField(label = "Nome Completo", value = fullName, icon = Icons.Default.Person, isCensored = isCensored)
+                ProfileField(label = "Nome Completo", value = fullName, icon = Icons.Outlined.Person, isCensored = isCensored)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ProfileField(label = "Matrícula", value = matricula, icon = Icons.Default.Badge, isCopyable = true, isCensored = isCensored)
+                ProfileField(label = "Matrícula", value = matricula, icon = Icons.Outlined.Badge, isCopyable = true, isCensored = isCensored)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ProfileField(label = "E-mail Pessoal", value = emailPessoal, icon = Icons.Default.Email, isCopyable = true, isCensored = isCensored)
+                ProfileField(label = "E-mail Pessoal", value = emailPessoal, icon = Icons.Outlined.Email, isCopyable = true, isCensored = isCensored)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ProfileField(label = "Ano / Semestre de Ingresso", value = ingresso, icon = Icons.Default.CalendarToday, isCensored = isCensored)
+                ProfileField(label = "Ano / Semestre de Ingresso", value = ingresso, icon = Icons.Outlined.CalendarToday, isCensored = isCensored)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ProfileField(label = "Curso", value = curso.replaceFirst(Regex("^\\S+\\s*-\\s*"), ""), icon = Icons.Default.AutoStories, isCensored = isCensored)
+                ProfileField(label = "Curso", value = curso.replaceFirst(Regex("^\\S+\\s*-\\s*"), ""), icon = Icons.Outlined.AutoStories, isCensored = isCensored)
             }
         }
 
@@ -506,7 +490,7 @@ fun ProfileScreen(
             )
         }
 
-        Card(
+        com.example.ui.components.AppContentCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -519,13 +503,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showThemeDialog = true }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -534,7 +518,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Palette,
+                                imageVector = Icons.Outlined.Palette,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
@@ -555,7 +539,7 @@ fun ProfileScreen(
                         }
                     }
                     Icon(
-                        imageVector = Icons.Default.ArrowForwardIos,
+                        imageVector = Icons.Outlined.ArrowForwardIos,
                         contentDescription = "Escolher tema",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(14.dp)
@@ -569,13 +553,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showFontDialog = true }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -584,7 +568,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Title,
+                                imageVector = Icons.Outlined.Title,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
@@ -605,7 +589,7 @@ fun ProfileScreen(
                         }
                     }
                     Icon(
-                        imageVector = Icons.Default.ArrowForwardIos,
+                        imageVector = Icons.Outlined.ArrowForwardIos,
                         contentDescription = "Escolher fonte",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(14.dp)
@@ -619,13 +603,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { notificationsExpanded = !notificationsExpanded }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                         modifier = Modifier.weight(1f)
                     ) {
                         Box(
@@ -635,7 +619,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Notifications,
+                                imageVector = Icons.Outlined.Notifications,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
@@ -655,7 +639,7 @@ fun ProfileScreen(
                         }
                     }
                     Icon(
-                        imageVector = if (notificationsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        imageVector = if (notificationsExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                         contentDescription = if (notificationsExpanded) "Recolher" else "Expandir",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -665,9 +649,9 @@ fun ProfileScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp)
-                            .padding(bottom = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(horizontal = AppDimens.Spacing12)
+                            .padding(bottom = AppDimens.Spacing12),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                     ) {
                         // Switch 1: Refeitório
                         Row(
@@ -678,7 +662,7 @@ fun ProfileScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("Lembrete de Almoço", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                                 Text("Lembrete às ${String.format("%02d:%02d", notificationHour, notificationMinute)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(
+                                com.example.ui.components.AppTextButton(
                                     onClick = {
                                         android.app.TimePickerDialog(
                                             context,
@@ -757,8 +741,8 @@ fun ProfileScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    .padding(vertical = AppDimens.Spacing4),
+                                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                             ) {
                                 Text(
                                     text = "Antecedência do lembrete:",
@@ -768,7 +752,7 @@ fun ProfileScreen(
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                 ) {
                                     listOf(10, 15, 30).forEach { mins ->
                                         val isSelected = classReminderLeadMinutes == mins
@@ -831,7 +815,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         // 5. Credenciais do SUAP & SIGAA
-        Card(
+        com.example.ui.components.AppContentCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -844,13 +828,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { suapCardExpanded = !suapCardExpanded }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -858,31 +842,31 @@ fun ProfileScreen(
                                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f), MaterialTheme.shapes.small),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         Column {
                             Text("Credenciais SUAP", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(if (credentialStore.hasSuapCredentials()) "Credenciais configuradas" else "Não configuradas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Icon(imageVector = if (suapCardExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null)
+                    Icon(imageVector = if (suapCardExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown, contentDescription = null)
                 }
 
                 AnimatedVisibility(visible = suapCardExpanded) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = editMatricula,
                             onValueChange = { editMatricula = it; showSavedMsg = false },
                             label = { Text("Matrícula SUAP") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = editSenha,
                             onValueChange = { editSenha = it; showSavedMsg = false },
                             label = { Text("Senha SUAP") },
@@ -891,7 +875,7 @@ fun ProfileScreen(
                             visualTransformation = if (showSenha) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 IconButton(onClick = { showSenha = !showSenha }) {
-                                    Icon(if (showSenha) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null)
+                                    Icon(if (showSenha) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, contentDescription = null)
                                 }
                             }
                         )
@@ -903,7 +887,7 @@ fun ProfileScreen(
                                     autoLoginEnabled = !autoLoginEnabled
                                     sharedPrefs.edit().putBoolean("auto_login", autoLoginEnabled).apply()
                                 }
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = AppDimens.Spacing4),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -933,7 +917,7 @@ fun ProfileScreen(
                                         termsAccepted = !termsAccepted 
                                         appPrefs.edit().putBoolean("terms_accepted", termsAccepted).apply()
                                     }
-                                    .padding(8.dp)
+                                    .padding(AppDimens.Spacing8)
                             ) {
                                 androidx.compose.material3.Checkbox(
                                     checked = termsAccepted,
@@ -955,7 +939,7 @@ fun ProfileScreen(
                             }
                         }
 
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = { 
                                 if (termsAccepted) {
                                     if (credentialStore.setSuapCredentials(editMatricula, editSenha)) {
@@ -982,13 +966,13 @@ fun ProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { sigaaCardExpanded = !sigaaCardExpanded }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -996,31 +980,31 @@ fun ProfileScreen(
                                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f), MaterialTheme.shapes.small),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         Column {
                             Text("Credenciais SIGAA", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(if (credentialStore.hasSigaaCredentials()) "Credenciais configuradas" else "Não configuradas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Icon(imageVector = if (sigaaCardExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null)
+                    Icon(imageVector = if (sigaaCardExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown, contentDescription = null)
                 }
 
                 AnimatedVisibility(visible = sigaaCardExpanded) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = editSigaaMatricula,
                             onValueChange = { editSigaaMatricula = it; showSigaaSavedMsg = false },
                             label = { Text("Usuário / CPF SIGAA") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = editSigaaSenha,
                             onValueChange = { editSigaaSenha = it; showSigaaSavedMsg = false },
                             label = { Text("Senha SIGAA") },
@@ -1029,7 +1013,7 @@ fun ProfileScreen(
                             visualTransformation = if (showSigaaSenha) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 IconButton(onClick = { showSigaaSenha = !showSigaaSenha }) {
-                                    Icon(if (showSigaaSenha) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null)
+                                    Icon(if (showSigaaSenha) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, contentDescription = null)
                                 }
                             }
                         )
@@ -1043,7 +1027,7 @@ fun ProfileScreen(
                                         termsAccepted = !termsAccepted 
                                         appPrefs.edit().putBoolean("terms_accepted", termsAccepted).apply()
                                     }
-                                    .padding(8.dp)
+                                    .padding(AppDimens.Spacing8)
                             ) {
                                 androidx.compose.material3.Checkbox(
                                     checked = termsAccepted,
@@ -1065,7 +1049,7 @@ fun ProfileScreen(
                             }
                         }
 
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = { 
                                 if (termsAccepted) {
                                     if (credentialStore.setSigaaCredentials(editSigaaMatricula, editSigaaSenha)) {
@@ -1092,16 +1076,16 @@ fun ProfileScreen(
         // 6. Ações do Aplicativo & Sobre
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
-            Button(
+            com.example.ui.components.AppPrimaryButton(
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Luis-Gustavo-Git-Hub/Suap.ifal-Mobile"))
                     context.startActivity(intent)
                 },
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = MaterialTheme.shapes.medium,
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.Spacing4, vertical = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1121,11 +1105,11 @@ fun ProfileScreen(
                 }
             }
 
-            Button(
+            com.example.ui.components.AppPrimaryButton(
                 onClick = onNavigateToLogs,
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = MaterialTheme.shapes.medium,
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.Spacing4, vertical = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1135,17 +1119,17 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Default.Terminal, contentDescription = "Ver Logs", modifier = Modifier.size(15.dp))
+                    Icon(Icons.Outlined.Terminal, contentDescription = "Ver Logs", modifier = Modifier.size(15.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Ver Logs", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
             }
 
-            Button(
+            com.example.ui.components.AppPrimaryButton(
                 onClick = onNavigateToCredits,
                 modifier = Modifier.weight(1f).height(44.dp),
                 shape = MaterialTheme.shapes.medium,
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.Spacing4, vertical = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -1155,7 +1139,7 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(15.dp))
+                    Icon(Icons.Outlined.Code, contentDescription = null, modifier = Modifier.size(15.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("v${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
                 }
@@ -1164,14 +1148,14 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        OutlinedButton(
+        com.example.ui.components.AppOutlineButton(
             onClick = { showDeleteDataDialog = true },
             modifier = Modifier.fillMaxWidth().height(42.dp),
             shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
         ) {
-            Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(Icons.Outlined.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text("Apagar Dados do Dispositivo", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
@@ -1181,12 +1165,12 @@ fun ProfileScreen(
     }
 
     if (showDeleteDataDialog) {
-        AlertDialog(
+        com.example.ui.components.AppDialog(
             onDismissRequest = { if (!isClearingData) showDeleteDataDialog = false },
             title = { Text("Apagar dados deste dispositivo?", fontWeight = FontWeight.Bold) },
             text = { Text(if (isClearingData) "Encerrando sincronizações e limpando os dados locais…" else "Remove as credenciais, notas e preferências locais e desconecta sua conta Google neste dispositivo.") },
             confirmButton = {
-                Button(
+                com.example.ui.components.AppPrimaryButton(
                     enabled = !isClearingData,
                     onClick = {
                         isClearingData = true
@@ -1216,8 +1200,8 @@ fun ProfileScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDataDialog = false }, enabled = !isClearingData) {
-                    Text("Cancelar")
+                com.example.ui.components.AppTextButton(onClick = { showDeleteDataDialog = false }, enabled = !isClearingData) {
+                    Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                 }
             },
             shape = MaterialTheme.shapes.extraLarge
@@ -1225,7 +1209,7 @@ fun ProfileScreen(
     }
 
     if (termsDialogTarget != null) {
-        AlertDialog(
+        com.example.ui.components.AppDialog(
             onDismissRequest = { termsDialogTarget = null },
             title = { Text("Termos de Uso") },
             text = {
@@ -1251,7 +1235,7 @@ fun ProfileScreen(
                 }
             },
             confirmButton = {
-                TextButton(
+                com.example.ui.components.AppTextButton(
                     onClick = {
                         termsAccepted = true
                         appPrefs.edit().putBoolean("terms_accepted", true).apply()
@@ -1275,7 +1259,7 @@ fun ProfileScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { termsDialogTarget = null }) {
+                com.example.ui.components.AppTextButton(onClick = { termsDialogTarget = null }) {
                     Text("Recusar")
                 }
             }

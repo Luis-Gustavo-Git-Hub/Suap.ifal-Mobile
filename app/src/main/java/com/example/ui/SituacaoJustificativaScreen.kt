@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -16,7 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -154,21 +155,8 @@ fun SituacaoJustificativaScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Situação das Justificativas",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            text = "Acompanhamento no SUAP",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Justificativas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -210,17 +198,17 @@ fun SituacaoJustificativaScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(AppDimens.Spacing24),
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(AppDimens.Spacing24),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ErrorOutline,
+                            imageVector = Icons.Outlined.ErrorOutline,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(40.dp)
@@ -238,17 +226,17 @@ fun SituacaoJustificativaScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(AppDimens.Spacing24),
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(32.dp),
+                        modifier = Modifier.padding(AppDimens.Spacing32),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AssignmentTurnedIn,
+                            imageVector = Icons.Outlined.AssignmentTurnedIn,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(48.dp)
@@ -274,8 +262,8 @@ fun SituacaoJustificativaScreen(
 modifier = Modifier
                         .fillMaxSize()
                         .widthIn(max = 600.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
+                    contentPadding = PaddingValues(horizontal = AppDimens.Spacing16, vertical = AppDimens.Spacing12)
                 ) {
                     items(
                         items = justificativas,
@@ -291,8 +279,8 @@ modifier = Modifier
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    .padding(AppDimens.Spacing16),
+                                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                             ) {
                                 // Header: Período & Status Pill
                                 Row(
@@ -302,7 +290,7 @@ modifier = Modifier
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -314,7 +302,7 @@ modifier = Modifier
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.DateRange,
+                                                imageVector = Icons.Outlined.DateRange,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.size(18.dp)
@@ -351,7 +339,7 @@ modifier = Modifier
                                             color = statusFg,
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.ExtraBold,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                            modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                                         )
                                     }
                                 }
@@ -378,10 +366,10 @@ modifier = Modifier
                                 // Date requested pill
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.CalendarToday,
+                                        imageVector = Icons.Outlined.CalendarToday,
                                         contentDescription = null,
                                         modifier = Modifier.size(13.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -396,7 +384,7 @@ modifier = Modifier
 
                                 // Details Action Button (Accessible Height)
                                 if (!item.detalhesUrl.isNullOrEmpty()) {
-                                    Button(
+                                    com.example.ui.components.AppPrimaryButton(
                                         onClick = {
                                             val match = Regex("""/edu/abonofaltas/(\d+)/""").find(item.detalhesUrl)
                                             val id = match?.groupValues?.get(1)
@@ -414,7 +402,7 @@ modifier = Modifier
                                         shape = MaterialTheme.shapes.medium
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Visibility,
+                                            imageVector = Icons.Outlined.Visibility,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )

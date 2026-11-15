@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import androidx.compose.animation.AnimatedContent
@@ -17,13 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,7 +59,7 @@ fun SuapTutorialDialog(
             subtitle = "Sincronização & Acesso Offline",
             description = "Sua matrícula e senha são necessárias para conectar diretamente ao SUAP do IFAL, permitindo buscar suas notas, boletins, faltas e horários e exibi-los em um visual moderno.",
             tip = "100% Seguro: Suas credenciais são armazenadas de forma estritamente local no seu próprio celular e NUNCA são enviadas a servidores externos.",
-            icon = Icons.Default.Security,
+            icon = Icons.Outlined.Security,
             accentColor = MaterialTheme.colorScheme.primary
         ),
         TutorialStep(
@@ -73,7 +68,7 @@ fun SuapTutorialDialog(
             subtitle = "Identificador Único do Aluno",
             description = "O campo Matrícula deve ser preenchido com o seu número de matrícula oficial do IFAL (por exemplo: 20241012345).",
             tip = "Onde encontrar: No comprovante de matrícula, declaração de vínculo, crachá estudantil ou e-mail de confirmação do campus.",
-            icon = Icons.Default.Badge,
+            icon = Icons.Outlined.Badge,
             accentColor = MaterialTheme.colorScheme.primary
         ),
         TutorialStep(
@@ -82,7 +77,7 @@ fun SuapTutorialDialog(
             subtitle = "Mesma Senha do Portal Oficial",
             description = "Utilize a mesma senha que você usa para acessar o sistema no portal oficial suap.ifal.edu.br.",
             tip = "Primeiro acesso? Caso nunca tenha acessado o SUAP, você pode cadastrar ou redefinir sua senha diretamente no site oficial do SUAP.",
-            icon = Icons.Default.Key,
+            icon = Icons.Outlined.Key,
             accentColor = MaterialTheme.colorScheme.tertiary
         ),
         TutorialStep(
@@ -91,7 +86,7 @@ fun SuapTutorialDialog(
             subtitle = "Aba Perfil ➔ Credenciais SUAP",
             description = "Você insere suas credenciais na aba Perfil, dentro do cartão 'Credenciais SUAP'. Ao clicar no botão abaixo, você será levado diretamente para lá com os campos abertos!",
             tip = "Preencha uma única vez para ter consulta rápida e instantânea de todo o seu histórico acadêmico!",
-            icon = Icons.Default.Lock,
+            icon = Icons.Outlined.Lock,
             accentColor = AppSemanticColors.success
         )
     )
@@ -102,11 +97,11 @@ fun SuapTutorialDialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Card(
+        com.example.ui.components.AppContentCard(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .widthIn(max = 480.dp)
-                .padding(vertical = 16.dp),
+                .padding(vertical = AppDimens.Spacing16),
             shape = MaterialTheme.shapes.extraLarge,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -116,7 +111,7 @@ fun SuapTutorialDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
+                    .padding(AppDimens.Spacing16),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header badge
@@ -126,11 +121,11 @@ fun SuapTutorialDialog(
                     contentColor = step.accentColor
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(14.dp))
                         Text(
                             text = "PASSO ${step.stepNumber} DE ${steps.size}",
                             style = MaterialTheme.typography.labelSmall,
@@ -208,7 +203,7 @@ fun SuapTutorialDialog(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(14.dp)
+                                modifier = Modifier.padding(AppDimens.Spacing12)
                             )
                         }
 
@@ -222,12 +217,12 @@ fun SuapTutorialDialog(
                             border = androidx.compose.foundation.BorderStroke(1.dp, targetStep.accentColor.copy(alpha = 0.25f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(AppDimens.Spacing12),
                                 verticalAlignment = Alignment.Top,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Lightbulb,
+                                    imageVector = Icons.Outlined.Lightbulb,
                                     contentDescription = null,
                                     tint = targetStep.accentColor,
                                     modifier = Modifier.padding(top = 1.dp)
@@ -247,7 +242,7 @@ fun SuapTutorialDialog(
 
                 // Stepper Dots Indicator
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     steps.forEachIndexed { index, _ ->
@@ -275,16 +270,16 @@ fun SuapTutorialDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (currentStep > 0) {
-                        TextButton(
+                        com.example.ui.components.AppTextButton(
                             onClick = { currentStep-- },
                             shape = MaterialTheme.shapes.small
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Voltar", )
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_back), )
                         }
                     } else {
-                        TextButton(
+                        com.example.ui.components.AppTextButton(
                             onClick = {
                                 onComplete()
                             },
@@ -295,7 +290,7 @@ fun SuapTutorialDialog(
                     }
 
                     if (currentStep < steps.size - 1) {
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = { currentStep++ },
                             shape = MaterialTheme.shapes.medium,
                             colors = ButtonDefaults.buttonColors(containerColor = step.accentColor)
@@ -305,7 +300,7 @@ fun SuapTutorialDialog(
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     } else {
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = {
                                 onComplete()
                             },

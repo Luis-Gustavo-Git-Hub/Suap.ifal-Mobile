@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 import androidx.compose.foundation.isSystemInDarkTheme
 
@@ -8,8 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -48,12 +48,12 @@ fun BlinkingSyncDot(
             modifier = modifier
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = AppDimens.Spacing4),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Sync,
+                    imageVector = Icons.Outlined.Sync,
                     contentDescription = "Sincronizando",
                     modifier = Modifier.size(10.dp).rotate(rotation)
                 )
@@ -72,12 +72,12 @@ fun BlinkingSyncDot(
             modifier = modifier
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.5.dp),
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = AppDimens.Spacing4),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = "Sincronizado",
                     modifier = Modifier.size(10.dp)
                 )

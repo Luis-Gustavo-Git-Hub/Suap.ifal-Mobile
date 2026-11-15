@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.util.configureAppWebSettings
 
 import android.annotation.SuppressLint
@@ -31,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -106,19 +107,8 @@ fun SigaaWebViewScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                        if (!statusMessage.isNullOrEmpty()) {
-                            Text(
-                                text = statusMessage ?: "",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("SIGAA") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -131,7 +121,7 @@ fun SigaaWebViewScreen(
                         hasAutoClickedNovoRegistro = false
                         webViewInstance?.reload()
                     }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Recarregar")
+                        Icon(Icons.Outlined.Refresh, contentDescription = "Recarregar")
                     }
                 }
             )
@@ -372,7 +362,7 @@ fun SigaaWebViewScreen(
                 exit = fadeOut(),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = AppDimens.Spacing24)
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
@@ -380,7 +370,7 @@ fun SigaaWebViewScreen(
                     shadowElevation = 6.dp
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing8),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         CircularProgressIndicator(

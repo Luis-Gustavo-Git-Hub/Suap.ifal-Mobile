@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.util.configureAppWebSettings
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -27,10 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -116,8 +114,8 @@ fun SigaaCertificadoNativeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Adicionar Certificado", fontWeight = FontWeight.Bold) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Certificados") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -365,19 +363,19 @@ fun SigaaCertificadoNativeScreen(
                 }
             } else if (loadError != null) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    modifier = Modifier.fillMaxSize().padding(AppDimens.Spacing24),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(loadError ?: "", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                     Spacer(modifier = Modifier.height(24.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = onNavigateBack) {
-                            Text("Voltar")
+                    Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)) {
+                        com.example.ui.components.AppOutlineButton(onClick = onNavigateBack) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_back))
                         }
-                        Button(onClick = {
+                        com.example.ui.components.AppPrimaryButton(onClick = {
                             loginAttempts = 0
                             hasNavigatedToTarget = false
                             fallbackAttempts = 0
@@ -392,17 +390,17 @@ fun SigaaCertificadoNativeScreen(
                 }
             } else if (isSuccess) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    modifier = Modifier.fillMaxSize().padding(AppDimens.Spacing24),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp))
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Certificado Enviado!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Sua atividade foi registrada no SIGAA.", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(32.dp))
-                    Button(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                    com.example.ui.components.AppPrimaryButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                         Text("Voltar para o Perfil", style = MaterialTheme.typography.titleMedium)
                     }
                 }
@@ -412,7 +410,7 @@ fun SigaaCertificadoNativeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(24.dp)
+                        .padding(AppDimens.Spacing24)
                 ) {
                     Text(
                         text = "Dados da Atividade",
@@ -434,7 +432,7 @@ fun SigaaCertificadoNativeScreen(
                             .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
                             .clip(MaterialTheme.shapes.medium)
                             .clickable { showDropdown = true }
-                            .padding(16.dp)
+                            .padding(AppDimens.Spacing16)
                     ) {
                         val selectedText = options.find { it.first == selectedOptionId }?.second ?: "Selecione a atividade"
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -445,7 +443,7 @@ fun SigaaCertificadoNativeScreen(
                                 maxLines = 2,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null)
                         }
                     }
 
@@ -458,11 +456,11 @@ fun SigaaCertificadoNativeScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 topBar = {
                                     Column {
-                                        TopAppBar(
+                                        com.example.ui.components.AppTopBar(
                                             title = { Text("Tipo de Atividade") },
                                             navigationIcon = {
                                                 IconButton(onClick = { showDropdown = false }) {
-                                                    Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                                    Icon(Icons.Outlined.Close, contentDescription = "Fechar")
                                                 }
                                             }
                                         )
@@ -489,7 +487,7 @@ modifier = Modifier
                                                     selectedOptionId = option.first
                                                     showDropdown = false
                                                 }
-                                                .padding(horizontal = 24.dp, vertical = 20.dp),
+                                                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing16),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
@@ -499,7 +497,7 @@ modifier = Modifier
                                             )
                                             if (selectedOptionId == option.first) {
                                                 Icon(
-                                                    Icons.Default.CheckCircle,
+                                                    Icons.Outlined.CheckCircle,
                                                     contentDescription = "Selecionado",
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
@@ -507,7 +505,7 @@ modifier = Modifier
                                         }
                                         if (index < options.size - 1) {
                                             HorizontalDivider(
-                                                modifier = Modifier.padding(horizontal = 24.dp),
+                                                modifier = Modifier.padding(horizontal = AppDimens.ScreenPadding),
                                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                             )
                                         }
@@ -523,7 +521,7 @@ modifier = Modifier
                         Text("*", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(start = 2.dp))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    com.example.ui.components.AppTextField(
                         value = observacao,
                         onValueChange = { observacao = it },
                         modifier = Modifier.fillMaxWidth().height(120.dp),
@@ -538,7 +536,7 @@ modifier = Modifier
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    Card(
+                    com.example.ui.components.AppContentCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.medium)
@@ -547,10 +545,10 @@ modifier = Modifier
                         elevation = CardDefaults.cardElevation(0.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(AppDimens.Spacing16),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.AttachFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Outlined.AttachFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = selectedFileName ?: "Escolher arquivo...",
@@ -562,11 +560,11 @@ modifier = Modifier
 
                     Spacer(modifier = Modifier.height(48.dp))
 
-                    Button(
+                    com.example.ui.components.AppPrimaryButton(
                         onClick = {
                             if (selectedOptionId.isEmpty() || selectedFileUri == null) {
                                 com.example.util.AppSnackbarManager.show("Preencha o tipo de atividade e anexe o comprovante.")
-                                return@Button
+                                return@AppPrimaryButton
                             }
                             isSubmitting = true
                             

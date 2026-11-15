@@ -23,9 +23,9 @@ private fun computeSubjectColor(subjectName: String): Color {
     val name = Normalizer.normalize(subjectName, Normalizer.Form.NFD)
         .replace(DIACRITICS_REGEX, "")
         .lowercase()
-        
+
     val words = name.split(WORDS_SPLIT_REGEX)
-        
+
     return when {
         // AGROPECUARIA
         words.contains("dtcr") || name.contains("desenho tecnico") || name.contains("construcoes rurais") -> Color(0xFFE65100) // Deep Orange
@@ -106,3 +106,94 @@ private fun computeSubjectColor(subjectName: String): Color {
         }
     }
 }
+
+private val paletteGradientCache = ConcurrentHashMap<String, List<Color>>()
+fun getSubjectGradient(subjectName: String): List<androidx.compose.ui.graphics.Color> {
+    if (subjectName.isBlank()) return listOf(androidx.compose.ui.graphics.Color(0xFF6366F1), androidx.compose.ui.graphics.Color(0xFF4F46E5), androidx.compose.ui.graphics.Color(0xFF4338CA))
+    return paletteGradientCache.getOrPut(subjectName) {
+        computeSubjectGradient(subjectName)
+    }
+}
+
+private fun computeSubjectGradient(subjectName: String): List<androidx.compose.ui.graphics.Color> {
+    val name = java.text.Normalizer.normalize(subjectName, java.text.Normalizer.Form.NFD)
+        .replace(DIACRITICS_REGEX, "")
+        .lowercase()
+
+    val words = name.split(WORDS_SPLIT_REGEX)
+
+    return when {
+        // MATEMATICA / EXATAS / ESTATISTICA / CALCULO
+        words.contains("mate") || name.contains("matematica") || name.contains("estatistica") || name.contains("calculo") || name.contains("geometria") || name.contains("algebra") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF3B82F6), androidx.compose.ui.graphics.Color(0xFF2563EB), androidx.compose.ui.graphics.Color(0xFF1D4ED8))
+
+        // FISICA / ASTRONOMIA
+        words.contains("fisc") || name.contains("fisica") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF06B6D4), androidx.compose.ui.graphics.Color(0xFF0284C7), androidx.compose.ui.graphics.Color(0xFF2563EB))
+
+        // QUIMICA / BIOQUIMICA
+        words.contains("quim") || name.contains("quimica") || name.contains("bioquimica") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF8B5CF6), androidx.compose.ui.graphics.Color(0xFFA855F7), androidx.compose.ui.graphics.Color(0xFFD946EF))
+
+        // BIOLOGIA / NATUREZA / ECOLOGIA / RECURSOS RENOVAVEIS
+        name.contains("biologia") || name.contains("natureza") || name.contains("genetica") || name.contains("ecologia") || words.contains("gerr") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF10B981), androidx.compose.ui.graphics.Color(0xFF059669), androidx.compose.ui.graphics.Color(0xFF84CC16))
+
+        // INFORMATICA / PROGRAMACAO / WEB / SISTEMAS
+        words.contains("info") || name.contains("informatica") || name.contains("programacao") || name.contains("algoritmo") || name.contains("computador") || name.contains("software") || name.contains("web") || name.contains("rede") || name.contains("sistemas") || name.contains("desenvolvimento") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF06B6D4), androidx.compose.ui.graphics.Color(0xFF3B82F6), androidx.compose.ui.graphics.Color(0xFF6366F1))
+
+        // PORTUGUES / LINGUAGENS / LITERATURA / REDACAO
+        words.contains("lipo") || words.contains("ling") || name.contains("portugues") || name.contains("lingua portuguesa") || name.contains("redacao") || name.contains("literatura") || name.contains("linguagens") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFF97316), androidx.compose.ui.graphics.Color(0xFFEA580C), androidx.compose.ui.graphics.Color(0xFFE11D48))
+
+        // HISTORIA / FILOSOFIA / SOCIOLOGIA / HUMANAS
+        words.contains("hist") || name.contains("historia") || words.contains("filo") || name.contains("filosofia") || words.contains("soci") || name.contains("sociologia") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFF59E0B), androidx.compose.ui.graphics.Color(0xFFD97706), androidx.compose.ui.graphics.Color(0xFFB45309))
+
+        // GEOGRAFIA / GEOPOLITICA
+        words.contains("geog") || name.contains("geografia") || name.contains("geopolitica") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF14B8A6), androidx.compose.ui.graphics.Color(0xFF0D9488), androidx.compose.ui.graphics.Color(0xFF059669))
+
+        // IDIOMAS (INGLES / ESPANHOL / LIBRAS / FRANCES)
+        name.contains("ingles") || name.contains("espanhol") || name.contains("libras") || name.contains("frances") || name.contains("lingua estrangeira") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFEC4899), androidx.compose.ui.graphics.Color(0xFFDB2777), androidx.compose.ui.graphics.Color(0xFF9333EA))
+
+        // ARTES / ED. FISICA
+        name.contains("arte") || name.contains("musica") || name.contains("danca") || words.contains("edfi") || name.contains("educacao fisica") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFF43F5E), androidx.compose.ui.graphics.Color(0xFFE11D48), androidx.compose.ui.graphics.Color(0xFFBE123C))
+
+        // AGROPECUARIA / ZOOTECNIA / MAQUINAS / SOLOS
+        words.contains("mapd") || words.contains("zoo") || name.contains("agro") || name.contains("agricultura") || name.contains("solo") || name.contains("plantas") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF84CC16), androidx.compose.ui.graphics.Color(0xFF65A30D), androidx.compose.ui.graphics.Color(0xFF15803D))
+
+        // AGROINDUSTRIA / ALIMENTOS / LATICINIOS
+        words.contains("agd") || words.contains("carn") || name.contains("alimento") || name.contains("agroindustria") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFFB923C), androidx.compose.ui.graphics.Color(0xFFF97316), androidx.compose.ui.graphics.Color(0xFFC2410C))
+
+        // ELETRICA / ELETRONICA
+        name.contains("eletro") || name.contains("eletrica") || name.contains("circuito") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFFBBF24), androidx.compose.ui.graphics.Color(0xFFF59E0B), androidx.compose.ui.graphics.Color(0xFFD97706))
+
+        // SAUDE / ENFERMAGEM
+        name.contains("saude") || name.contains("enfermagem") || name.contains("primeiros socorros") ->
+            listOf(androidx.compose.ui.graphics.Color(0xFFFB7185), androidx.compose.ui.graphics.Color(0xFFF43F5E), androidx.compose.ui.graphics.Color(0xFFE11D48))
+
+        // DEFAULT / OUTROS
+        else ->
+            listOf(androidx.compose.ui.graphics.Color(0xFF6366F1), androidx.compose.ui.graphics.Color(0xFF4F46E5), androidx.compose.ui.graphics.Color(0xFF4338CA))
+    }
+}
+
+val FriendCardColorPresets = listOf(
+    "" to ("Padrão M3" to Color.Unspecified),
+    "#E91E63" to ("Rosa" to Color(0xFFE91E63)),
+    "#8B5CF6" to ("Roxo" to Color(0xFF8B5CF6)),
+    "#3B82F6" to ("Azul" to Color(0xFF3B82F6)),
+    "#06B6D4" to ("Ciano" to Color(0xFF06B6D4)),
+    "#10B981" to ("Verde" to Color(0xFF10B981)),
+    "#F59E0B" to ("Amarelo" to Color(0xFFF59E0B)),
+    "#F97316" to ("Laranja" to Color(0xFFF97316)),
+    "#EF4444" to ("Vermelho" to Color(0xFFEF4444)),
+    "#1E293B" to ("Grafite" to Color(0xFF1E293B))
+)

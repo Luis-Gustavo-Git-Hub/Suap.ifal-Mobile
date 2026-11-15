@@ -1,12 +1,12 @@
 package com.example.ui.components
 
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,9 +32,9 @@ fun AppFeedbackCard(
     onAction: (() -> Unit)? = null
 ) {
     AppCard(modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)) {
+            Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -53,34 +53,57 @@ fun AppFeedbackCard(
 fun AppTopBar(
     title: String,
     onBack: (() -> Unit)? = null,
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
+    subtitle: String? = null
 ) {
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
+    AppTopBar(
+        title = { AppBarTitle(title, subtitle) },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                 }
             }
         },
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surface
-        )
+        actions = actions
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppTopBar(
+    title: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    ),
+    scrollBehavior: TopAppBarScrollBehavior? = null
+) {
+    TopAppBar(
+        title = title,
+        modifier = modifier,
+        navigationIcon = navigationIcon,
+        actions = actions,
+        colors = colors,
+        scrollBehavior = scrollBehavior,
+        expandedHeight = (64 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp
+    )
+}
+
+@Composable
+fun AppBarTitle(title: String, subtitle: String? = null) {
+    Column {
+        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold,
+            maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (!subtitle.isNullOrBlank()) {
+            Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
 }
 
 /**
@@ -94,7 +117,7 @@ fun AppCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shape = MaterialTheme.shapes.large
-    val containerColor = MaterialTheme.colorScheme.surfaceContainer
+    val containerColor = accent?.copy(alpha = 0.10f) ?: MaterialTheme.colorScheme.surfaceContainer
     val borderColor = accent?.copy(alpha = 0.35f)
         ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
 
@@ -197,8 +220,7 @@ fun AppPageHeader(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    maxLines = Int.MAX_VALUE
                 )
                 supportingContent?.invoke()
             }
@@ -230,7 +252,7 @@ fun AppChip(
 
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.small,
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
@@ -261,7 +283,9 @@ fun AppChip(
 enum class AppButtonVariant {
     Primary,
     Secondary,
-    Tertiary
+    Tertiary,
+    Outline,
+    Destructive
 }
 
 /**
@@ -280,6 +304,13 @@ fun AppButton(
     icon: ImageVector? = null
 ) {
     when (variant) {
+        AppButtonVariant.Outline -> OutlinedButton(onClick = onClick, modifier = modifier,
+            enabled = enabled, shape = MaterialTheme.shapes.medium) { ButtonInnerContent(text, icon) }
+        AppButtonVariant.Destructive -> Button(onClick = onClick, modifier = modifier,
+            enabled = enabled, shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError)) { ButtonInnerContent(text, icon) }
+
         AppButtonVariant.Primary -> {
             Button(
                 onClick = onClick,

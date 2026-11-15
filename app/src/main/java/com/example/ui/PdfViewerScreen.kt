@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.rememberAppFlingBehavior
 
 import android.graphics.Bitmap
@@ -89,8 +90,8 @@ fun PdfViewerScreen(title: String, url: String, onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Documento") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar") }
                 },
@@ -113,7 +114,7 @@ fun PdfViewerScreen(title: String, url: String, onBack: () -> Unit) {
                 Text(
                     text = errorMessage!!,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(AppDimens.Spacing16)
                 )
             } else if (pdfFile != null) {
                 PdfRendererView(pdfFile!!)
@@ -143,8 +144,8 @@ fun PdfRendererView(file: File) {
         LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(AppDimens.Spacing8),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             items(
                 count = renderer.pageCount,
@@ -180,7 +181,7 @@ modifier = Modifier.fillMaxSize(),
                     }
                 }
                 
-                Card(
+                com.example.ui.components.AppContentCard(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {

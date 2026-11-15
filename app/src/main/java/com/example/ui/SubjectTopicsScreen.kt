@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -24,7 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,37 +64,8 @@ fun SubjectTopicsScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
-                title = { 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        AnimatedSubjectBadge(
-                            subjectName = subjectName,
-                            size = 42.dp,
-                            iconSize = 22.dp
-                        )
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = subjectName,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                            Text(
-                                text = "Materiais de Aula",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle(subjectName) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -101,7 +73,7 @@ fun SubjectTopicsScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.fetchMaterials(subjectUrl) }, enabled = !isLoading) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar materiais")
+                        Icon(Icons.Outlined.Refresh, contentDescription = "Atualizar materiais")
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -136,7 +108,7 @@ fun SubjectTopicsScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(32.dp)
+                        modifier = Modifier.padding(AppDimens.Spacing32)
                     ) {
                         Surface(
                             shape = CircleShape,
@@ -145,7 +117,7 @@ fun SubjectTopicsScreen(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = Icons.Default.FolderOff,
+                                    imageVector = Icons.Outlined.FolderOff,
                                     contentDescription = null,
                                     modifier = Modifier.size(48.dp),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer
@@ -167,12 +139,12 @@ fun SubjectTopicsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(32.dp))
-                        FilledTonalButton(
+                        com.example.ui.components.AppTonalButton(
                             onClick = { viewModel.fetchMaterials(subjectUrl) },
                             shape = MaterialTheme.shapes.large,
-                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                            contentPadding = PaddingValues(horizontal = AppDimens.Spacing24, vertical = AppDimens.Spacing12)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Atualizar página")
                         }
@@ -184,7 +156,7 @@ fun SubjectTopicsScreen(
                 com.example.ui.components.AppFeedbackCard(
                     title = "Materiais indisponíveis",
                     message = errorMessage.orEmpty(),
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                    modifier = Modifier.align(Alignment.Center).padding(AppDimens.Spacing16),
                     actionLabel = "Tentar novamente",
                     onAction = { viewModel.fetchMaterials(subjectUrl) }
                 )
@@ -198,8 +170,8 @@ fun SubjectTopicsScreen(
                 LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    contentPadding = PaddingValues(start = AppDimens.Spacing16, end = AppDimens.Spacing16, top = AppDimens.Spacing8, bottom = AppDimens.Spacing32),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                 ) {
                     items(
                         items = materials,
@@ -302,55 +274,55 @@ fun TopicCard(
             "pdf" -> Quadruple(
                 listOf(errColor, errColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.PictureAsPdf,
+                Icons.Outlined.PictureAsPdf,
                 "PDF"
             )
             "doc", "docx" -> Quadruple(
                 listOf(primColor, primColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.Description,
+                Icons.Outlined.Description,
                 "WORD"
             )
             "xls", "xlsx", "csv" -> Quadruple(
                 listOf(succColor, succColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.TableChart,
+                Icons.Outlined.TableChart,
                 "PLANILHA"
             )
             "ppt", "pptx" -> Quadruple(
                 listOf(warnColor, warnColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.Slideshow,
+                Icons.Outlined.Slideshow,
                 "SLIDES"
             )
             "zip", "rar", "7z" -> Quadruple(
                 listOf(tertColor, tertColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.FolderZip,
+                Icons.Outlined.FolderZip,
                 "ZIP"
             )
             "jpg", "jpeg", "png", "gif" -> Quadruple(
                 listOf(secColor, secColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.Image,
+                Icons.Outlined.Image,
                 "IMAGEM"
             )
             "mp4", "mkv", "avi" -> Quadruple(
                 listOf(primColor, tertColor),
                 Color.White,
-                Icons.Default.VideoLibrary,
+                Icons.Outlined.VideoLibrary,
                 "VÍDEO"
             )
             else -> Quadruple(
                 listOf(outColor, outColor.copy(alpha = 0.8f)),
                 Color.White,
-                Icons.Default.InsertDriveFile,
+                Icons.Outlined.InsertDriveFile,
                 "ARQUIVO"
             )
         }
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraLarge),
@@ -361,7 +333,7 @@ fun TopicCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(AppDimens.Spacing16)
                 .fillMaxWidth()
         ) {
             Row(
@@ -398,7 +370,7 @@ fun TopicCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         Surface(
                             shape = MaterialTheme.shapes.extraSmall,
@@ -409,7 +381,7 @@ fun TopicCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = iconBgBrush.first(),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                             )
                         }
 
@@ -420,10 +392,10 @@ fun TopicCard(
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Event,
+                                        imageVector = Icons.Outlined.Event,
                                         contentDescription = null,
                                         modifier = Modifier.size(11.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -458,18 +430,18 @@ fun TopicCard(
             // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 if (fileExtension == "pdf" && onViewPdfClick != null) {
-                    OutlinedButton(
+                    com.example.ui.components.AppOutlineButton(
                         onClick = { onViewPdfClick(material.url) },
                         modifier = Modifier.weight(1f).height(40.dp),
                         shape = MaterialTheme.shapes.medium,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Visibility,
+                            imageVector = Icons.Outlined.Visibility,
                             contentDescription = "Visualizar PDF",
                             modifier = Modifier.size(16.dp)
                         )
@@ -482,21 +454,21 @@ fun TopicCard(
                     }
                 }
 
-                FilledTonalButton(
+                com.example.ui.components.AppTonalButton(
                     onClick = {
                         hasRequestedDownload = true
                         onDownloadClick()
                     },
                     modifier = Modifier.weight(1f).height(40.dp),
                     shape = MaterialTheme.shapes.medium,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Download,
+                        imageVector = Icons.Outlined.Download,
                         contentDescription = "Baixar",
                         modifier = Modifier.size(17.dp)
                     )

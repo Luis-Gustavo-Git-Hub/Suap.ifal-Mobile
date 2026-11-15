@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -94,7 +96,7 @@ fun XpRankHeaderWidget(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 9.dp, vertical = 6.dp)
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                 .widthIn(min = 120.dp, max = 155.dp)
         ) {
             // Top Row: Emblem + Level + Total XP
@@ -105,7 +107,7 @@ fun XpRankHeaderWidget(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     Box(
                         modifier = Modifier
@@ -256,9 +258,9 @@ fun DashboardScreen(
                     .fillMaxWidth()
                     .widthIn(max = if (isWide) 1100.dp else 600.dp)
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
                     .verticalScroll(rememberScrollState(), flingBehavior = rememberAppFlingBehavior()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 com.example.ui.components.AppPageHeader(
                     eyebrow = campusName,
@@ -266,7 +268,7 @@ fun DashboardScreen(
                     titleMaxLines = null,
                     subtitle = "Veja seu resumo acadêmico e os próximos compromissos.",
                     supportingContent = {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                             com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
                             if (!isWide) {
                                 XpRankHeaderWidget(
@@ -303,9 +305,9 @@ fun DashboardScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         val infiniteTransition = rememberInfiniteTransition(label = "syncSpin")
                         val rotation by infiniteTransition.animateFloat(
@@ -325,7 +327,7 @@ fun DashboardScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sync,
+                                imageVector = Icons.Outlined.Sync,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(16.dp)
@@ -380,13 +382,13 @@ fun DashboardScreen(
                 // Wide adaptive 2-column Bento Grid
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
                     verticalAlignment = Alignment.Top
                 ) {
                     // Left Column (Today, Boletim, Documentos)
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         com.example.ui.components.DashboardTodayCard(
                             scheduleItems = scheduleItems,
@@ -421,7 +423,7 @@ fun DashboardScreen(
                     // Right Column (Frequência, Almoço, Horários, Amigos)
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         FrequenciaCard(
                             modifier = Modifier.fillMaxWidth(),
@@ -444,7 +446,7 @@ fun DashboardScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                         ) {
                             HorariosSquareCard(
                                 modifier = Modifier.weight(1f),
@@ -514,7 +516,7 @@ fun DashboardScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     HorariosSquareCard(
                         modifier = Modifier.weight(1f),
@@ -737,7 +739,7 @@ fun BoletimCard(
     val containerColor = if (hasSuapCredentials) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
     val contentColor = if (hasSuapCredentials) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable {
             if (hasSuapCredentials) {
                 onClick()
@@ -754,17 +756,17 @@ fun BoletimCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing8),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 AnimatedModuleBadge(
-                    icon = Icons.Default.School,
+                    icon = Icons.Outlined.School,
                     contentDescription = "Boletim",
                     gradientColors = if (hasSuapCredentials) {
                         listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary)
@@ -799,7 +801,7 @@ fun BoletimCard(
             }
 
             Icon(
-                imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Lock,
+                imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Outlined.Lock,
                 contentDescription = if (hasSuapCredentials) "Abrir boletim" else "Bloqueado: entre no SUAP para ver",
                 tint = contentColor.copy(alpha = 0.85f),
                 modifier = Modifier.size(20.dp)
@@ -864,7 +866,7 @@ fun FrequenciaCard(
         AppSemanticColors.warning
     }
     
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable {
             if (!hasSuapCredentials) {
                 com.example.util.AppSnackbarManager.show("Entre no SUAP no Perfil para acompanhar sua frequência global e faltas.")
@@ -878,9 +880,9 @@ fun FrequenciaCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8)
                 .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             // Header: Icon + Titles + Circular Indicator
             Row(
@@ -889,12 +891,12 @@ fun FrequenciaCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing8),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     AnimatedModuleBadge(
-                        icon = Icons.Default.EventAvailable,
+                        icon = Icons.Outlined.EventAvailable,
                         contentDescription = "Frequência",
                         gradientColors = if (hasSuapCredentials) {
                             listOf(AppSemanticColors.warning, MaterialTheme.colorScheme.tertiary)
@@ -966,7 +968,7 @@ fun FrequenciaCard(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Default.Lock,
+                            imageVector = Icons.Outlined.Lock,
                             contentDescription = "Bloqueado: entre no SUAP para ver",
                             tint = contentColor.copy(alpha = 0.85f),
                             modifier = Modifier.size(20.dp)
@@ -980,7 +982,7 @@ fun FrequenciaCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(contentColor.copy(alpha = 0.08f), MaterialTheme.shapes.small)
-                    .padding(vertical = 5.dp, horizontal = 4.dp),
+                    .padding(vertical = AppDimens.Spacing4, horizontal = AppDimens.Spacing4),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1053,14 +1055,14 @@ fun FrequenciaCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
-                    FilledTonalButton(
+                    com.example.ui.components.AppTonalButton(
                         onClick = onNavigateToJustificativa,
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = 0.dp),
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = AppSemanticColors.warning,
@@ -1081,12 +1083,12 @@ fun FrequenciaCard(
                         )
                     }
                     
-                    OutlinedButton(
+                    com.example.ui.components.AppOutlineButton(
                         onClick = onNavigateToSituacao,
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = 0.dp),
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = contentColor
@@ -1124,19 +1126,19 @@ private fun StatisticsQuickAccessCard(
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Default.Insights, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)) {
+                Icon(Icons.Outlined.Insights, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Estatísticas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
                     Text("Resumo do seu desempenho acadêmico", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
                 }
-                Icon(Icons.Default.ChevronRight, contentDescription = "Abrir Estatísticas", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                Icon(Icons.Outlined.ChevronRight, contentDescription = "Abrir Estatísticas", tint = MaterialTheme.colorScheme.onTertiaryContainer)
             }
             if (statistics.hasData) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                     StatisticsPreviewMetric("Média", statistics.overallAverage?.let { String.format(java.util.Locale("pt", "BR"), "%.1f", it) } ?: "—", Modifier.weight(1f))
                     StatisticsPreviewMetric("Frequência", statistics.globalFrequency?.let { "${it.toInt()}%" } ?: "—", Modifier.weight(1f))
                     StatisticsPreviewMetric("Em risco", statistics.atRiskCount.toString(), Modifier.weight(1f))
@@ -1169,7 +1171,7 @@ fun AssuntosCard(modifier: Modifier = Modifier, hasSuapCredentials: Boolean, onC
         listOf(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.outlineVariant)
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable {
             if (hasSuapCredentials) {
                 onClick()
@@ -1192,18 +1194,18 @@ fun AssuntosCard(modifier: Modifier = Modifier, hasSuapCredentials: Boolean, onC
                 )
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp).fillMaxWidth(),
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12).fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp)
+                    modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing4)
                 ) {
                     AnimatedModuleBadge(
-                        icon = Icons.Default.LibraryBooks,
-                        contentDescription = "Materiais e Aulas",
+                        icon = Icons.Outlined.LibraryBooks,
+                        contentDescription = "Disciplinas",
                         gradientColors = if (hasSuapCredentials) {
                             listOf(MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary)
                         } else {
@@ -1215,7 +1217,7 @@ fun AssuntosCard(modifier: Modifier = Modifier, hasSuapCredentials: Boolean, onC
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Materiais e Aulas",
+                            text = "Disciplinas",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -1232,7 +1234,7 @@ fun AssuntosCard(modifier: Modifier = Modifier, hasSuapCredentials: Boolean, onC
                     }
                 }
                 Icon(
-                    imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Lock,
+                    imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Outlined.Lock,
                     contentDescription = if (hasSuapCredentials) "Abrir materiais" else "Bloqueado: entre no SUAP para ver",
                     tint = Color.White.copy(alpha = 0.85f),
                     modifier = Modifier.size(20.dp)
@@ -1254,7 +1256,7 @@ fun MarcarAlmocoCard(modifier: Modifier = Modifier, hasSigaaCredentials: Boolean
         listOf(Color.Gray, Color.DarkGray)
     }
 
-    androidx.compose.material3.Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable { 
             if (hasSigaaCredentials) {
                 onClick()
@@ -1277,17 +1279,17 @@ fun MarcarAlmocoCard(modifier: Modifier = Modifier, hasSigaaCredentials: Boolean
                 )
         ) {
             androidx.compose.foundation.layout.Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp).fillMaxWidth(),
+                modifier = Modifier.padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing12).fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 androidx.compose.foundation.layout.Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp)
+                    modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing4)
                 ) {
                     AnimatedModuleBadge(
-                        icon = Icons.Default.LunchDining,
+                        icon = Icons.Outlined.LunchDining,
                         contentDescription = "Refeitório",
                         gradientColors = if (hasSigaaCredentials) {
                             listOf(AppSemanticColors.warning, AppSemanticColors.warningContainer)
@@ -1317,7 +1319,7 @@ fun MarcarAlmocoCard(modifier: Modifier = Modifier, hasSigaaCredentials: Boolean
                     }
                 }
                 androidx.compose.material3.Icon(
-                    imageVector = if (hasSigaaCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Lock,
+                    imageVector = if (hasSigaaCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Outlined.Lock,
                     contentDescription = if (hasSigaaCredentials) "Abrir almoço" else "Bloqueado: entre no SIGAA para ver",
                     tint = androidx.compose.ui.graphics.Color.White,
                     modifier = Modifier.size(20.dp)
@@ -1344,7 +1346,7 @@ fun HorariosSquareCard(
         listOf(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.outlineVariant)
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable { 
             if (hasSuapCredentials) {
                 onClick()
@@ -1361,7 +1363,7 @@ fun HorariosSquareCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.linearGradient(colors = gradientColors))
-                .padding(14.dp)
+                .padding(AppDimens.Spacing12)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1373,7 +1375,7 @@ fun HorariosSquareCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AnimatedModuleBadge(
-                        icon = Icons.Default.CalendarToday,
+                        icon = Icons.Outlined.CalendarToday,
                         contentDescription = "Horário das Aulas",
                         gradientColors = if (hasSuapCredentials) {
                             listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
@@ -1385,7 +1387,7 @@ fun HorariosSquareCard(
                         iconSize = 20.dp
                     )
                     Icon(
-                        imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Default.Lock,
+                        imageVector = if (hasSuapCredentials) Icons.AutoMirrored.Filled.ArrowForward else Icons.Outlined.Lock,
                         contentDescription = if (hasSuapCredentials) "Abrir horários" else "Bloqueado: entre no SUAP para ver",
                         tint = Color.White.copy(alpha = 0.8f),
                         modifier = Modifier.size(18.dp)
@@ -1427,7 +1429,7 @@ fun FriendsSquareCard(
         listOf(MaterialTheme.colorScheme.outline, MaterialTheme.colorScheme.outlineVariant)
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable(enabled = enabled) { onClick() },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline),
@@ -1437,7 +1439,7 @@ fun FriendsSquareCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.linearGradient(colors = gradientColors))
-                .padding(14.dp)
+                .padding(AppDimens.Spacing12)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1449,7 +1451,7 @@ fun FriendsSquareCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AnimatedModuleBadge(
-                        icon = Icons.Default.Group,
+                        icon = Icons.Outlined.Group,
                         contentDescription = "Amigos",
                         gradientColors = if (enabled) {
                             listOf(MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.primary)
@@ -1499,12 +1501,12 @@ fun AcademicLevelsDialog(
     val lvl4 = totalSubjects * 320
     val lvl5 = totalSubjects * 360
 
-    AlertDialog(
+    com.example.ui.components.AppDialog(
         onDismissRequest = onDismiss,
         title = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Icon(
-                    imageVector = Icons.Default.EmojiEvents,
+                    imageVector = Icons.Outlined.EmojiEvents,
                     contentDescription = null,
                     tint = AppSemanticColors.warning,
                     modifier = Modifier.size(40.dp)
@@ -1520,7 +1522,7 @@ fun AcademicLevelsDialog(
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Informational Warning Card explaining cumulative XP vs current bimester average
@@ -1528,15 +1530,15 @@ fun AcademicLevelsDialog(
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = AppDimens.Spacing4)
                 ) {
-                    Column(modifier = Modifier.padding(10.dp)) {
+                    Column(modifier = Modifier.padding(AppDimens.Spacing8)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Info,
+                                imageVector = Icons.Outlined.Info,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
@@ -1609,7 +1611,7 @@ fun AcademicLevelsDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            com.example.ui.components.AppTextButton(
                 onClick = onDismiss,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
@@ -1636,9 +1638,9 @@ private fun LevelDialogInfoRow(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(AppDimens.Spacing8),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Box(
                 modifier = Modifier
@@ -1661,7 +1663,7 @@ private fun LevelDialogInfoRow(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -1687,7 +1689,7 @@ private fun LevelDialogInfoRow(
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Black,
                     fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                 )
             }
         }

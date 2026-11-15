@@ -9,20 +9,20 @@ fun BatteryOptimizationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    com.example.ui.components.AppDialog(
         onDismissRequest = onDismiss,
         title = { Text("Otimização da Bateria", fontWeight = FontWeight.Bold) },
         text = {
             Text("Para garantir que você receba notificações de lembrete de aula e novas notas em segundo plano, desative a otimização de bateria para o aplicativo nas configurações do sistema.")
         },
         confirmButton = {
-            Button(onClick = onConfirm) {
+            com.example.ui.components.AppPrimaryButton(onClick = onConfirm) {
                 Text("Configurar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+            com.example.ui.components.AppTextButton(onClick = onDismiss) {
+                Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
             }
         }
     )

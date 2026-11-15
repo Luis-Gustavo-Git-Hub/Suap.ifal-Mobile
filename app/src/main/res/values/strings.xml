@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Suap.ifal Mobile</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_back">Voltar</string>
+    <string name="action_retry">Tentar novamente</string>
+    <string name="action_save">Salvar</string>
+    <string name="action_close">Fechar</string>
 </resources>

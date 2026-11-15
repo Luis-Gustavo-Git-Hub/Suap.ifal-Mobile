@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import androidx.compose.foundation.background
@@ -8,8 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,8 +28,8 @@ fun AlmocoScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Módulo Refeitório", fontWeight = FontWeight.Bold) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Almoço") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -48,8 +48,8 @@ fun AlmocoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 600.dp)
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(AppDimens.Spacing16),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
             ) {
                 MarcarAlmocoActionCard(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToMarcarAlmoco)
             }
@@ -59,7 +59,7 @@ fun AlmocoScreen(
 
 @Composable
 fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable { onClick() },
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -78,7 +78,7 @@ fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
                 )
         ) {
             Row(
-                modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                modifier = Modifier.padding(AppDimens.Spacing16).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -88,7 +88,7 @@ fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Login,
+                        imageVector = Icons.Outlined.Login,
                         contentDescription = null,
                         tint = Color.White
                     )
@@ -114,7 +114,7 @@ fun SigaaLoginCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
 
 @Composable
 fun MarcarAlmocoActionCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.clickable { onClick() },
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = AppSemanticColors.warning),
@@ -133,7 +133,7 @@ fun MarcarAlmocoActionCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
                 )
         ) {
             Row(
-                modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                modifier = Modifier.padding(AppDimens.Spacing16).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -143,7 +143,7 @@ fun MarcarAlmocoActionCard(modifier: Modifier = Modifier, onClick: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Restaurant,
+                        imageVector = Icons.Outlined.Restaurant,
                         contentDescription = null,
                         tint = Color.White
                     )

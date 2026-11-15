@@ -26,8 +26,8 @@ fun SuapWebViewScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("SUAP") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")

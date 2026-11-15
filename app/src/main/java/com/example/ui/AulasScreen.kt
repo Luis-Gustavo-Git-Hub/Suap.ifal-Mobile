@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -28,7 +30,6 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -324,33 +325,8 @@ fun AulasScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        AnimatedSubjectBadge(
-                            subjectName = subjectName,
-                            size = 36.dp,
-                            iconSize = 19.dp
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = subjectName,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Aulas e Conteúdos Ministrados",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Aulas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -374,8 +350,8 @@ fun AulasScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Text(
                             text = "Acessando aulas ministradas no SUAP...",
@@ -391,11 +367,11 @@ fun AulasScreen(
                     Column(
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .padding(24.dp),
+                            .padding(AppDimens.Spacing24),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.EventBusy,
+                            imageVector = Icons.Outlined.EventBusy,
                             contentDescription = null,
                             modifier = Modifier.size(56.dp),
                             tint = MaterialTheme.colorScheme.error
@@ -408,16 +384,16 @@ fun AulasScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = {
                                 coroutineScope.launch {
                                     loadData()
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Tentar novamente")
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_retry))
                         }
                     }
                 }
@@ -425,8 +401,8 @@ fun AulasScreen(
                     LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        contentPadding = PaddingValues(AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                     ) {
                         // Bento Summary Cards Header
                         item {
@@ -440,19 +416,19 @@ modifier = Modifier.fillMaxSize(),
 
                         // Search & Filter controls
                         item {
-                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                OutlinedTextField(
+                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = AppDimens.Spacing4)) {
+                                com.example.ui.components.AppTextField(
                                     value = searchQuery,
                                     onValueChange = { searchQuery = it },
                                     modifier = Modifier.fillMaxWidth(),
                                     placeholder = { Text("Pesquisar conteúdo ou data...") },
                                     leadingIcon = {
-                                        Icon(Icons.Default.Search, contentDescription = "Pesquisar")
+                                        Icon(Icons.Outlined.Search, contentDescription = "Pesquisar")
                                     },
                                     trailingIcon = {
                                         if (searchQuery.isNotEmpty()) {
                                             IconButton(onClick = { searchQuery = "" }) {
-                                                Icon(Icons.Default.Clear, contentDescription = "Limpar")
+                                                Icon(Icons.Outlined.Clear, contentDescription = "Limpar")
                                             }
                                         }
                                     },
@@ -464,20 +440,20 @@ modifier = Modifier.fillMaxSize(),
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    FilterChip(
+                                    com.example.ui.components.AppFilterChip(
                                         selected = !onlyAbsences,
                                         onClick = { onlyAbsences = false },
                                         label = { Text("Todas (${aulas.size})") },
                                         leadingIcon = if (!onlyAbsences) {
-                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            { Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                         } else null
                                     )
 
                                     val countFaltas = aulas.count { (it.numFaltas.toIntOrNull() ?: 0) > 0 }
-                                    FilterChip(
+                                    com.example.ui.components.AppFilterChip(
                                         selected = onlyAbsences,
                                         onClick = { onlyAbsences = true },
                                         label = { Text("Com faltas ($countFaltas)") },
@@ -486,7 +462,7 @@ modifier = Modifier.fillMaxSize(),
                                             selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
                                         ),
                                         leadingIcon = if (onlyAbsences) {
-                                            { Icon(Icons.Default.WarningAmber, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                            { Icon(Icons.Outlined.WarningAmber, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                         } else null
                                     )
 
@@ -507,13 +483,13 @@ modifier = Modifier.fillMaxSize(),
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Box(
@@ -523,7 +499,7 @@ modifier = Modifier.fillMaxSize(),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.FolderOpen,
+                                                    imageVector = Icons.Outlined.FolderOpen,
                                                     contentDescription = null,
                                                     tint = MaterialTheme.colorScheme.onSecondary,
                                                     modifier = Modifier.size(18.dp)
@@ -553,7 +529,7 @@ modifier = Modifier.fillMaxSize(),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSecondary,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 2.dp)
                                             )
                                         }
                                     }
@@ -575,7 +551,7 @@ modifier = Modifier.fillMaxSize(),
 
                             if (standaloneMaterials.size > 3) {
                                 item(key = "btn_expand_standalone_materials") {
-                                    OutlinedButton(
+                                    com.example.ui.components.AppOutlineButton(
                                         onClick = { expandStandaloneMaterials = !expandStandaloneMaterials },
                                         modifier = Modifier.fillMaxWidth(),
                                         shape = MaterialTheme.shapes.medium,
@@ -587,10 +563,10 @@ modifier = Modifier.fillMaxSize(),
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                                         ) {
                                             Icon(
-                                                imageVector = if (expandStandaloneMaterials) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                imageVector = if (expandStandaloneMaterials) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -609,12 +585,12 @@ modifier = Modifier.fillMaxSize(),
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(top = 8.dp, bottom = 2.dp),
+                                            .padding(top = AppDimens.Spacing8, bottom = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.MenuBook,
+                                            imageVector = Icons.Outlined.MenuBook,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
@@ -635,7 +611,7 @@ modifier = Modifier.fillMaxSize(),
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 32.dp),
+                                        .padding(vertical = AppDimens.Spacing32),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
@@ -677,16 +653,16 @@ modifier = Modifier.fillMaxSize(),
 
     // Modal Sheet for Subject Materials (Files/Slides uploaded to the subject)
     if (showMaterialsSheet) {
-        ModalBottomSheet(
+        com.example.ui.components.AppBottomSheet(
             onDismissRequest = { showMaterialsSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = androidx.compose.material3.MaterialTheme.shapes.extraLarge
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 32.dp)
+                    .padding(horizontal = AppDimens.ScreenPadding)
+                    .padding(bottom = AppDimens.Spacing32)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -707,7 +683,7 @@ modifier = Modifier.fillMaxSize(),
                     }
 
                     if (materials.isNotEmpty()) {
-                        FilledTonalButton(
+                        com.example.ui.components.AppTonalButton(
                             onClick = {
                                 materials.forEach { mat ->
                                     downloadSuapFile(context, mat.title, mat.url)
@@ -716,7 +692,7 @@ modifier = Modifier.fillMaxSize(),
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Icon(Icons.Default.DownloadForOffline, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Outlined.DownloadForOffline, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Baixar Todos", style = MaterialTheme.typography.labelMedium)
                         }
@@ -729,8 +705,8 @@ modifier = Modifier.fillMaxSize(),
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing8),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         repeat(3) {
                             com.example.ui.components.AulaCardSkeleton()
@@ -740,7 +716,7 @@ modifier = Modifier.fillMaxSize(),
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 32.dp),
+                            .padding(vertical = AppDimens.Spacing32),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -753,14 +729,14 @@ modifier = Modifier.fillMaxSize(),
                     LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         items(
                             items = materials,
                             key = { it.url.ifBlank { "${it.title}_${it.date}" } },
                             contentType = { "material_item" }
                         ) { mat ->
-                            Card(
+                            com.example.ui.components.AppContentCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.large,
                                 colors = CardDefaults.cardColors(
@@ -770,9 +746,9 @@ modifier = Modifier.fillMaxWidth(),
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(14.dp),
+                                        .padding(AppDimens.Spacing12),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -803,7 +779,7 @@ modifier = Modifier.fillMaxWidth(),
                                         )
                                     }
 
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
                                         IconButton(
                                             onClick = { openInBrowser(context, mat.url) },
                                             modifier = Modifier.size(36.dp)
@@ -825,7 +801,7 @@ modifier = Modifier.fillMaxWidth(),
                                             )
                                         ) {
                                             Icon(
-                                                Icons.Default.Download,
+                                                Icons.Outlined.Download,
                                                 contentDescription = "Baixar material",
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -856,12 +832,12 @@ fun AulasBentoHeader(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
     ) {
         // Bento Row 1: Aulas ministradas & Faltas
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             // Card Total Aulas
             ElevatedCard(
@@ -872,10 +848,10 @@ fun AulasBentoHeader(
                 ),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(AppDimens.Spacing16)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -884,7 +860,7 @@ fun AulasBentoHeader(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.EventNote,
+                                imageVector = Icons.Outlined.EventNote,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(18.dp)
@@ -926,10 +902,10 @@ fun AulasBentoHeader(
                 ),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(AppDimens.Spacing16)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -941,7 +917,7 @@ fun AulasBentoHeader(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = if (hasFaltas) Icons.Default.WarningAmber else Icons.Default.CheckCircle,
+                                imageVector = if (hasFaltas) Icons.Outlined.WarningAmber else Icons.Outlined.CheckCircle,
                                 contentDescription = null,
                                 tint = if (hasFaltas) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSecondary,
                                 modifier = Modifier.size(18.dp)
@@ -977,7 +953,7 @@ fun AulasBentoHeader(
 
         // Professor Card (if available)
         if (professor.isNotBlank()) {
-            Card(
+            com.example.ui.components.AppContentCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(
@@ -988,9 +964,9 @@ fun AulasBentoHeader(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     Box(
                         modifier = Modifier
@@ -999,7 +975,7 @@ fun AulasBentoHeader(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.School,
+                            imageVector = Icons.Outlined.School,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onTertiaryContainer,
                             modifier = Modifier.size(18.dp)
@@ -1064,7 +1040,7 @@ fun AulaCard(
         }
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
@@ -1087,7 +1063,7 @@ fun AulaCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(AppDimens.Spacing16)
         ) {
             // Header Row: Date & Status Badge
             Row(
@@ -1098,7 +1074,7 @@ fun AulaCard(
                 // Date with Calendar Icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1111,7 +1087,7 @@ fun AulaCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CalendarToday,
+                            imageVector = Icons.Outlined.CalendarToday,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                             tint = if (hasFalta) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -1141,12 +1117,12 @@ fun AulaCard(
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         Icon(
-                            imageVector = if (hasFalta) Icons.Default.WarningAmber else Icons.Default.CheckCircle,
+                            imageVector = if (hasFalta) Icons.Outlined.WarningAmber else Icons.Outlined.CheckCircle,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = if (hasFalta) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer
@@ -1178,7 +1154,7 @@ fun AulaCard(
                 },
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
+                Column(modifier = Modifier.padding(AppDimens.Spacing12)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1186,10 +1162,10 @@ fun AulaCard(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MenuBook,
+                                imageVector = Icons.Outlined.MenuBook,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -1209,7 +1185,7 @@ fun AulaCard(
                             modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                Icons.Default.ContentCopy,
+                                Icons.Outlined.ContentCopy,
                                 contentDescription = "Copiar conteúdo",
                                 modifier = Modifier.size(15.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1241,8 +1217,8 @@ fun AulaCard(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(AppDimens.Spacing12),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         // Header for Download Section
                         Row(
@@ -1252,7 +1228,7 @@ fun AulaCard(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -1261,7 +1237,7 @@ fun AulaCard(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.CloudDownload,
+                                        imageVector = Icons.Outlined.CloudDownload,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
                                         tint = MaterialTheme.colorScheme.onPrimary
@@ -1285,7 +1261,7 @@ fun AulaCard(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 2.dp)
                                 )
                             }
                         }
@@ -1302,9 +1278,9 @@ fun AulaCard(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -1339,13 +1315,13 @@ fun AulaCard(
                                         )
                                     }
 
-                                    FilledTonalButton(
+                                    com.example.ui.components.AppTonalButton(
                                         onClick = { onDownloadAttachment(mat.url, mat.title) },
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing4),
                                         shape = MaterialTheme.shapes.small
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Download,
+                                            imageVector = Icons.Outlined.Download,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -1368,7 +1344,7 @@ fun AulaCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     Text(
                         text = "Links para acesso web:",
@@ -1387,9 +1363,9 @@ fun AulaCard(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
@@ -1407,7 +1383,7 @@ fun AulaCard(
                                     modifier = Modifier.weight(1f)
                                 )
                                 Icon(
-                                    imageVector = Icons.Default.ChevronRight,
+                                    imageVector = Icons.Outlined.ChevronRight,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                                     modifier = Modifier.size(16.dp)
@@ -1429,10 +1405,10 @@ fun AulaCard(
                 // Class count badge
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Schedule,
+                        imageVector = Icons.Outlined.Schedule,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1450,10 +1426,10 @@ fun AulaCard(
                 if (aula.professor.isNotBlank()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Person,
+                            imageVector = Icons.Outlined.Person,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1507,12 +1483,12 @@ fun StandaloneMaterialCard(
         tertiaryContainer, tertiary
     ) {
         when (fileExtension) {
-            "pdf" -> Triple(dangerContainer, danger, Icons.Default.PictureAsPdf)
-            "doc", "docx" -> Triple(infoContainer, info, Icons.Default.Description)
-            "xls", "xlsx" -> Triple(successContainer, success, Icons.Default.TableChart)
-            "ppt", "pptx" -> Triple(warningContainer, warning, Icons.Default.Slideshow)
-            "zip", "rar", "7z" -> Triple(tertiaryContainer, tertiary, Icons.Default.FolderZip)
-            "jpg", "jpeg", "png" -> Triple(secContainer, onSecContainer, Icons.Default.Image)
+            "pdf" -> Triple(dangerContainer, danger, Icons.Outlined.PictureAsPdf)
+            "doc", "docx" -> Triple(infoContainer, info, Icons.Outlined.Description)
+            "xls", "xlsx" -> Triple(successContainer, success, Icons.Outlined.TableChart)
+            "ppt", "pptx" -> Triple(warningContainer, warning, Icons.Outlined.Slideshow)
+            "zip", "rar", "7z" -> Triple(tertiaryContainer, tertiary, Icons.Outlined.FolderZip)
+            "jpg", "jpeg", "png" -> Triple(secContainer, onSecContainer, Icons.Outlined.Image)
             else -> Triple(sec.copy(alpha = 0.2f), sec, getMaterialIcon(material.url, material.title))
         }
     }
@@ -1531,9 +1507,9 @@ fun StandaloneMaterialCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 9.dp),
+                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Box(
                 modifier = Modifier
@@ -1564,7 +1540,7 @@ fun StandaloneMaterialCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4),
                     modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Text(
@@ -1588,10 +1564,10 @@ fun StandaloneMaterialCard(
                 }
             }
 
-            FilledTonalButton(
+            com.example.ui.components.AppTonalButton(
                 onClick = onDownload,
                 shape = MaterialTheme.shapes.small,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                contentPadding = PaddingValues(horizontal = AppDimens.Spacing12, vertical = 0.dp),
                 modifier = Modifier.height(34.dp),
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
@@ -1599,7 +1575,7 @@ fun StandaloneMaterialCard(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Default.Download,
+                    imageVector = Icons.Outlined.Download,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )
@@ -1613,13 +1589,13 @@ fun StandaloneMaterialCard(
 fun getMaterialIcon(url: String, title: String): androidx.compose.ui.graphics.vector.ImageVector {
     val combined = "$url $title".lowercase()
     return when {
-        combined.contains(".pdf") -> Icons.Default.PictureAsPdf
-        combined.contains(".zip") || combined.contains(".rar") || combined.contains(".7z") -> Icons.Default.FolderZip
-        combined.contains(".doc") || combined.contains(".docx") -> Icons.Default.Description
-        combined.contains(".ppt") || combined.contains(".pptx") || combined.contains("slide") || combined.contains("apresenta") -> Icons.Default.Slideshow
-        combined.contains(".xls") || combined.contains(".xlsx") || combined.contains(".csv") -> Icons.Default.TableChart
-        combined.contains(".mp4") || combined.contains(".mkv") || combined.contains("video") -> Icons.Default.VideoLibrary
-        else -> Icons.Default.FileDownload
+        combined.contains(".pdf") -> Icons.Outlined.PictureAsPdf
+        combined.contains(".zip") || combined.contains(".rar") || combined.contains(".7z") -> Icons.Outlined.FolderZip
+        combined.contains(".doc") || combined.contains(".docx") -> Icons.Outlined.Description
+        combined.contains(".ppt") || combined.contains(".pptx") || combined.contains("slide") || combined.contains("apresenta") -> Icons.Outlined.Slideshow
+        combined.contains(".xls") || combined.contains(".xlsx") || combined.contains(".csv") -> Icons.Outlined.TableChart
+        combined.contains(".mp4") || combined.contains(".mkv") || combined.contains("video") -> Icons.Outlined.VideoLibrary
+        else -> Icons.Outlined.FileDownload
     }
 }
 

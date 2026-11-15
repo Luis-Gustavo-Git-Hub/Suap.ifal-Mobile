@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -20,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -100,40 +100,8 @@ fun HorariosScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "Horário de Aulas",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(if (isRefreshing || errorMessage != null || !hasSavedData) MaterialTheme.colorScheme.outline else AppSemanticColors.success, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = when {
-                                    isRefreshing -> "Atualizando com o SUAP…"
-                                    errorMessage != null && hasSavedData -> "Exibindo dados salvos"
-                                    hasSavedData -> "Dados salvos no dispositivo"
-                                    else -> "Nenhum dado sincronizado"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Horários") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -147,7 +115,7 @@ fun HorariosScreen(
                         if (isRefreshing) {
                             CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                         } else {
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Atualizar esta aba")
+                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = "Atualizar esta aba")
                         }
                     }
                 },
@@ -173,7 +141,7 @@ fun HorariosScreen(
                     com.example.ui.components.AppFeedbackCard(
                         title = "Atualização indisponível",
                         message = errorMessage,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing8),
                         actionLabel = "Tentar novamente",
                         onAction = refreshCurrentTab
                     )
@@ -183,7 +151,7 @@ fun HorariosScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4),
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.35f else 0.5f),
                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -200,11 +168,11 @@ fun HorariosScreen(
                             text = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
+                                    modifier = Modifier.padding(vertical = AppDimens.Spacing4)
                                 ) {
                                     Icon(
-                                        imageVector = if (selectedTab == 0) Icons.Default.ViewWeek else Icons.Outlined.ViewWeek,
+                                        imageVector = if (selectedTab == 0) Icons.Outlined.ViewWeek else Icons.Outlined.ViewWeek,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -218,11 +186,11 @@ fun HorariosScreen(
                             text = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
+                                    modifier = Modifier.padding(vertical = AppDimens.Spacing4)
                                 ) {
                                     Icon(
-                                        imageVector = if (selectedTab == 1) Icons.Default.CalendarMonth else Icons.Outlined.CalendarMonth,
+                                        imageVector = if (selectedTab == 1) Icons.Outlined.CalendarMonth else Icons.Outlined.CalendarMonth,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -378,7 +346,7 @@ private fun DayViewContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4)
                 .clip(MaterialTheme.shapes.extraLarge)
                 .background(
                     if (isDark) {
@@ -409,7 +377,7 @@ private fun DayViewContent(
                     ),
                     MaterialTheme.shapes.extraLarge
                 )
-                .padding(16.dp)
+                .padding(AppDimens.Spacing16)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -418,7 +386,7 @@ private fun DayViewContent(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                 ) {
                     Box(
                         modifier = Modifier
@@ -435,7 +403,7 @@ private fun DayViewContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CalendarToday,
+                            imageVector = Icons.Outlined.CalendarToday,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(22.dp)
@@ -444,7 +412,7 @@ private fun DayViewContent(
                     Column {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Text(
                                 text = "$selectedDayName-feira",
@@ -459,7 +427,7 @@ private fun DayViewContent(
                                     contentColor = MaterialTheme.colorScheme.onPrimary
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
@@ -492,12 +460,12 @@ private fun DayViewContent(
                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AutoAwesome,
+                            imageVector = Icons.Outlined.AutoAwesome,
                             contentDescription = null,
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -517,8 +485,8 @@ private fun DayViewContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing16),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             daysOfWeek.forEachIndexed { index, dayName ->
                 val isSelected = index == selectedDayIndex
@@ -562,7 +530,7 @@ private fun DayViewContent(
                     } else null
                 ) {
                     Column(
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        modifier = Modifier.padding(vertical = AppDimens.Spacing8),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -589,13 +557,13 @@ private fun DayViewContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(AppDimens.Spacing24),
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = AppDimens.Spacing12),
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -603,7 +571,7 @@ private fun DayViewContent(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(32.dp),
+                            .padding(AppDimens.Spacing32),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
@@ -613,7 +581,7 @@ private fun DayViewContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.BeachAccess,
+                                imageVector = Icons.Outlined.BeachAccess,
                                 contentDescription = null,
                                 modifier = Modifier.size(34.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -641,8 +609,8 @@ private fun DayViewContent(
             LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                contentPadding = PaddingValues(start = AppDimens.Spacing16, end = AppDimens.Spacing16, bottom = AppDimens.Spacing24),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 items(
                     items = dayClasses,
@@ -679,7 +647,7 @@ modifier = Modifier.fillMaxSize(),
                                     ),
                                     MaterialTheme.shapes.large
                                 )
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -688,7 +656,7 @@ modifier = Modifier.fillMaxSize(),
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -697,7 +665,7 @@ modifier = Modifier.fillMaxSize(),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.FreeBreakfast,
+                                            imageVector = Icons.Outlined.FreeBreakfast,
                                             contentDescription = null,
                                             modifier = Modifier.size(18.dp),
                                             tint = AppSemanticColors.warning
@@ -727,7 +695,7 @@ modifier = Modifier.fillMaxSize(),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = AppSemanticColors.onWarningContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                                     )
                                 }
                             }
@@ -752,11 +720,11 @@ modifier = Modifier.fillMaxSize(),
                                     ),
                                     MaterialTheme.shapes.extraLarge
                                 )
-                                .padding(14.dp)
+                                .padding(AppDimens.Spacing12)
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                             ) {
                                 // Header Row: Time slot pill & Location
                                 Row(
@@ -765,7 +733,7 @@ modifier = Modifier.fillMaxSize(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Surface(
@@ -773,11 +741,11 @@ modifier = Modifier.fillMaxSize(),
                                             shape = MaterialTheme.shapes.small
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Schedule,
+                                                    imageVector = Icons.Outlined.Schedule,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(13.dp),
                                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -802,7 +770,7 @@ modifier = Modifier.fillMaxSize(),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp)
                                                 )
                                             }
                                         }
@@ -814,11 +782,11 @@ modifier = Modifier.fillMaxSize(),
                                             shape = MaterialTheme.shapes.small
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.LocationOn,
+                                                    imageVector = Icons.Outlined.LocationOn,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(13.dp),
                                                     tint = MaterialTheme.colorScheme.onTertiaryContainer
@@ -838,7 +806,7 @@ modifier = Modifier.fillMaxSize(),
                                 // Main Content Row with Subject Icon Badge
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     AnimatedSubjectBadge(
@@ -875,9 +843,9 @@ modifier = Modifier.fillMaxSize(),
                                         border = BorderStroke(0.6.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                            modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                         ) {
                                             Box(
                                                 modifier = Modifier
@@ -886,7 +854,7 @@ modifier = Modifier.fillMaxSize(),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Person,
+                                                    imageVector = Icons.Outlined.Person,
                                                     contentDescription = null,
                                                     modifier = Modifier.size(13.dp),
                                                     tint = MaterialTheme.colorScheme.primary
@@ -1045,9 +1013,9 @@ fun MonthCalendarContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState(), flingBehavior = rememberAppFlingBehavior())
-            .padding(16.dp),
+            .padding(AppDimens.Spacing16),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
     ) {
         // Month Navigation Card (Premium Bento Style)
         var expanded by remember { mutableStateOf(false) }
@@ -1060,7 +1028,7 @@ fun MonthCalendarContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1082,13 +1050,13 @@ fun MonthCalendarContent(
                 }
                 
                 Box(contentAlignment = Alignment.Center) {
-                    TextButton(
+                    com.example.ui.components.AppTextButton(
                         onClick = { expanded = true },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Text(
                                 text = "${selectedMonth.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale("pt", "BR")).replaceFirstChar { it.uppercase() }} ${selectedMonth.year}",
@@ -1098,7 +1066,7 @@ fun MonthCalendarContent(
                                 letterSpacing = (-0.2).sp
                             )
                             Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
+                                imageVector = Icons.Outlined.ArrowDropDown,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -1154,8 +1122,8 @@ fun MonthCalendarContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(AppDimens.Spacing12),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 // Days of Week Header Row
                 Row(
@@ -1170,7 +1138,7 @@ fun MonthCalendarContent(
                             ),
                             shape = MaterialTheme.shapes.medium
                         )
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = AppDimens.Spacing8),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -1214,9 +1182,10 @@ fun MonthCalendarContent(
                                 val hasExams = dayItems.any { it.isExam }
                                 val hasEvents = dayItems.isNotEmpty()
                                 
-                                val firstEventColor = remember(dayItems) {
+                                val examColor = AppSemanticColors.warning
+                                val firstEventColor = remember(dayItems, examColor) {
                                     try {
-                                        if (hasExams) Color(0xFFFF4081)
+                                        if (hasExams) examColor
                                         else dayItems.firstOrNull { it.color.isNotBlank() && it.color != "#E0E0E0" }?.color?.let {
                                             Color(android.graphics.Color.parseColor(it))
                                         }
@@ -1234,7 +1203,7 @@ fun MonthCalendarContent(
                                 val cellBgModifier = when {
                                     isToday -> Modifier.background(todayGradient)
                                     isSelected -> Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f))
-                                    hasExams -> Modifier.background(Color(0xFFFF4081).copy(alpha = if (isDark) 0.22f else 0.15f))
+                                    hasExams -> Modifier.background(AppSemanticColors.warning.copy(alpha = if (isDark) 0.22f else 0.15f))
                                     hasEvents -> Modifier.background(firstEventColor?.copy(alpha = if (isDark) 0.16f else 0.12f) ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
                                     else -> Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
                                 }
@@ -1242,7 +1211,7 @@ fun MonthCalendarContent(
                                 val cellText = when {
                                     isToday -> Color.White
                                     isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                    hasExams -> Color(0xFFFF4081)
+                                    hasExams -> AppSemanticColors.warning
                                     hasEvents -> firstEventColor ?: MaterialTheme.colorScheme.primary
                                     else -> MaterialTheme.colorScheme.onSurface
                                 }
@@ -1251,7 +1220,7 @@ fun MonthCalendarContent(
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(1.0f)
-                                        .padding(4.dp)
+                                        .padding(AppDimens.Spacing4)
                                         .clip(MaterialTheme.shapes.medium)
                                         .then(cellBgModifier)
                                         .clickable {
@@ -1260,7 +1229,7 @@ fun MonthCalendarContent(
                                         .then(
                                             if (isToday) Modifier.shadow(6.dp, MaterialTheme.shapes.medium)
                                             else if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
-                                            else if (hasExams) Modifier.border(1.5.dp, Color(0xFFFF4081).copy(alpha = 0.7f), MaterialTheme.shapes.medium)
+                                            else if (hasExams) Modifier.border(1.5.dp, AppSemanticColors.warning.copy(alpha = 0.7f), MaterialTheme.shapes.medium)
                                             else if (hasEvents) Modifier.border(1.dp, (firstEventColor ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.4f), MaterialTheme.shapes.medium)
                                             else Modifier.border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f), MaterialTheme.shapes.medium)
                                         ),
@@ -1289,7 +1258,7 @@ fun MonthCalendarContent(
                                                     val dotColor = if (isToday) {
                                                         Color.White
                                                     } else if (ev.isExam) {
-                                                        Color(0xFFFF4081)
+                                                        AppSemanticColors.warning
                                                     } else {
                                                         try {
                                                             Color(android.graphics.Color.parseColor(ev.color))
@@ -1330,14 +1299,14 @@ fun MonthCalendarContent(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.extraLarge,
-                color = Color(0xFFFF4081).copy(alpha = if (isDark) 0.12f else 0.08f),
-                border = BorderStroke(1.2.dp, Color(0xFFFF4081).copy(alpha = 0.45f))
+                color = AppSemanticColors.warning.copy(alpha = if (isDark) 0.12f else 0.08f),
+                border = BorderStroke(1.2.dp, AppSemanticColors.warning.copy(alpha = 0.45f))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(AppDimens.Spacing16),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1346,18 +1315,18 @@ fun MonthCalendarContent(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(32.dp)
-                                    .background(Color(0xFFFF4081).copy(alpha = 0.2f), CircleShape),
+                                    .background(AppSemanticColors.warning.copy(alpha = 0.2f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Assignment,
+                                    imageVector = Icons.Outlined.Assignment,
                                     contentDescription = null,
-                                    tint = Color(0xFFFF4081),
+                                    tint = AppSemanticColors.warning,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -1378,21 +1347,21 @@ fun MonthCalendarContent(
 
                         Surface(
                             shape = MaterialTheme.shapes.small,
-                            color = Color(0xFFFF4081).copy(alpha = 0.2f),
-                            border = BorderStroke(0.8.dp, Color(0xFFFF4081).copy(alpha = 0.5f))
+                            color = AppSemanticColors.warning.copy(alpha = 0.2f),
+                            border = BorderStroke(0.8.dp, AppSemanticColors.warning.copy(alpha = 0.5f))
                         ) {
                             Text(
                                 text = "${monthExams.size} Prova(s)",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFF4081),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                color = AppSemanticColors.warning,
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                             )
                         }
                     }
 
                     if (monthExams.isNotEmpty()) {
-                        HorizontalDivider(color = Color(0xFFFF4081).copy(alpha = 0.2f))
+                        HorizontalDivider(color = AppSemanticColors.warning.copy(alpha = 0.2f))
                         
                         monthExams.forEach { exam ->
                             Surface(
@@ -1403,16 +1372,16 @@ fun MonthCalendarContent(
                                     },
                                 shape = MaterialTheme.shapes.medium,
                                 color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(0.8.dp, Color(0xFFFF4081).copy(alpha = 0.35f))
+                                border = BorderStroke(0.8.dp, AppSemanticColors.warning.copy(alpha = 0.35f))
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(10.dp),
+                                        .padding(AppDimens.Spacing8),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Column(modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing8)) {
                                         Text(
                                             text = exam.title,
                                             style = MaterialTheme.typography.bodyMedium,
@@ -1432,14 +1401,14 @@ fun MonthCalendarContent(
 
                                     Surface(
                                         shape = MaterialTheme.shapes.small,
-                                        color = Color(0xFFFF4081).copy(alpha = 0.15f)
+                                        color = AppSemanticColors.warning.copy(alpha = 0.15f)
                                     ) {
                                         Text(
                                             text = exam.dateInfo,
                                             style = MaterialTheme.typography.labelSmall,
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = Color(0xFFFF4081),
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                            color = AppSemanticColors.warning,
+                                            modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp)
                                         )
                                     }
                                 }
@@ -1460,8 +1429,8 @@ fun MonthCalendarContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(AppDimens.Spacing16),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
             ) {
                 // Header
                 Row(
@@ -1471,7 +1440,7 @@ fun MonthCalendarContent(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -1480,7 +1449,7 @@ fun MonthCalendarContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Event,
+                                imageVector = Icons.Outlined.Event,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
@@ -1507,7 +1476,7 @@ fun MonthCalendarContent(
                                 text = "Ver Todos",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                             )
                         }
                     }
@@ -1533,12 +1502,12 @@ fun MonthCalendarContent(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 24.dp),
+                            .padding(vertical = AppDimens.Spacing24),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Default.EventBusy,
+                                imageVector = Icons.Outlined.EventBusy,
                                 contentDescription = null,
                                 modifier = Modifier.size(36.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
@@ -1555,12 +1524,13 @@ fun MonthCalendarContent(
                 } else {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         filteredEvents.forEach { item ->
-                            val rawColor = remember(item) {
+                            val examColor = AppSemanticColors.warning
+                            val rawColor = remember(item, examColor) {
                                 try {
-                                    if (item.isExam) Color(0xFFFF4081)
+                                    if (item.isExam) examColor
                                     else if (item.color.isNotBlank() && item.color != "#E0E0E0") {
                                         Color(android.graphics.Color.parseColor(item.color))
                                     } else {
@@ -1576,13 +1546,13 @@ fun MonthCalendarContent(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.large,
                                 color = if (item.isExam) {
-                                    Color(0xFFFF4081).copy(alpha = if (isDark) 0.12f else 0.08f)
+                                    AppSemanticColors.warning.copy(alpha = if (isDark) 0.12f else 0.08f)
                                 } else {
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.25f else 0.35f)
                                 },
                                 border = BorderStroke(
                                     if (item.isExam) 1.2.dp else 1.dp,
-                                    if (item.isExam) Color(0xFFFF4081).copy(alpha = 0.45f)
+                                    if (item.isExam) AppSemanticColors.warning.copy(alpha = 0.45f)
                                     else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                                 )
                             ) {
@@ -1603,8 +1573,8 @@ fun MonthCalendarContent(
                                     Column(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            .padding(AppDimens.Spacing12),
+                                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                                     ) {
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -1614,25 +1584,25 @@ fun MonthCalendarContent(
                                             if (item.isExam) {
                                                 Surface(
                                                     shape = MaterialTheme.shapes.small,
-                                                    color = Color(0xFFFF4081).copy(alpha = 0.18f),
-                                                    border = BorderStroke(0.8.dp, Color(0xFFFF4081).copy(alpha = 0.5f))
+                                                    color = AppSemanticColors.warning.copy(alpha = 0.18f),
+                                                    border = BorderStroke(0.8.dp, AppSemanticColors.warning.copy(alpha = 0.5f))
                                                 ) {
                                                     Row(
-                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp),
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                                                     ) {
                                                         Icon(
-                                                            imageVector = Icons.Default.Assignment,
+                                                            imageVector = Icons.Outlined.Assignment,
                                                             contentDescription = null,
-                                                            tint = Color(0xFFFF4081),
+                                                            tint = AppSemanticColors.warning,
                                                             modifier = Modifier.size(12.dp)
                                                         )
                                                         Text(
                                                             text = "PROVA / AVALIAÇÃO",
                                                             style = MaterialTheme.typography.labelSmall,
                                                             fontWeight = FontWeight.ExtraBold,
-                                                            color = Color(0xFFFF4081)
+                                                            color = AppSemanticColors.warning
                                                         )
                                                     }
                                                 }
@@ -1656,7 +1626,7 @@ fun MonthCalendarContent(
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.ExtraBold,
                                                     color = eventColor,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp)
                                                 )
                                             }
                                         }

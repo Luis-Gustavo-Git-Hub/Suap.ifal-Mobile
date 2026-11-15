@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import com.example.ui.theme.rememberAppFlingBehavior
@@ -23,7 +24,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -57,18 +57,7 @@ private fun cachedFriendDateFormat(pattern: String) = object : ThreadLocal<Simpl
 private val FRIEND_TIME_FORMATTER = cachedFriendDateFormat("HH:mm")
 private val FRIEND_DATE_FORMATTER = cachedFriendDateFormat("dd/MM 'às' HH:mm")
 
-val cardColorPresets = listOf(
-    "" to ("Padrão M3" to Color.Unspecified),
-    "#E91E63" to ("Rosa" to Color(0xFFE91E63)),
-    "#8B5CF6" to ("Roxo" to Color(0xFF8B5CF6)),
-    "#3B82F6" to ("Azul" to Color(0xFF3B82F6)),
-    "#06B6D4" to ("Ciano" to Color(0xFF06B6D4)),
-    "#10B981" to ("Verde" to Color(0xFF10B981)),
-    "#F59E0B" to ("Amarelo" to Color(0xFFF59E0B)),
-    "#F97316" to ("Laranja" to Color(0xFFF97316)),
-    "#EF4444" to ("Vermelho" to Color(0xFFEF4444)),
-    "#1E293B" to ("Grafite" to Color(0xFF1E293B))
-)
+val cardColorPresets = com.example.ui.theme.FriendCardColorPresets
 
 fun formatLastUpdate(timestamp: Long): String {
     if (timestamp <= 0L) return "Sem notas atualizadas"
@@ -94,8 +83,8 @@ fun formatLastUpdate(timestamp: Long): String {
 private fun FriendsUnavailableScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Rede Acadêmica") },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Rede Acadêmica") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -108,12 +97,12 @@ private fun FriendsUnavailableScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .padding(AppDimens.Spacing24),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.Info,
+                imageVector = Icons.Outlined.Info,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(40.dp)
@@ -133,7 +122,7 @@ private fun FriendsUnavailableScreen(onBack: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(20.dp))
-            OutlinedButton(onClick = onBack) { Text("Voltar ao app") }
+            com.example.ui.components.AppOutlineButton(onClick = onBack) { Text("Voltar ao app") }
         }
     }
 }
@@ -267,11 +256,11 @@ fun FriendsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            com.example.ui.components.AppTopBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -288,7 +277,7 @@ fun FriendsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Group,
+                                imageVector = Icons.Outlined.Group,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
@@ -323,15 +312,15 @@ fun FriendsScreen(
                             shape = MaterialTheme.shapes.medium,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(end = AppDimens.Spacing4)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.PersonAdd,
+                                    imageVector = Icons.Outlined.PersonAdd,
                                     contentDescription = "Adicionar",
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -352,7 +341,7 @@ fun FriendsScreen(
                                 }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Notifications,
+                                    imageVector = Icons.Outlined.Notifications,
                                     contentDescription = "Solicitações",
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
@@ -361,7 +350,7 @@ fun FriendsScreen(
 
                         IconButton(onClick = { showSettingsSheet = true }) {
                             Icon(
-                                imageVector = Icons.Default.Settings,
+                                imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Configurações",
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -387,7 +376,7 @@ fun FriendsScreen(
                         .fillMaxSize()
                         .widthIn(max = 600.dp)
                         .verticalScroll(rememberScrollState(), flingBehavior = rememberAppFlingBehavior())
-                        .padding(20.dp),
+                        .padding(AppDimens.Spacing16),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -406,7 +395,7 @@ fun FriendsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.PeopleAlt,
+                            imageVector = Icons.Outlined.PeopleAlt,
                             contentDescription = null,
                             modifier = Modifier.size(46.dp),
                             tint = Color.White
@@ -439,18 +428,18 @@ fun FriendsScreen(
                     ) {
                         Column(
                             modifier = Modifier.padding(18.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
-                            FeatureRow(icon = Icons.Default.Sync, text = "Sincronização em tempo real das notas do SUAP")
-                            FeatureRow(icon = Icons.Default.Palette, text = "Personalização de cor do seu card para amigos")
-                            FeatureRow(icon = Icons.Default.AccessTime, text = "Data e hora exatas de atualização do boletim")
-                            FeatureRow(icon = Icons.Default.Compare, text = "Comparação detalhada de disciplinas e médias")
+                            FeatureRow(icon = Icons.Outlined.Sync, text = "Sincronização em tempo real das notas do SUAP")
+                            FeatureRow(icon = Icons.Outlined.Palette, text = "Personalização de cor do seu card para amigos")
+                            FeatureRow(icon = Icons.Outlined.AccessTime, text = "Data e hora exatas de atualização do boletim")
+                            FeatureRow(icon = Icons.Outlined.Compare, text = "Comparação detalhada de disciplinas e médias")
                         }
                     }
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    Button(
+                    com.example.ui.components.AppPrimaryButton(
                         onClick = {
                             isSigningIn = true
                             coroutineScope.launch {
@@ -484,7 +473,7 @@ fun FriendsScreen(
                             Text("Entrando...", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         } else {
                             Icon(
-                                imageVector = Icons.Default.Login,
+                                imageVector = Icons.Outlined.Login,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -532,8 +521,8 @@ fun FriendsScreen(
                         LazyColumn(
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                            contentPadding = PaddingValues(start = AppDimens.Spacing16, end = AppDimens.Spacing16, top = AppDimens.Spacing8, bottom = AppDimens.Spacing24),
+                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
                             // 1. CARD COLOR CUSTOMIZER & SHARE BOLETIM BENTO CONTAINER
                             item {
@@ -551,8 +540,8 @@ modifier = Modifier.fillMaxSize(),
                                     )
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                                        modifier = Modifier.padding(AppDimens.Spacing16),
+                                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                                     ) {
                                         // Top Section: Cor do Seu Card para Amigos
                                         Row(
@@ -562,10 +551,10 @@ modifier = Modifier.fillMaxSize(),
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Palette,
+                                                    imageVector = Icons.Outlined.Palette,
                                                     contentDescription = null,
                                                     tint = mySelectedColor ?: MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.size(20.dp)
@@ -593,7 +582,7 @@ modifier = Modifier.fillMaxSize(),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Bold,
                                                     color = mySelectedColor ?: MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                                                 )
                                             }
                                         }
@@ -601,7 +590,7 @@ modifier = Modifier.fillMaxSize(),
                                         // Horizontal Swatch Color Palette Picker
                                         LazyRow(
                 flingBehavior = rememberAppFlingBehavior(),
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                                             contentPadding = PaddingValues(vertical = 2.dp)
                                         ) {
                                             items(
@@ -634,7 +623,7 @@ modifier = Modifier.fillMaxSize(),
                                                 ) {
                                                     if (isSelected) {
                                                         Icon(
-                                                            imageVector = Icons.Default.Check,
+                                                            imageVector = Icons.Outlined.Check,
                                                             contentDescription = "Selecionado",
                                                             tint = if (color == Color.Unspecified) MaterialTheme.colorScheme.primary else Color.White,
                                                             modifier = Modifier.size(18.dp)
@@ -652,7 +641,7 @@ modifier = Modifier.fillMaxSize(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                            Column(modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing8)) {
                                                 Text(
                                                     text = "Compartilhar Meu Boletim",
                                                     style = MaterialTheme.typography.titleSmall,
@@ -665,7 +654,7 @@ modifier = Modifier.fillMaxSize(),
                                                 )
                                             }
 
-                                            Button(
+                                            com.example.ui.components.AppPrimaryButton(
                                                 onClick = {
                                                     isSyncing = true
                                                     coroutineScope.launch {
@@ -736,7 +725,7 @@ modifier = Modifier.fillMaxSize(),
                                                     Text("Enviando...", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
                                                 } else {
                                                     Icon(
-                                                        imageVector = Icons.Default.Sync,
+                                                        imageVector = Icons.Outlined.Sync,
                                                         contentDescription = null,
                                                         modifier = Modifier.size(16.dp)
                                                     )
@@ -751,14 +740,14 @@ modifier = Modifier.fillMaxSize(),
 
                             // 2. SEARCH & FILTER BAR
                             item {
-                                OutlinedTextField(
+                                com.example.ui.components.AppTextField(
                                     value = listSearchQuery,
                                     onValueChange = { listSearchQuery = it },
                                     modifier = Modifier.fillMaxWidth(),
                                     placeholder = { Text("Pesquisar amigos na lista...") },
                                     leadingIcon = {
                                         Icon(
-                                            imageVector = Icons.Default.Search,
+                                            imageVector = Icons.Outlined.Search,
                                             contentDescription = "Pesquisar",
                                             tint = MaterialTheme.colorScheme.primary
                                         )
@@ -766,7 +755,7 @@ modifier = Modifier.fillMaxSize(),
                                     trailingIcon = {
                                         if (listSearchQuery.isNotEmpty()) {
                                             IconButton(onClick = { listSearchQuery = "" }) {
-                                                Icon(Icons.Default.Clear, contentDescription = "Limpar")
+                                                Icon(Icons.Outlined.Clear, contentDescription = "Limpar")
                                             }
                                         }
                                     },
@@ -788,7 +777,7 @@ modifier = Modifier.fillMaxSize(),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.PersonSearch,
+                                                imageVector = Icons.Outlined.PersonSearch,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(40.dp),
                                                 tint = MaterialTheme.colorScheme.primary
@@ -808,11 +797,11 @@ modifier = Modifier.fillMaxSize(),
                                             )
                                             if (friendsList.isEmpty()) {
                                                 Spacer(modifier = Modifier.height(16.dp))
-                                                Button(
+                                                com.example.ui.components.AppPrimaryButton(
                                                     onClick = { showAddDialog = true },
                                                     shape = MaterialTheme.shapes.medium
                                                 ) {
-                                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                                                     Spacer(modifier = Modifier.width(6.dp))
                                                     Text("Adicionar Amigos", fontWeight = FontWeight.Bold)
                                                 }
@@ -860,13 +849,13 @@ modifier = Modifier.fillMaxSize(),
         
         // Requests Sheet Modal
         if (showRequestsSheet) {
-            ModalBottomSheet(onDismissRequest = { showRequestsSheet = false }) {
+            com.example.ui.components.AppBottomSheet(onDismissRequest = { showRequestsSheet = false }) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
-                        .padding(bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(AppDimens.Spacing16)
+                        .padding(bottom = AppDimens.Spacing32),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
                 ) {
                     Text(
                         text = "Solicitações de Amizade",
@@ -882,7 +871,7 @@ modifier = Modifier.fillMaxSize(),
                         )
                     } else {
                         LazyColumn(
-                flingBehavior = rememberAppFlingBehavior(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                flingBehavior = rememberAppFlingBehavior(), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                             items(
                                 items = pendingRequests,
                                 key = { it.uid },
@@ -896,12 +885,12 @@ modifier = Modifier.fillMaxSize(),
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                 ) {
                                     Column(
-                                        modifier = Modifier.padding(14.dp),
-                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        modifier = Modifier.padding(AppDimens.Spacing12),
+                                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                     ) {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                         ) {
                                             Base64Image(
                                                 base64String = req.photoBase64,
@@ -922,7 +911,7 @@ modifier = Modifier.fillMaxSize(),
                                             }
                                         }
 
-                                        OutlinedTextField(
+                                        com.example.ui.components.AppTextField(
                                             value = reqName,
                                             onValueChange = { reqName = it },
                                             label = { Text("Apelido para este amigo *") },
@@ -936,7 +925,7 @@ modifier = Modifier.fillMaxSize(),
                                             horizontalArrangement = Arrangement.End,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            TextButton(onClick = {
+                                            com.example.ui.components.AppTextButton(onClick = {
                                                 coroutineScope.launch {
                                                     FriendsManager.declineFriendRequest(req.uid)
                                                     pendingRequests = FriendsManager.getPendingRequests()
@@ -945,7 +934,7 @@ modifier = Modifier.fillMaxSize(),
                                                 Text("Recusar", color = MaterialTheme.colorScheme.error)
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Button(
+                                            com.example.ui.components.AppPrimaryButton(
                                                 onClick = {
                                                     if (reqName.isNotBlank()) {
                                                         coroutineScope.launch {
@@ -973,12 +962,12 @@ modifier = Modifier.fillMaxSize(),
 
         // Settings Dialog (Includes Profile Photo Toggle)
         if (showSettingsSheet) {
-            AlertDialog(
+            com.example.ui.components.AppDialog(
                 onDismissRequest = { showSettingsSheet = false },
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Box(
                             modifier = Modifier
@@ -988,7 +977,7 @@ modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Settings,
+                                imageVector = Icons.Outlined.Settings,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -1003,7 +992,7 @@ modifier = Modifier.fillMaxSize(),
                 },
                 text = {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
@@ -1022,15 +1011,15 @@ modifier = Modifier.fillMaxSize(),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    modifier = Modifier.padding(AppDimens.Spacing12),
+                                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.AccountCircle,
+                                            imageVector = Icons.Outlined.AccountCircle,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
@@ -1060,11 +1049,11 @@ modifier = Modifier.fillMaxSize(),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(12.dp),
+                                modifier = Modifier.padding(AppDimens.Spacing12),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing8)) {
                                     Text(
                                         text = "Compartilhar Foto",
                                         fontWeight = FontWeight.Bold,
@@ -1088,7 +1077,7 @@ modifier = Modifier.fillMaxSize(),
 
                         // Switch Google Account Option
                         if (isSignedIn) {
-                            Button(
+                            com.example.ui.components.AppPrimaryButton(
                                 onClick = {
                                     showSettingsSheet = false
                                     coroutineScope.launch {
@@ -1107,7 +1096,7 @@ modifier = Modifier.fillMaxSize(),
                                 shape = MaterialTheme.shapes.medium
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.SwitchAccount,
+                                    imageVector = Icons.Outlined.SwitchAccount,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -1118,7 +1107,7 @@ modifier = Modifier.fillMaxSize(),
 
                         // Disconnect Google Account Option
                         if (isSignedIn) {
-                            OutlinedButton(
+                            com.example.ui.components.AppOutlineButton(
                                 onClick = {
                                     coroutineScope.launch {
                                         FriendsManager.signOut(context)
@@ -1136,7 +1125,7 @@ modifier = Modifier.fillMaxSize(),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Logout,
+                                    imageVector = Icons.Outlined.Logout,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -1147,11 +1136,11 @@ modifier = Modifier.fillMaxSize(),
                     }
                 },
                 confirmButton = {
-                    Button(
+                    com.example.ui.components.AppPrimaryButton(
                         onClick = { showSettingsSheet = false },
                         shape = MaterialTheme.shapes.medium
                     ) {
-                        Text("Fechar", fontWeight = FontWeight.Bold)
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_close), fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -1159,13 +1148,13 @@ modifier = Modifier.fillMaxSize(),
 
         // Edit Friend Custom Name Dialog
         friendToEdit?.let { friend ->
-            AlertDialog(
+            com.example.ui.components.AppDialog(
                 onDismissRequest = { friendToEdit = null },
                 title = { Text("Apelido do Amigo", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                         Text("Defina um apelido personalizado para identificar seu amigo:")
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = customNameForEdit,
                             onValueChange = { customNameForEdit = it },
                             label = { Text("Apelido") },
@@ -1176,7 +1165,7 @@ modifier = Modifier.fillMaxSize(),
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = {
+                    com.example.ui.components.AppTextButton(onClick = {
                         coroutineScope.launch {
                             try {
                                 FriendsManager.updateFriendName(friend.uid, customNameForEdit)
@@ -1188,12 +1177,12 @@ modifier = Modifier.fillMaxSize(),
                             }
                         }
                     }) {
-                        Text("Salvar", fontWeight = FontWeight.Bold)
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_save), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { friendToEdit = null }) {
-                        Text("Cancelar")
+                    com.example.ui.components.AppTextButton(onClick = { friendToEdit = null }) {
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                     }
                 }
             )
@@ -1201,12 +1190,12 @@ modifier = Modifier.fillMaxSize(),
         
         // Remove Friend Confirmation Dialog
         friendToRemove?.let { friend ->
-            AlertDialog(
+            com.example.ui.components.AppDialog(
                 onDismissRequest = { friendToRemove = null },
                 title = { Text("Remover Amigo", fontWeight = FontWeight.Bold) },
                 text = { Text("Tem certeza que deseja remover ${friend.nome}? Vocês não poderão mais visualizar os boletins um do outro.") },
                 confirmButton = {
-                    TextButton(onClick = {
+                    com.example.ui.components.AppTextButton(onClick = {
                         coroutineScope.launch {
                             try {
                                 FriendsManager.removeFriend(friend.uid)
@@ -1222,8 +1211,8 @@ modifier = Modifier.fillMaxSize(),
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { friendToRemove = null }) {
-                        Text("Cancelar")
+                    com.example.ui.components.AppTextButton(onClick = { friendToRemove = null }) {
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                     }
                 }
             )
@@ -1231,7 +1220,7 @@ modifier = Modifier.fillMaxSize(),
 
         // Add Friend Dialog
         if (showAddDialog) {
-            AlertDialog(
+            com.example.ui.components.AppDialog(
                 onDismissRequest = {
                     showAddDialog = false
                     searchResult = null
@@ -1240,9 +1229,9 @@ modifier = Modifier.fillMaxSize(),
                 },
                 title = { Text("Adicionar Colega", fontWeight = FontWeight.Bold) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                         Text("Insira o e-mail Google do seu amigo ou escaneie o QR Code dele:")
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = searchMatricula,
                             onValueChange = { searchMatricula = it },
                             label = { Text("E-mail Google do Amigo") },
@@ -1257,12 +1246,12 @@ modifier = Modifier.fillMaxSize(),
                                     options.setOrientationLocked(true)
                                     scanLauncher.launch(options)
                                 }) {
-                                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Escanear QR Code")
+                                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = "Escanear QR Code")
                                 }
                             }
                         )
 
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = {
                                 if (searchMatricula.isNotBlank()) {
                                     isSearching = true
@@ -1285,7 +1274,7 @@ modifier = Modifier.fillMaxSize(),
                         searchResult?.let { found ->
                             HorizontalDivider()
                             Text("Usuário encontrado!", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            OutlinedTextField(
+                            com.example.ui.components.AppTextField(
                                 value = customNameForAdd,
                                 onValueChange = { customNameForAdd = it },
                                 label = { Text("Apelido para este amigo *") },
@@ -1298,7 +1287,7 @@ modifier = Modifier.fillMaxSize(),
                 },
                 confirmButton = {
                     if (searchResult != null) {
-                        TextButton(
+                        com.example.ui.components.AppTextButton(
                             onClick = {
                                 if (customNameForAdd.isNotBlank()) {
                                     coroutineScope.launch {
@@ -1323,13 +1312,13 @@ modifier = Modifier.fillMaxSize(),
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = {
+                    com.example.ui.components.AppTextButton(onClick = {
                         showAddDialog = false
                         searchResult = null
                         searchMatricula = ""
                         customNameForAdd = ""
                     }) {
-                        Text("Cancelar")
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                     }
                 }
             )
@@ -1337,12 +1326,12 @@ modifier = Modifier.fillMaxSize(),
 
         // Compare Sheet
         if (showCompareSheet) {
-            ModalBottomSheet(onDismissRequest = { showCompareSheet = false }) {
+            com.example.ui.components.AppBottomSheet(onDismissRequest = { showCompareSheet = false }) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 32.dp),
+                        .padding(horizontal = AppDimens.ScreenPadding)
+                        .padding(bottom = AppDimens.Spacing32),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Comparativo do Boletim", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
@@ -1351,10 +1340,10 @@ modifier = Modifier.fillMaxSize(),
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AccessTime,
+                                imageVector = Icons.Outlined.AccessTime,
                                 contentDescription = null,
                                 modifier = Modifier.size(13.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -1377,14 +1366,14 @@ modifier = Modifier.fillMaxSize(),
                         Text("Este amigo ainda não compartilhou o boletim no app.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(32.dp))
                     } else {
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = compareSearchQuery,
                             onValueChange = { compareSearchQuery = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 12.dp),
+                                .padding(bottom = AppDimens.Spacing12),
                             placeholder = { Text("Pesquisar disciplina...") },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
+                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Pesquisar") },
                             singleLine = true,
                             shape = MaterialTheme.shapes.medium
                         )
@@ -1396,12 +1385,12 @@ modifier = Modifier.fillMaxSize(),
                         }
                         
                         LazyColumn(
-                flingBehavior = rememberAppFlingBehavior(), modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                flingBehavior = rememberAppFlingBehavior(), modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                             item {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 4.dp, start = 8.dp, end = 8.dp),
+                                        .padding(bottom = AppDimens.Spacing4, start = AppDimens.Spacing8, end = AppDimens.Spacing8),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text("Disciplina", modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1425,7 +1414,7 @@ modifier = Modifier.fillMaxSize(),
                                     shape = MaterialTheme.shapes.large,
                                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                 ) {
-                                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(AppDimens.Spacing12)) {
                                         Text(name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                                         Spacer(modifier = Modifier.height(10.dp))
                                         
@@ -1588,12 +1577,12 @@ fun FriendItemCard(
     }
 
     val badgeIcon = when (globalLevel) {
-        1 -> Icons.Default.LocalFlorist
-        2 -> Icons.Default.MenuBook
-        3 -> Icons.Default.School
-        4 -> Icons.Default.Psychology
-        5 -> Icons.Default.WorkspacePremium
-        else -> Icons.Default.Star
+        1 -> Icons.Outlined.LocalFlorist
+        2 -> Icons.Outlined.MenuBook
+        3 -> Icons.Outlined.School
+        4 -> Icons.Outlined.Psychology
+        5 -> Icons.Outlined.WorkspacePremium
+        else -> Icons.Outlined.Star
     }
 
     Surface(
@@ -1606,8 +1595,8 @@ fun FriendItemCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(AppDimens.Spacing16),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
         ) {
             // Header Row: Avatar, Name/Email, Actions
             Row(
@@ -1630,7 +1619,7 @@ fun FriendItemCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         Text(
                             text = friend.nome.ifEmpty { "Amigo sem nome" },
@@ -1658,7 +1647,7 @@ fun FriendItemCard(
                     )
                 }
                 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -1668,7 +1657,7 @@ fun FriendItemCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = Icons.Outlined.Edit,
                                 contentDescription = "Editar Apelido",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1685,7 +1674,7 @@ fun FriendItemCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.PersonRemove,
+                                imageVector = Icons.Outlined.PersonRemove,
                                 contentDescription = "Remover Amigo",
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.error
@@ -1707,12 +1696,12 @@ fun FriendItemCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing4),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.AccessTime,
+                        imageVector = Icons.Outlined.AccessTime,
                         contentDescription = "Última atualização de notas",
                         modifier = Modifier.size(15.dp),
                         tint = customCardColor ?: MaterialTheme.colorScheme.primary
@@ -1731,7 +1720,7 @@ fun FriendItemCard(
             // XP & LEVEL BADGES ROW (DISTRUBUTED BELOW TO COMPLETELY PREVENT CUT-OFF)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // XP Badge
@@ -1742,12 +1731,12 @@ fun FriendItemCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Stars,
+                            imageVector = Icons.Outlined.Stars,
                             contentDescription = null,
                             modifier = Modifier.size(13.dp),
                             tint = MaterialTheme.colorScheme.secondary
@@ -1770,7 +1759,7 @@ fun FriendItemCard(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(badgeIcon, contentDescription = null, modifier = Modifier.size(13.dp))
@@ -1820,7 +1809,7 @@ fun FriendItemCard(
 fun FeatureRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
     ) {
         Icon(
             imageVector = icon,
@@ -1864,7 +1853,7 @@ fun Base64Image(base64String: String, modifier: Modifier = Modifier, contentDesc
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Person,
+                imageVector = Icons.Outlined.Person,
                 contentDescription = contentDescription,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(24.dp)

@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import android.content.Context
 import android.webkit.CookieManager
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -329,7 +330,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                     .shadow(16.dp, navShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.78f), navShape)
                                     .border(1.dp, MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), navShape)
-                                    .padding(horizontal = 8.dp),
+                                    .padding(horizontal = AppDimens.Spacing8),
                                 horizontalArrangement = Arrangement.SpaceAround,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -365,7 +366,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                     selected = isStatistics,
                                     onClick = { navigateTab(NavRoute.Statistics()) },
                                     icon = getTabIcon("statistics", isStatistics, appTheme),
-                                    label = "Estatística"
+                                    label = "Estatísticas"
                                 )
                                 NavItem(
                                     modifier = Modifier.weight(1f),
@@ -385,15 +386,19 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                     startDestination = NavRoute.Dashboard,
                     modifier = Modifier.padding(innerPadding),
                     enterTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeIn(tween(180)) else
                         slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> width / 3 } + fadeIn(animationSpec = tween(240))
                     },
                     exitTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeOut(tween(120)) else
                         slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> -width / 3 } + fadeOut(animationSpec = tween(240))
                     },
                     popEnterTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeIn(tween(180)) else
                         slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> -width / 3 } + fadeIn(animationSpec = tween(240))
                     },
                     popExitTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeOut(tween(120)) else
                         slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> width } + fadeOut(animationSpec = tween(240))
                     }
                 ) {
@@ -903,3 +908,7 @@ fun NavItem(
         )
     }
 }
+
+private fun androidx.navigation.NavDestination.isAppTab(): Boolean =
+    hasRoute<NavRoute.Dashboard>() || hasRoute<NavRoute.Avisos>() ||
+        hasRoute<NavRoute.Statistics>() || hasRoute<NavRoute.Profile>()

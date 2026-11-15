@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,10 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.DesignServices
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,8 +31,8 @@ fun CreditsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Créditos", fontWeight = FontWeight.Bold) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Sobre o app") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -47,7 +45,7 @@ fun CreditsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
+                .padding(AppDimens.Spacing24)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
             
@@ -59,7 +57,7 @@ fun CreditsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Favorite,
+                    imageVector = Icons.Outlined.Favorite,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(64.dp)
@@ -82,13 +80,13 @@ fun CreditsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            Card(
+            com.example.ui.components.AppContentCard(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                 shape = MaterialTheme.shapes.large
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(AppDimens.Spacing24),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -101,7 +99,7 @@ fun CreditsScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Código & Engenharia", fontWeight = FontWeight.Bold)
                     }
@@ -118,7 +116,7 @@ fun CreditsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.DesignServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.DesignServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "UI & UX Design", fontWeight = FontWeight.Bold)
                     }
@@ -136,24 +134,12 @@ fun CreditsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            Button(
-                onClick = onViewLogs,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Code, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ver Logs do Sistema")
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Button(
+            com.example.ui.components.AppPrimaryButton(
                 onClick = onActivateDemoMode,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.AutoFixHigh, contentDescription = null)
+                Icon(Icons.Outlined.AutoFixHigh, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Ativar Modo Demonstração")
             }

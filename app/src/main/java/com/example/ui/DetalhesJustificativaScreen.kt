@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import android.content.Intent
@@ -14,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -191,21 +192,8 @@ fun DetalhesJustificativaScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Detalhes da Solicitação",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            text = "Abono de Falta / SUAP",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Detalhes da justificativa") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -243,17 +231,17 @@ fun DetalhesJustificativaScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .padding(AppDimens.Spacing24),
                     shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(AppDimens.Spacing24),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ErrorOutline,
+                            imageVector = Icons.Outlined.ErrorOutline,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(40.dp)
@@ -273,8 +261,8 @@ fun DetalhesJustificativaScreen(
                         .fillMaxSize()
                         .widthIn(max = 600.dp)
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
                 ) {
                     // Status Banner
                     val (statusBg, statusFg) = when (item.situacao.lowercase()) {
@@ -290,9 +278,9 @@ fun DetalhesJustificativaScreen(
                         color = statusBg
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(AppDimens.Spacing16),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -301,7 +289,7 @@ fun DetalhesJustificativaScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = if (item.situacao.contains("deferido", true)) Icons.Default.CheckCircle else Icons.Default.Info,
+                                    imageVector = if (item.situacao.contains("deferido", true)) Icons.Outlined.CheckCircle else Icons.Outlined.Info,
                                     contentDescription = null,
                                     tint = statusFg,
                                     modifier = Modifier.size(20.dp)
@@ -334,24 +322,24 @@ fun DetalhesJustificativaScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(18.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
-                            DetailRowItem(icon = Icons.Default.Person, label = "Aluno", value = item.aluno)
+                            DetailRowItem(icon = Icons.Outlined.Person, label = "Aluno", value = item.aluno)
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
                             DetailRowItem(
-                                icon = Icons.Default.DateRange,
+                                icon = Icons.Outlined.DateRange,
                                 label = "Período da Ausência",
                                 value = if (item.dataInicio == item.dataFim) item.dataInicio else "${item.dataInicio} a ${item.dataFim}"
                             )
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-                            DetailRowItem(icon = Icons.Default.Assignment, label = "Motivo Registrado", value = item.motivo)
+                            DetailRowItem(icon = Icons.Outlined.Assignment, label = "Motivo Registrado", value = item.motivo)
                             
                             if (item.infoComplementar != "-") {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-                                DetailRowItem(icon = Icons.Default.Notes, label = "Informação Complementar", value = item.infoComplementar)
+                                DetailRowItem(icon = Icons.Outlined.Notes, label = "Informação Complementar", value = item.infoComplementar)
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-                            DetailRowItem(icon = Icons.Default.CalendarToday, label = "Data de Solicitação", value = item.dataSolicitacao)
+                            DetailRowItem(icon = Icons.Outlined.CalendarToday, label = "Data de Solicitação", value = item.dataSolicitacao)
                             
                             if (item.anexoUrl != null && item.anexoNome != null) {
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
@@ -378,12 +366,12 @@ fun DetalhesJustificativaScreen(
                                             }
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(12.dp),
+                                            modifier = Modifier.padding(AppDimens.Spacing12),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.AttachFile,
+                                                imageVector = Icons.Outlined.AttachFile,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(18.dp)
@@ -396,7 +384,7 @@ fun DetalhesJustificativaScreen(
                                                 modifier = Modifier.weight(1f)
                                             )
                                             Icon(
-                                                imageVector = Icons.Default.OpenInNew,
+                                                imageVector = Icons.Outlined.OpenInNew,
                                                 contentDescription = "Abrir",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(16.dp)
@@ -409,7 +397,7 @@ fun DetalhesJustificativaScreen(
                     }
 
                     if (item.podeSolicitarReposicao) {
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = { onNavigateToReposicao(justificativaId) },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary
@@ -420,7 +408,7 @@ fun DetalhesJustificativaScreen(
                             shape = MaterialTheme.shapes.large
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Replay,
+                                imageVector = Icons.Outlined.Replay,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -441,7 +429,7 @@ private fun DetailRowItem(icon: androidx.compose.ui.graphics.vector.ImageVector,
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             Icon(
                 imageVector = icon,

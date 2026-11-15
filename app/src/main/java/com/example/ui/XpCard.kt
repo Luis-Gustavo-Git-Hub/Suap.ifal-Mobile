@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.*
 
 import androidx.compose.foundation.background
@@ -161,7 +162,7 @@ fun XpSystemCard(
     val lvl4 = totalSubjects * 320
     val lvl5 = totalSubjects * 360
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -170,7 +171,7 @@ fun XpSystemCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(14.dp)
+                .padding(AppDimens.Spacing12)
                 .fillMaxWidth()
         ) {
             // Header Row: Badge Icon + Name & Level + Info button
@@ -181,7 +182,7 @@ fun XpSystemCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
                     modifier = Modifier.weight(1f)
                 ) {
                     Box(
@@ -202,7 +203,7 @@ fun XpSystemCard(
                     Column {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             Text(
                                 text = rankInfo.rankName,
@@ -219,7 +220,7 @@ fun XpSystemCard(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = rankInfo.badgeColor,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 1.dp)
                                 )
                             }
                         }
@@ -282,13 +283,13 @@ fun XpSystemCard(
     }
 
     if (showRankDialog) {
-        AlertDialog(
+        com.example.ui.components.AppDialog(
             onDismissRequest = { showRankDialog = false },
             title = {
                 Text("Níveis de Rank Acadêmico", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                     RankInfoRow(1, "🌱 Calouro Curioso", 0, lvl2 - 1, "< 3.5", AcademicRankLevel1, Icons.Filled.LocalFlorist)
                     RankInfoRow(2, "📖 Aprendiz Dedicado", lvl2, lvl3 - 1, "3.5 a 5.9", AcademicRankLevel2, Icons.Filled.MenuBook)
                     RankInfoRow(3, "🎓 Estudante de Elite", lvl3, lvl4 - 1, "6.0 a 7.9", AcademicRankLevel3, Icons.Filled.School)
@@ -304,8 +305,8 @@ fun XpSystemCard(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showRankDialog = false }) {
-                    Text("Fechar")
+                com.example.ui.components.AppTextButton(onClick = { showRankDialog = false }) {
+                    Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_close))
                 }
             },
             shape = MaterialTheme.shapes.extraLarge
@@ -325,7 +326,7 @@ private fun RankInfoRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
         modifier = Modifier.fillMaxWidth()
     ) {
         Box(

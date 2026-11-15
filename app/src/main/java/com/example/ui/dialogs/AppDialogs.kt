@@ -1,12 +1,12 @@
 package com.example.ui.dialogs
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,7 +30,7 @@ fun ThemeSelectionDialog(
     onCreateTheme: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    com.example.ui.components.AppDialog(
         onDismissRequest = onDismiss,
         title = { Text("Escolha o Tema", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
         text = {
@@ -57,7 +57,7 @@ fun ThemeSelectionDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectTheme(theme) }
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                            .padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing4),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
@@ -77,15 +77,15 @@ fun ThemeSelectionDialog(
                 }
 
                 if (customThemes.isNotEmpty()) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    Text("Temas Personalizados", fontWeight = FontWeight.Bold, modifier = Modifier.padding(8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = AppDimens.Spacing8))
+                    Text("Temas Personalizados", fontWeight = FontWeight.Bold, modifier = Modifier.padding(AppDimens.Spacing8))
                     customThemes.forEach { customTheme ->
                         val theme = AppTheme.Custom(customTheme)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onSelectTheme(theme) }
-                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                                .padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing4),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -109,13 +109,13 @@ fun ThemeSelectionDialog(
                                     onClick = { onEditCustomTheme(customTheme) },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Editar", modifier = Modifier.size(16.dp))
                                 }
                                 IconButton(
                                     onClick = { onDeleteCustomTheme(customTheme.id) },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Excluir", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Excluir", modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -124,18 +124,18 @@ fun ThemeSelectionDialog(
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onOpenFontDialog) {
+            Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
+                com.example.ui.components.AppTextButton(onClick = onOpenFontDialog) {
                     Text("Trocar Fonte")
                 }
-                TextButton(onClick = onCreateTheme) {
+                com.example.ui.components.AppTextButton(onClick = onCreateTheme) {
                     Text("Criar Tema")
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Fechar")
+            com.example.ui.components.AppTextButton(onClick = onDismiss) {
+                Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_close))
             }
         },
         shape = MaterialTheme.shapes.extraLarge
@@ -148,7 +148,7 @@ fun FontSelectionDialog(
     onSelectFont: (AppFontFamily?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    com.example.ui.components.AppDialog(
         onDismissRequest = onDismiss,
         title = { Text("Fonte da Interface", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
         text = {
@@ -157,14 +157,14 @@ fun FontSelectionDialog(
                     text = "Altere a fonte de qualquer tema padrão ou personalizado:",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = AppDimens.Spacing8)
                 )
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectFont(null) }
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                        .padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing4),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
@@ -182,14 +182,14 @@ fun FontSelectionDialog(
                     }
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = AppDimens.Spacing4))
 
                 AppFontFamily.values().forEach { font ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectFont(font) }
-                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                            .padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing4),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
@@ -210,7 +210,7 @@ fun FontSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Fechar") }
+            com.example.ui.components.AppTextButton(onClick = onDismiss) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_close)) }
         },
         shape = MaterialTheme.shapes.extraLarge
     )

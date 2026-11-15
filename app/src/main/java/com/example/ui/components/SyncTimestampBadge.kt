@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -63,12 +64,12 @@ fun SyncTimestampBadge(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             Icon(
-                imageVector = Icons.Default.Schedule,
+                imageVector = Icons.Outlined.Schedule,
                 contentDescription = "Última atualização",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(12.dp)
