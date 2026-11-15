@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "840373636158",
+    "project_id": "suap-ifal",
+    "storage_bucket": "suap-ifal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:840373636158:android:b1de2e2f16a1ff5f8d156f",
+        "android_client_info": {
+          "package_name": "com.aistudio.suap.xkcdz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "840373636158-8lo1urm93fgos26sucvlik3p4u3bfqjt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.suap.xkcdz",
+            "certificate_hash": "960cbf0bc1f27fcfb03e89326ee61e9ab549b216"
+          }
+        },
+        {
+          "client_id": "840373636158-gmrstn8u12rn9rubbe9nk54ucd62onvu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.suap.xkcdz",
+            "certificate_hash": "07bb4673fd4faf5ece7c85708fccc09dd0c01e83"
+          }
+        },
+        {
+          "client_id": "840373636158-vc4gbp132ljchlii91ss7e2rtui90rsf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aistudio.suap.xkcdz",
+            "certificate_hash": "6a9f89850fd648758db7b2e34a7500d9bb9bac3c"
+          }
+        },
+        {
+          "client_id": "840373636158-95h6tmpek2bkl1b2cr3q8pmj58vqhvf8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6SLuMbJM2f3vQq_fBBLLLEWNg1qjyNSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "840373636158-95h6tmpek2bkl1b2cr3q8pmj58vqhvf8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -172,9 +172,25 @@ fun FriendsScreen(
     var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var pendingRequests by remember { mutableStateOf<List<Friend>>(emptyList()) }
     var isLoadingFriends by remember { mutableStateOf(false) }
+    var friendsLoadError by remember { mutableStateOf<String?>(null) }
     var friendToRemove by remember { mutableStateOf<Friend?>(null) }
     var friendToEdit by remember { mutableStateOf<Friend?>(null) }
     var customNameForEdit by remember { mutableStateOf("") }
+
+    suspend fun refreshFriendsData() {
+        isLoadingFriends = true
+        friendsLoadError = null
+        try {
+            friendsList = FriendsManager.getFriends()
+            pendingRequests = FriendsManager.getPendingRequests()
+            myCardColorHex = FriendsManager.getMyCardColor()
+        } catch (e: Exception) {
+            com.example.util.AppLog.printStackTrace(e)
+            friendsLoadError = FriendsManager.userFacingError(e)
+        } finally {
+            isLoadingFriends = false
+        }
+    }
 
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
@@ -183,19 +199,24 @@ fun FriendsScreen(
             searchMatricula = result.contents
             isSearching = true
             coroutineScope.launch {
-                searchResult = FriendsManager.searchUserByEmail(searchMatricula)
-                isSearching = false
+                try {
+                    searchResult = FriendsManager.searchUserByEmail(searchMatricula)
+                    if (searchResult == null) {
+                        com.example.util.AppSnackbarManager.show("Nenhum usuário encontrado com esse e-mail.")
+                    }
+                } catch (e: Exception) {
+                    com.example.util.AppLog.printStackTrace(e)
+                    com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                } finally {
+                    isSearching = false
+                }
             }
         }
     }
 
     LaunchedEffect(isSignedIn, signedInUserUid) {
         if (isSignedIn) {
-            isLoadingFriends = true
-            friendsList = FriendsManager.getFriends()
-            pendingRequests = FriendsManager.getPendingRequests()
-            myCardColorHex = FriendsManager.getMyCardColor()
-            isLoadingFriends = false
+            refreshFriendsData()
             
             val sharedPrefs = context.getSharedPreferences("suap_credentials", android.content.Context.MODE_PRIVATE)
             val savedMatricula = sharedPrefs.getString("saved_matricula", "") ?: ""
@@ -243,14 +264,24 @@ fun FriendsScreen(
                     }
                 }
                 profileBase64Cache = base64
-                FriendsManager.linkProfile(base64, sharePhoto)
+                try {
+                    FriendsManager.linkProfile(base64, sharePhoto)
+                } catch (e: Exception) {
+                    com.example.util.AppLog.printStackTrace(e)
+                    friendsLoadError = FriendsManager.userFacingError(e)
+                }
             }
         }
     }
     
     LaunchedEffect(sharePhoto) {
         if (isSignedIn) {
-            FriendsManager.linkProfile(profileBase64Cache, sharePhoto)
+            try {
+                FriendsManager.linkProfile(profileBase64Cache, sharePhoto)
+            } catch (e: Exception) {
+                com.example.util.AppLog.printStackTrace(e)
+                friendsLoadError = FriendsManager.userFacingError(e)
+            }
         }
     }
 
@@ -307,6 +338,16 @@ fun FriendsScreen(
                 },
                 actions = {
                     if (isSignedIn) {
+                        IconButton(
+                            onClick = { coroutineScope.launch { refreshFriendsData() } },
+                            enabled = !isLoadingFriends
+                        ) {
+                            if (isLoadingFriends) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Outlined.Refresh, contentDescription = "Atualizar amigos")
+                            }
+                        }
                         Surface(
                             onClick = { showAddDialog = true },
                             shape = MaterialTheme.shapes.medium,
@@ -446,14 +487,11 @@ fun FriendsScreen(
                                 val success = try {
                                     FriendsManager.signInWithGoogle(context)
                                 } catch (e: Exception) {
-                                    com.example.util.AppSnackbarManager.show("Erro no Google Sign-In")
-                                    false
-                                }
-                                if (!success) {
-                                    com.example.util.AppSnackbarManager.show("Falha ao fazer login com o Google.")
+                                    com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                    FriendsManager.isUserSignedIn()
                                 }
                                 signedInUserUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                isSignedIn = success
+                                isSignedIn = success || FriendsManager.isUserSignedIn()
                                 isSigningIn = false
                             }
                         },
@@ -524,6 +562,16 @@ modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(start = AppDimens.Spacing16, end = AppDimens.Spacing16, top = AppDimens.Spacing8, bottom = AppDimens.Spacing24),
                             verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
+                            friendsLoadError?.let { errorMessage ->
+                                item {
+                                    com.example.ui.components.AppFeedbackCard(
+                                        title = "Não foi possível carregar a Rede Acadêmica",
+                                        message = errorMessage,
+                                        actionLabel = "Tentar novamente",
+                                        onAction = { coroutineScope.launch { refreshFriendsData() } }
+                                    )
+                                }
+                            }
                             // 1. CARD COLOR CUSTOMIZER & SHARE BOLETIM BENTO CONTAINER
                             item {
                                 Surface(
@@ -614,9 +662,14 @@ modifier = Modifier.fillMaxSize(),
                                                         .clickable {
                                                             myCardColorHex = hex
                                                             coroutineScope.launch {
-                                                                FriendsManager.updateMyCardColor(hex)
-                                                                friendsList = FriendsManager.getFriends()
-                                                                com.example.util.AppSnackbarManager.show("Cor do card atualizada!")
+                                                                try {
+                                                                    FriendsManager.updateMyCardColor(hex)
+                                                                    friendsList = FriendsManager.getFriends()
+                                                                    com.example.util.AppSnackbarManager.show("Cor do card atualizada!")
+                                                                } catch (e: Exception) {
+                                                                    com.example.util.AppLog.printStackTrace(e)
+                                                                    com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                                                }
                                                             }
                                                         },
                                                     contentAlignment = Alignment.Center
@@ -703,7 +756,7 @@ modifier = Modifier.fillMaxSize(),
                                                             }
                                                         } catch (e: Exception) {
                                                             com.example.util.AppLog.printStackTrace(e)
-                                                            com.example.util.AppSnackbarManager.show("Erro ao compartilhar boletim.")
+                                                            com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
                                                         } finally {
                                                             isSyncing = false
                                                         }
@@ -764,7 +817,7 @@ modifier = Modifier.fillMaxSize(),
                                 )
                             }
 
-                            if (filteredFriends.isEmpty()) {
+                            if (friendsLoadError == null && filteredFriends.isEmpty()) {
                                 item {
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
@@ -828,6 +881,9 @@ modifier = Modifier.fillMaxSize(),
                                                     if (myUid != null) {
                                                         myBoletim = FriendsManager.getSharedBoletim(myUid)
                                                     }
+                                                } catch (e: Exception) {
+                                                    com.example.util.AppLog.printStackTrace(e)
+                                                    com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
                                                 } finally {
                                                     isLoadingCompare = false
                                                 }
@@ -927,8 +983,13 @@ modifier = Modifier.fillMaxSize(),
                                         ) {
                                             com.example.ui.components.AppTextButton(onClick = {
                                                 coroutineScope.launch {
-                                                    FriendsManager.declineFriendRequest(req.uid)
-                                                    pendingRequests = FriendsManager.getPendingRequests()
+                                                    try {
+                                                        FriendsManager.declineFriendRequest(req.uid)
+                                                        pendingRequests = FriendsManager.getPendingRequests()
+                                                    } catch (e: Exception) {
+                                                        com.example.util.AppLog.printStackTrace(e)
+                                                        com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                                    }
                                                 }
                                             }) {
                                                 Text("Recusar", color = MaterialTheme.colorScheme.error)
@@ -938,9 +999,15 @@ modifier = Modifier.fillMaxSize(),
                                                 onClick = {
                                                     if (reqName.isNotBlank()) {
                                                         coroutineScope.launch {
-                                                            FriendsManager.acceptFriendRequest(req.uid, reqName.trim())
-                                                            pendingRequests = FriendsManager.getPendingRequests()
-                                                            friendsList = FriendsManager.getFriends()
+                                                            try {
+                                                                FriendsManager.acceptFriendRequest(req.uid, reqName.trim())
+                                                                pendingRequests = FriendsManager.getPendingRequests()
+                                                                friendsList = FriendsManager.getFriends()
+                                                                com.example.util.AppSnackbarManager.show("Solicitação aceita.")
+                                                            } catch (e: Exception) {
+                                                                com.example.util.AppLog.printStackTrace(e)
+                                                                com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                                            }
                                                         }
                                                     } else {
                                                         com.example.util.AppSnackbarManager.show("Insira um apelido!")
@@ -1172,6 +1239,7 @@ modifier = Modifier.fillMaxSize(),
                                 friendsList = FriendsManager.getFriends()
                             } catch (e: Exception) {
                                 com.example.util.AppLog.printStackTrace(e)
+                                com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
                             } finally {
                                 friendToEdit = null
                             }
@@ -1202,6 +1270,7 @@ modifier = Modifier.fillMaxSize(),
                                 friendsList = FriendsManager.getFriends()
                             } catch (e: Exception) {
                                 com.example.util.AppLog.printStackTrace(e)
+                                com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
                             } finally {
                                 friendToRemove = null
                             }
@@ -1256,8 +1325,17 @@ modifier = Modifier.fillMaxSize(),
                                 if (searchMatricula.isNotBlank()) {
                                     isSearching = true
                                     coroutineScope.launch {
-                                        searchResult = FriendsManager.searchUserByEmail(searchMatricula.trim())
-                                        isSearching = false
+                                        try {
+                                            searchResult = FriendsManager.searchUserByEmail(searchMatricula)
+                                            if (searchResult == null) {
+                                                com.example.util.AppSnackbarManager.show("Nenhum usuário encontrado com esse e-mail.")
+                                            }
+                                        } catch (e: Exception) {
+                                            com.example.util.AppLog.printStackTrace(e)
+                                            com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                        } finally {
+                                            isSearching = false
+                                        }
                                     }
                                 }
                             },
@@ -1297,12 +1375,13 @@ modifier = Modifier.fillMaxSize(),
                                             friendsList = FriendsManager.getFriends()
                                         } catch (e: Exception) {
                                             com.example.util.AppLog.printStackTrace(e)
-                                        } finally {
-                                            showAddDialog = false
-                                            searchResult = null
-                                            searchMatricula = ""
-                                            customNameForAdd = ""
+                                            com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                            return@launch
                                         }
+                                        showAddDialog = false
+                                        searchResult = null
+                                        searchMatricula = ""
+                                        customNameForAdd = ""
                                     }
                                 }
                             }
@@ -1517,7 +1596,12 @@ fun FriendItemCard(
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     LaunchedEffect(friend.uid) {
-        friendBoletim = FriendsManager.getSharedBoletim(friend.uid)
+        try {
+            friendBoletim = FriendsManager.getSharedBoletim(friend.uid)
+        } catch (e: Exception) {
+            friendBoletim = null
+            com.example.util.AppLog.printStackTrace(e)
+        }
     }
 
     val customCardColor = remember(friend.cardColorHex) {

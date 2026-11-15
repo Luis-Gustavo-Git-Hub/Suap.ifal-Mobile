@@ -9,8 +9,10 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import java.util.UUID
@@ -42,14 +44,28 @@ object FriendsManager {
     private val db by lazy { FirebaseFirestore.getInstance() }
 
     fun isFirebaseConfigured(context: Context): Boolean = runCatching {
-        FirebaseApp.getApps(context.applicationContext)
-            .any { it.name == FirebaseApp.DEFAULT_APP_NAME }
+        val appContext = context.applicationContext
+        FirebaseApp.getApps(appContext).any { it.name == FirebaseApp.DEFAULT_APP_NAME } ||
+            FirebaseApp.initializeApp(appContext)?.name == FirebaseApp.DEFAULT_APP_NAME
     }.getOrDefault(false)
 
     fun currentUserId(): String? = runCatching { auth.currentUser?.uid }.getOrNull()
 
     fun isUserSignedIn(): Boolean {
         return runCatching { auth.currentUser != null }.getOrDefault(false)
+    }
+
+    fun userFacingError(error: Throwable): String = when {
+        error is FirebaseAuthException && error.errorCode == "ERROR_OPERATION_NOT_ALLOWED" ->
+            "O login Google ainda não está habilitado no Firebase Auth do projeto Suap IFAL."
+        error is FirebaseAuthException && error.errorCode == "ERROR_INVALID_CREDENTIAL" ->
+            "A credencial Google expirou ou é inválida. Tente entrar novamente."
+        error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+            "O Firebase negou o acesso. Verifique as regras do Firestore para a Rede Acadêmica."
+        error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.UNAVAILABLE ->
+            "O Firebase está indisponível no momento. Confira a conexão e tente de novo."
+        else -> error.localizedMessage?.takeIf { it.isNotBlank() }
+            ?: "Não foi possível concluir a operação no Firebase. Tente novamente."
     }
 
     suspend fun signInWithGoogle(context: Context, forceAccountPicker: Boolean = true): Boolean {
@@ -76,7 +92,7 @@ object FriendsManager {
 
             val webClientId = context.googleWebClientId().ifEmpty {
                 Log.e("FriendsManager", "WEB_CLIENT_ID is missing!")
-                return false
+                throw IllegalStateException("A configuração Google do Firebase está ausente nesta instalação.")
             }
 
             val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
@@ -113,14 +129,16 @@ object FriendsManager {
                 linkProfile(explicitEmail = googleEmail)
                 return true
             }
+            throw IllegalStateException("O Google não retornou uma credencial compatível.")
         } catch (e: androidx.credentials.exceptions.GetCredentialException) {
             com.example.util.AppLog.e("FriendsManager", "GetCredentialException [${e.javaClass.simpleName}]: type=${e.type}, msg=${e.errorMessage}")
             com.example.util.AppLog.printStackTrace(e)
+            throw e
         } catch (e: Exception) {
             com.example.util.AppLog.printStackTrace(e)
             com.example.util.AppLog.e("FriendsManager", "Erro inesperado no login [${e.javaClass.simpleName}]: ${e.message}")
+            throw e
         }
-        return false
     }
 
     suspend fun linkProfile(photoBase64: String = "", sharePhoto: Boolean = true, explicitEmail: String? = null) {
@@ -130,11 +148,11 @@ object FriendsManager {
             "nome" to com.google.firebase.firestore.FieldValue.delete()
         )
         if (explicitEmail != null) {
-            map["email"] = explicitEmail
+            map["email"] = explicitEmail.trim().lowercase(java.util.Locale.ROOT)
         } else {
             val doc = db.collection("users").document(user.uid).get().await()
             if (!doc.exists() || doc.getString("email").isNullOrEmpty()) {
-                map["email"] = user.email ?: ""
+                map["email"] = user.email?.trim()?.lowercase(java.util.Locale.ROOT) ?: ""
             }
         }
         
@@ -146,7 +164,8 @@ object FriendsManager {
         db.collection("users").document(user.uid).set(map, com.google.firebase.firestore.SetOptions.merge()).await()
     }
     suspend fun shareBoletim(boletimData: List<Map<String, String>>) {
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google antes de compartilhar o boletim.")
+        require(boletimData.isNotEmpty()) { "Não há notas carregadas para compartilhar." }
         db.collection("boletins").document(uid).set(
             mapOf(
                 "uid" to uid,
@@ -156,9 +175,12 @@ object FriendsManager {
         ).await()
     }
     suspend fun searchUserByEmail(email: String): Friend? {
-        val query = db.collection("users").whereEqualTo("email", email).get().await()
+        val normalizedEmail = email.trim().lowercase(java.util.Locale.ROOT)
+        if (normalizedEmail.isBlank()) return null
+        val query = db.collection("users").whereEqualTo("email", normalizedEmail).limit(1).get().await()
         if (!query.isEmpty) {
             val doc = query.documents[0]
+            if (doc.id == auth.currentUser?.uid) return null
             return Friend(
                 uid = doc.id,
                 email = doc.getString("email") ?: "",
@@ -171,22 +193,24 @@ object FriendsManager {
     }
 
     suspend fun sendFriendRequest(toUid: String, customName: String) {
-        val fromUid = auth.currentUser?.uid ?: return
-        val myEmail = auth.currentUser?.email ?: return
-        
-        // Save in my friends as pending
-        db.collection("users").document(fromUid).collection("friends").document(toUid).set(
-            mapOf(
-                "customName" to customName,
-                "status" to "pending",
-                "timestamp" to System.currentTimeMillis()
-            )
-        ).await()
-        
-        // Save request for the other user
-        db.collection("users").document(toUid).collection("requests").document(fromUid).set(
-            mapOf("from" to fromUid, "email" to myEmail, "timestamp" to System.currentTimeMillis())
-        ).await()
+        val user = auth.currentUser ?: throw IllegalStateException("Entre com o Google para adicionar amigos.")
+        val fromUid = user.uid
+        val myEmail = user.email?.trim()?.lowercase(java.util.Locale.ROOT)
+            ?: throw IllegalStateException("Sua conta Google não informou um e-mail.")
+        require(toUid.isNotBlank() && toUid != fromUid) { "Você não pode enviar uma solicitação para si mesmo." }
+        require(customName.isNotBlank()) { "Informe um apelido para o amigo." }
+
+        val timestamp = System.currentTimeMillis()
+        val batch = db.batch()
+        batch.set(
+            db.collection("users").document(fromUid).collection("friends").document(toUid),
+            mapOf("customName" to customName.trim(), "status" to "pending", "timestamp" to timestamp)
+        )
+        batch.set(
+            db.collection("users").document(toUid).collection("requests").document(fromUid),
+            mapOf("from" to fromUid, "email" to myEmail, "timestamp" to timestamp)
+        )
+        batch.commit().await()
     }
     
     suspend fun getPendingRequests(): List<Friend> {
@@ -213,39 +237,40 @@ object FriendsManager {
     }
 
     suspend fun acceptFriendRequest(friendUid: String, customName: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        
-        // Adicionar na minha lista de amigos
-        db.collection("users").document(myUid).collection("friends").document(friendUid).set(
-            mapOf("customName" to customName, "status" to "accepted", "timestamp" to System.currentTimeMillis())
-        ).await()
-        
-        // Atualizar status na lista de amigos da outra pessoa
-        db.collection("users").document(friendUid).collection("friends").document(myUid).update(
-            "status", "accepted"
-        ).await()
-        
-        // Remover a solicitação
-        db.collection("users").document(myUid).collection("requests").document(friendUid).delete().await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para aceitar solicitações.")
+        require(customName.isNotBlank()) { "Informe um apelido para o amigo." }
+        val timestamp = System.currentTimeMillis()
+        val batch = db.batch()
+        batch.set(
+            db.collection("users").document(myUid).collection("friends").document(friendUid),
+            mapOf("customName" to customName.trim(), "status" to "accepted", "timestamp" to timestamp)
+        )
+        batch.set(
+            db.collection("users").document(friendUid).collection("friends").document(myUid),
+            mapOf("status" to "accepted"),
+            com.google.firebase.firestore.SetOptions.merge()
+        )
+        batch.delete(db.collection("users").document(myUid).collection("requests").document(friendUid))
+        batch.commit().await()
     }
 
     suspend fun declineFriendRequest(friendUid: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        db.collection("users").document(myUid).collection("requests").document(friendUid).delete().await()
-        // Optional: also delete the pending entry in the other user's friends list
-        try {
-            db.collection("users").document(friendUid).collection("friends").document(myUid).delete().await()
-        } catch (e: Exception) {}
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para gerenciar solicitações.")
+        val batch = db.batch()
+        batch.delete(db.collection("users").document(myUid).collection("requests").document(friendUid))
+        batch.delete(db.collection("users").document(friendUid).collection("friends").document(myUid))
+        batch.commit().await()
     }
 
     suspend fun getFriends(): List<Friend> {
-        val uid = auth.currentUser?.uid ?: return emptyList()
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para carregar seus amigos.")
         val friendsSnapshot = db.collection("users").document(uid).collection("friends").get().await()
         
         val friends = mutableListOf<Friend>()
         for (doc in friendsSnapshot.documents) {
             val friendUid = doc.id
             val status = doc.getString("status") ?: "accepted"
+            if (status != "accepted") continue
             val customName = doc.getString("customName") ?: ""
             
             val userDoc = db.collection("users").document(friendUid).get().await()
@@ -293,17 +318,17 @@ object FriendsManager {
     }
     
     suspend fun updateFriendName(friendUid: String, newName: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        db.collection("users").document(myUid).collection("friends").document(friendUid).update("customName", newName).await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para editar amigos.")
+        require(newName.isNotBlank()) { "Informe um apelido para o amigo." }
+        db.collection("users").document(myUid).collection("friends").document(friendUid).update("customName", newName.trim()).await()
     }
 
     suspend fun removeFriend(friendUid: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        
-        // Remove da minha lista de amigos
-        db.collection("users").document(myUid).collection("friends").document(friendUid).delete().await()
-        // Remove da lista de amigos da outra pessoa
-        db.collection("users").document(friendUid).collection("friends").document(myUid).delete().await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para remover amigos.")
+        val batch = db.batch()
+        batch.delete(db.collection("users").document(myUid).collection("friends").document(friendUid))
+        batch.delete(db.collection("users").document(friendUid).collection("friends").document(myUid))
+        batch.commit().await()
     }
     suspend fun changeGoogleAccount(context: Context): String? {
         try {
