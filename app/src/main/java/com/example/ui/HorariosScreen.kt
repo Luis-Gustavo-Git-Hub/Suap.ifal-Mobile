@@ -69,16 +69,16 @@ fun HorariosScreen(
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) } // 0: Grade Semanal, 1: Calendário do Mês
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchScheduleFromSuap()
-        viewModel.fetchAcademicCalendar()
-    }
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val syncTimes by viewModel.syncCoordinator.lastSyncedAt.collectAsStateWithLifecycle()
 
-    val isRefreshing = if (selectedTab == 0) isLoadingSchedule else isLoadingCalendar
-    val errorMessage = if (selectedTab == 0) scheduleError else calendarError
+    val isRefreshing = syncState is com.example.sync.SyncState.Syncing || if (selectedTab == 0) isLoadingSchedule else isLoadingCalendar
+    val errorMessage = (if (selectedTab == 0) scheduleError else calendarError)
+        ?: (syncState as? com.example.sync.SyncState.Failed)?.let { com.example.network.SuapError.fromReason(it.reason).message }
     val hasSavedData = if (selectedTab == 0) scheduleItems.isNotEmpty() || diarioItems.isNotEmpty() else academicEvents.isNotEmpty()
     val refreshCurrentTab: () -> Unit = {
-        if (selectedTab == 0) viewModel.fetchScheduleFromSuap() else viewModel.fetchAcademicCalendar()
+        viewModel.requestSync(force = true, module = if (selectedTab == 0) com.example.sync.SyncModule.SCHEDULE else com.example.sync.SyncModule.CALENDAR)
+        Unit
     }
 
     val daysOfWeek = remember { listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta") }
@@ -136,8 +136,11 @@ fun HorariosScreen(
                     .fillMaxWidth()
                     .widthIn(max = 600.dp)
             ) {
-                if (isRefreshing) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                if (errorMessage != null && !isRefreshing) {
+                if (isRefreshing) Text("Sincronizando...", style = MaterialTheme.typography.labelSmall)
+                else syncTimes[if (selectedTab == 0) com.example.sync.SyncModule.SCHEDULE else com.example.sync.SyncModule.CALENDAR]?.let {
+                    com.example.ui.components.SyncTimestampBadge(java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it)))
+                }
+                if (errorMessage != null && !isRefreshing && !hasSavedData) {
                     com.example.ui.components.AppFeedbackCard(
                         title = "Atualização indisponível",
                         message = errorMessage,

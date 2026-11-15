@@ -146,7 +146,30 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
     LaunchedEffect(Unit) {
         if (autoLoginEnabled && credentialStore.hasSuapCredentials()) {
             isLoggedIn = true
-            isSilentSyncing = true
+            viewModel.requestSync()
+        }
+    }
+
+    val userLoginRequest by viewModel.syncCoordinator.userLoginRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(userLoginRequest) {
+        if (userLoginRequest > 0) { isSyncing = true; viewModel.syncCoordinator.consumeUserLoginRequest() }
+    }
+    val coordinatorLogin by viewModel.syncCoordinator.loginRequested.collectAsStateWithLifecycle()
+    val coordinatedState by viewModel.syncState.collectAsStateWithLifecycle()
+    LaunchedEffect(coordinatorLogin) {
+        isSilentSyncing = coordinatorLogin
+        if (coordinatorLogin) com.example.network.SyncMetrics.logins.incrementAndGet()
+    }
+    LaunchedEffect(coordinatedState) {
+        if (coordinatedState is com.example.sync.SyncState.Synced || coordinatedState is com.example.sync.SyncState.Failed) {
+            com.example.util.CrashLogger.log(context, "INFO", "SYNC_METRICS: requests=${com.example.network.SyncMetrics.requests.get()}, logins=${com.example.network.SyncMetrics.logins.get()} (desde início do processo).")
+        }
+        val failure = coordinatedState as? com.example.sync.SyncState.Failed
+        if (failure?.requiresUserAction == true) {
+            com.example.util.AppSnackbarManager.showSyncError(failure.reason) {
+                viewModel.syncCoordinator.credentialsChanged()
+                isSyncing = true
+            }
         }
     }
 
@@ -191,6 +214,8 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
             onBack = { isSyncing = false },
             onSaveCredentials = { u, p ->
                 if (credentialStore.setSuapCredentials(u, p)) {
+                            appPrefs.edit().putString("suap_login_method", "password").apply()
+                            viewModel.syncCoordinator.credentialsChanged()
                     suapCredentialsSaved = credentialStore.hasSuapCredentials()
                 } else {
                     com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
@@ -477,7 +502,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
                                 if (cookie.isNullOrEmpty() || !cookie.contains("sessionid")) {
                                     pendingNavigationRoute = NavRoute.JustificativaFalta
-                                    isSilentSyncing = true
+                                    viewModel.requestSync(force = true)
                                     com.example.util.AppSnackbarManager.show("Conectando ao SUAP...")
                                 } else {
                                     try { navController.navigate(NavRoute.JustificativaFalta) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir justificativa: ${e.message}", e) }
@@ -492,7 +517,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
                                 if (cookie.isNullOrEmpty() || !cookie.contains("sessionid")) {
                                     pendingNavigationRoute = NavRoute.SituacaoJustificativa
-                                    isSilentSyncing = true
+                                    viewModel.requestSync(force = true)
                                     com.example.util.AppSnackbarManager.show("Conectando ao SUAP...")
                                 } else {
                                     try { navController.navigate(NavRoute.SituacaoJustificativa) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir situacao: ${e.message}", e) }
@@ -514,7 +539,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                             },
                             onSyncClick = { isSyncing = true },
                             isRefreshing = isSilentSyncing,
-                            onRefresh = { isSilentSyncing = true }
+                            onRefresh = { viewModel.requestSync(force = true) }
                         )
                     }
 
@@ -534,7 +559,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 }
                             },
                             isRefreshing = isSilentSyncing,
-                            onRefresh = { isSilentSyncing = true }
+                            onRefresh = { viewModel.requestSync(force = true) }
                         )
                     }
 
@@ -775,6 +800,8 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                     onBack = { },
                     onSaveCredentials = { u, p ->
                         if (credentialStore.setSuapCredentials(u, p)) {
+                            appPrefs.edit().putString("suap_login_method", "password").apply()
+                            viewModel.syncCoordinator.credentialsChanged()
                             suapCredentialsSaved = credentialStore.hasSuapCredentials()
                         } else {
                             com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
@@ -813,14 +840,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                         isSilentSyncing = false
                         hasSilentSyncFailed = true
                         pendingNavigationRoute = null
-                        com.example.util.AppSnackbarManager.showSyncError(reason, onRetry = {
-                            when (reason) {
-                                com.example.util.SyncFailureReason.CAPTCHA_REQUIRED,
-                                com.example.util.SyncFailureReason.INVALID_CREDENTIALS,
-                                com.example.util.SyncFailureReason.NO_CREDENTIALS -> isSyncing = true
-                                else -> isSilentSyncing = true
-                            }
-                        })
+                        viewModel.syncCoordinator.fail(com.example.network.SuapError.fromReason(reason))
                     }
                 )
             }

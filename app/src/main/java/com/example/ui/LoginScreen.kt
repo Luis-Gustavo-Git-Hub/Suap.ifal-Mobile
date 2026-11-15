@@ -201,6 +201,7 @@ fun LoginScreen(
             WebView(context).apply {
                     activeWebView = this
                     configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
+                    CookieManager.getInstance().setAcceptCookie(true)
                     CookieManager.getInstance().setAcceptThirdPartyCookies(
                         this,
                         loginMethod == LoginMethod.CREDENTIALS

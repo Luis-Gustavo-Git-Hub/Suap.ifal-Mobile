@@ -17,7 +17,7 @@ import org.jsoup.Jsoup
 
 sealed class NetworkResult<out T> {
     data class Success<out T>(val data: T) : NetworkResult<T>()
-    data class Error(val message: String, val exception: Throwable? = null) : NetworkResult<Nothing>()
+    data class Error(val message: String, val exception: Throwable? = null, val error: SuapError = exception?.let(SuapError::fromException) ?: SuapError.Unknown) : NetworkResult<Nothing>()
 
     inline fun onSuccess(action: (T) -> Unit): NetworkResult<T> {
         if (this is Success) action(data)
@@ -39,8 +39,11 @@ class SuapAuthRepository internal constructor(
     }
 ) {
     private val loginMutex = Mutex()
+    @Volatile var lastError: SuapError? = null
+    internal var coordinator: com.example.sync.SyncCoordinator? = null
 
     companion object {
+        private val requestPermits = java.util.concurrent.Semaphore(2, true)
         const val BASE_URL = "https://suap.ifal.edu.br"
         const val LOGIN_URL = "https://suap.ifal.edu.br/accounts/login/"
 
@@ -49,13 +52,13 @@ class SuapAuthRepository internal constructor(
 
         fun getInstance(context: Context): SuapAuthRepository {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: SuapAuthRepository(context.applicationContext).also { INSTANCE = it }
+                INSTANCE ?: SuapAuthRepository(context.applicationContext).also { it.coordinator = com.example.sync.SyncCoordinator.shared; INSTANCE = it }
             }
         }
     }
 
     suspend fun login(): NetworkResult<Boolean> = withContext(Dispatchers.IO) {
-        loginMutex.withLock { performLogin() }
+        loginMutex.withLock { SyncMetrics.logins.incrementAndGet(); performLogin() }
     }
 
     // Called with loginMutex held and on Dispatchers.IO.
@@ -64,17 +67,17 @@ class SuapAuthRepository internal constructor(
             val (username, password) = credentialsProvider()
             if (username.isBlank() || password.isBlank()) {
                 diagnostic("Login SUAP interrompido: credenciais ausentes.")
-                return NetworkResult.Error("Credenciais do SUAP não configuradas.")
+                return NetworkResult.Error(SuapError.NoCredentials.message, error = SuapError.NoCredentials)
             }
             val loginPage = fetchPage(Request.Builder().url(LOGIN_URL).get().build())
             diagnostic("Login SUAP GET: status=${loginPage.code}, rota=${loginPage.safeRoute()}, csrf=${hasCsrf(loginPage.html)}.")
             if (!loginPage.isSuccessful) {
-                return NetworkResult.Error("Falha ao carregar página de login do SUAP. Código: ${loginPage.code}")
+                return NetworkResult.Error("Falha ao carregar página de login do SUAP. Código: ${loginPage.code}", error = if (loginPage.code >= 500) SuapError.SuapUnavailable else SuapError.Unknown)
             }
             val csrfToken = Jsoup.parse(loginPage.html).select("input[name=csrfmiddlewaretoken]").`val`()
             if (csrfToken.isBlank()) {
                 diagnostic("Login SUAP falhou: token CSRF ausente na página.")
-                return NetworkResult.Error("Token de segurança (CSRF) não encontrado na página do SUAP.")
+                return NetworkResult.Error(SuapError.VerificationRequired.message, error = SuapError.VerificationRequired)
             }
 
             val formBody = FormBody.Builder()
@@ -89,15 +92,18 @@ class SuapAuthRepository internal constructor(
             )
             diagnostic("Login SUAP POST: status=${page.code}, rota=${page.safeRoute()}, formularioLogin=${page.requiresLogin()}.")
             if (!page.isSuccessful) {
-                return NetworkResult.Error("Falha ao entrar no SUAP. Código: ${page.code}")
+                return NetworkResult.Error("Falha ao entrar no SUAP. Código: ${page.code}", error = if (page.code >= 500) SuapError.SuapUnavailable else SuapError.Unknown)
+            }
+            if (page.requiresLogin() && (page.html.contains("captcha", true) || page.html.contains("verificação", true))) {
+                return NetworkResult.Error(SuapError.VerificationRequired.message, error = SuapError.VerificationRequired)
             }
             if (page.html.contains("alert-error") || page.html.contains("errorlist") ||
                 page.html.contains("Usuário e/ou senha inválidos")) {
-                return NetworkResult.Error("Usuário ou senha incorretos no SUAP.")
+                return NetworkResult.Error(SuapError.InvalidCredentials.message, error = SuapError.InvalidCredentials)
             }
             if (page.requiresLogin() || page.html.isBlank()) {
                 diagnostic("Login SUAP não confirmado: resposta permaneceu na tela de login ou veio vazia.")
-                return NetworkResult.Error("O SUAP não confirmou o login. Verifique suas credenciais ou conclua a verificação na tela de login.")
+                return NetworkResult.Error(SuapError.VerificationRequired.message, error = SuapError.VerificationRequired)
             }
 
             diagnostic("Login SUAP confirmado pelo fluxo HTTP.")
@@ -107,36 +113,89 @@ class SuapAuthRepository internal constructor(
             if (e is CancellationException) throw e
             diagnostic("Exceção no login SUAP: ${e.javaClass.simpleName}.")
             AppLog.e("SuapAuthRepository", "Erro durante login no SUAP", e)
-            NetworkResult.Error("Erro de conexão com o SUAP: ${e.message}", e)
+            NetworkResult.Error(SuapError.fromException(e).message, e, SuapError.fromException(e))
         }
     }
 
-    /** Re-authenticates at most once and validates both the original and retried response. */
-    suspend fun executeRequest(requestBuilder: Request.Builder): NetworkResult<String> = withContext(Dispatchers.IO) {
+    /** Detects rejection; the foreground coordinator owns reauthentication, never this repository. */
+    suspend fun executeRequest(requestBuilder: Request.Builder, coordinate: Boolean = true): NetworkResult<String> = withContext(Dispatchers.IO) {
+        val owner = coordinator.takeIf { coordinate }
         try {
             val request = requestBuilder.build()
             if (!request.url.isHttps || request.url.host != "suap.ifal.edu.br") {
-                return@withContext NetworkResult.Error("Endereço bloqueado: as requisições autenticadas só podem acessar o SUAP oficial.")
+                return@withContext NetworkResult.Error("Endereço bloqueado: só o SUAP oficial é permitido.")
             }
-            val page = fetchPage(request)
+            if (owner?.isSyncing == true && !owner.awaitSession()) {
+                val error = owner.currentError ?: SuapError.Timeout
+                return@withContext NetworkResult.Error(error.message, error = error)
+            }
+            val sessionVersion = owner?.sessionVersion
+            var page = fetchPage(request)
             if (page.requiresLogin()) {
                 diagnostic("Sessão SUAP recusada: status=${page.code}, rotaSolicitada=${safeRoute(request.url)}, rotaFinal=${page.safeRoute()}.")
-                return@withContext NetworkResult.Error("Sessão do SUAP expirada. Entre novamente no app para continuar.")
+                if (owner != null) {
+                    owner.onSessionRejected(sessionVersion ?: owner.sessionVersion)
+                    if (owner.awaitSession()) page = fetchPage(request) // original request retried once
+                }
+                if (page.requiresLogin()) {
+                    val error = owner?.currentError ?: SuapError.SessionExpired(true)
+                    if (owner?.currentError == null) owner?.fail(error)
+                    return@withContext NetworkResult.Error(error.message, error = error)
+                }
             }
             when {
+                page.code >= 500 -> NetworkResult.Error(SuapError.SuapUnavailable.message, error = SuapError.SuapUnavailable)
                 !page.isSuccessful -> NetworkResult.Error("O SUAP não concluiu a solicitação. Código: ${page.code}")
-                page.html.isBlank() -> NetworkResult.Error("O SUAP retornou uma resposta vazia. Tente novamente.")
+                page.html.isBlank() -> NetworkResult.Error(SuapError.ParseError.message, error = SuapError.ParseError)
                 else -> NetworkResult.Success(page.html)
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            AppLog.e("SuapAuthRepository", "Erro na execução da requisição SUAP", e)
-            NetworkResult.Error("Falha na comunicação com o SUAP: ${e.message}", e)
+            val error = SuapError.fromException(e)
+            NetworkResult.Error(error.message, e, error)
         }
+    }.also { if (coordinate && it is NetworkResult.Error) lastError = it.error }
+
+    suspend fun executeRaw(request: Request): okhttp3.Response = withContext(Dispatchers.IO) {
+        if (!request.url.isHttps || request.url.host != "suap.ifal.edu.br") throw SuapRequestException(SuapError.Unknown)
+        val owner = coordinator
+        if (owner?.isSyncing == true && !owner.awaitSession()) throw SuapRequestException(owner.currentError ?: SuapError.Timeout)
+        val version = owner?.sessionVersion
+        SyncMetrics.requests.incrementAndGet()
+        var response = client.newCall(request).execute()
+        if (response.code == 401 || response.request.url.encodedPath.startsWith("/accounts/login")) {
+            response.close()
+            owner?.onSessionRejected(version ?: owner.sessionVersion)
+            if (owner?.awaitSession() != true) throw SuapRequestException(SuapError.SessionExpired(true))
+            SyncMetrics.requests.incrementAndGet()
+            response = client.newCall(request).execute()
+            if (response.code == 401 || response.request.url.encodedPath.startsWith("/accounts/login")) {
+                response.close()
+                owner.fail(SuapError.SessionExpired(true))
+                throw SuapRequestException(SuapError.SessionExpired(true))
+            }
+        }
+        response
     }
 
-    private fun fetchPage(request: Request): Page = client.newCall(request).execute().use { response ->
-        Page(response.body?.string().orEmpty(), response.request.url, response.code, response.isSuccessful)
+    suspend fun readDocument(url: String): org.jsoup.nodes.Document = when (val result = executeRequest(Request.Builder().url(url))) {
+        is NetworkResult.Success -> org.jsoup.Jsoup.parse(result.data, url)
+        is NetworkResult.Error -> throw SuapRequestException(result.error)
+    }
+
+    fun cookieHeaderFor(url: String): String {
+        if (!com.example.util.UrlSecurityUtils.isAllowedSuapUrl(url)) return ""
+        return android.webkit.CookieManager.getInstance().getCookie(url).orEmpty()
+    }
+
+    private fun fetchPage(request: Request): Page {
+        requestPermits.acquire()
+        try {
+            SyncMetrics.requests.incrementAndGet()
+            return client.newCall(request).execute().use { response ->
+                Page(response.body?.string().orEmpty(), response.request.url, response.code, response.isSuccessful)
+            }
+        } finally { requestPermits.release() }
     }
 
     private fun diagnostic(message: String) {
@@ -170,3 +229,9 @@ class SuapAuthRepository internal constructor(
 private val LOGIN_FORM_FIELD = Regex("""\bname\s*=\s*(['"])this_is_the_login_form\1""", RegexOption.IGNORE_CASE)
 private val LOGIN_USERNAME_FIELD = Regex("""\bid\s*=\s*(['"])id_username\1""", RegexOption.IGNORE_CASE)
 private val LOGIN_PASSWORD_FIELD = Regex("""\bid\s*=\s*(['"])id_password\1""", RegexOption.IGNORE_CASE)
+
+/** Counters only: no identifiers, cookie values, URLs or HTML. */
+object SyncMetrics {
+    val requests = java.util.concurrent.atomic.AtomicInteger()
+    val logins = java.util.concurrent.atomic.AtomicInteger()
+}

@@ -65,31 +65,16 @@ fun SituacaoJustificativaScreen(
         isLoading = true
         coroutineScope.launch {
             try {
+                com.example.util.JustificativaCache.loadList(context)?.let { justificativas = it }
                 val prefs = context.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE)
                 var matricula = prefs.getString("saved_matricula", "") ?: ""
                 
-                val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
-                if (cookie.isNullOrEmpty()) {
-                    val cached = com.example.util.JustificativaCache.loadList(context)
-                    if (cached != null) {
-                        justificativas = cached
-                        com.example.util.AppSnackbarManager.show("Sem sessão ativa — exibindo dados salvos.")
-                    } else {
-                        errorMessage = "Sessão expirada. Sincronize novamente no início."
-                    }
-                    isLoading = false
-                    return@launch
-                }
+
                 
                 if (matricula.isEmpty() || matricula == "-") {
                     try {
                         val homeDoc = withContext(Dispatchers.IO) {
-                            Jsoup.connect("https://suap.ifal.edu.br/")
-                                .header("Cookie", cookie)
-                                .followRedirects(false)
-                                .timeout(15000)
-                                .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                                .get()
+                            com.example.network.SuapAuthRepository.getInstance(context).readDocument("https://suap.ifal.edu.br/")
                         }
                         val profileLink = homeDoc.select("a.user-profile").attr("href")
                         val match = Regex("""/edu/aluno/(\d+)/""").find(profileLink)
@@ -108,12 +93,7 @@ fun SituacaoJustificativaScreen(
 
                 val url = "https://suap.ifal.edu.br/edu/aluno/$matricula/?tab=abono_falta"
                 val doc = withContext(Dispatchers.IO) {
-                    Jsoup.connect(url)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                        .get()
+                    com.example.network.SuapAuthRepository.getInstance(context).readDocument(url)
                 }
 
                 val items = mutableListOf<JustificativaFaltaItem>()
@@ -144,9 +124,9 @@ fun SituacaoJustificativaScreen(
                 val cached = com.example.util.JustificativaCache.loadList(context)
                 if (cached != null) {
                     justificativas = cached
-                    com.example.util.AppSnackbarManager.show("Sem conexão — exibindo dados salvos.")
+                    com.example.util.AppSnackbarManager.show("Exibindo dados salvos no dispositivo.")
                 } else {
-                    errorMessage = "Erro ao buscar solicitações: ${e.message}"
+                    errorMessage = com.example.network.SuapError.fromException(e).message
                 }
                 isLoading = false
             }

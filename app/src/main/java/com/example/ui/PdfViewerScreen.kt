@@ -51,7 +51,7 @@ fun PdfViewerScreen(title: String, url: String, onBack: () -> Unit) {
                 val request = Request.Builder().url(fullUrl).build()
 
                 val client = com.example.network.SuapClient.okHttpClient
-                client.newCall(request).execute().use { response ->
+                com.example.network.SuapAuthRepository.getInstance(context).executeRaw(request).use { response ->
                     if (response.isSuccessful) {
                         val body = response.body ?: throw IOException("O servidor não retornou um arquivo.")
                         val mediaType = body.contentType()?.type.orEmpty()

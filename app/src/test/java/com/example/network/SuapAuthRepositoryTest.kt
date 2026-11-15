@@ -5,6 +5,8 @@ import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -96,4 +98,51 @@ class SuapAuthRepositoryTest {
         assertTrue(results.all { it is NetworkResult.Error })
         assertEquals(2, requestCount.get())
     }
+    @Test
+    fun `concurrent detail rejection shares one foreground login and retries each once`() = runBlocking {
+        val owner = com.example.sync.SyncCoordinator { 0 }
+        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined)
+        owner.bind(scope) { emptyMap() }
+        owner.sessionAccepted(); owner.parsed(true)
+        val authenticated = java.util.concurrent.atomic.AtomicBoolean(false)
+        val gate = java.util.concurrent.CountDownLatch(2)
+        val calls = AtomicInteger()
+        var logins = 0
+        val repo = repository { request ->
+            calls.incrementAndGet()
+            if (!authenticated.get()) {
+                gate.countDown()
+                check(gate.await(5, java.util.concurrent.TimeUnit.SECONDS))
+                response(request, html = loginHtml, finalUrl = SuapAuthRepository.LOGIN_URL)
+            } else response(request, html = "<p>fixture acadêmica</p>")
+        }.apply { coordinator = owner }
+        val login = launch {
+            owner.loginRequested.first { it }
+            logins++
+            authenticated.set(true)
+            owner.sessionAccepted(); owner.parsed(true)
+        }
+        val results = List(2) { async { repo.executeRequest(Request.Builder().url(protectedUrl)) } }.awaitAll()
+        login.join()
+        assertTrue(results.all { it is NetworkResult.Success })
+        assertEquals(1, logins)
+        assertEquals(4, calls.get())
+        scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
+        Unit
+    }
+
+    @Test
+    fun `transport errors carry typed causes`() = runBlocking {
+        for ((exception, expected) in listOf(
+            java.net.UnknownHostException() to SuapError.NoInternet,
+            java.net.ConnectException() to SuapError.NoInternet,
+            java.net.SocketTimeoutException() to SuapError.Timeout
+        )) {
+            val result = repository { throw exception }.executeRequest(Request.Builder().url(protectedUrl)) as NetworkResult.Error
+            assertEquals(expected, result.error)
+        }
+        val unavailable = repository { response(it, 503, "fixture") }.executeRequest(Request.Builder().url(protectedUrl)) as NetworkResult.Error
+        assertEquals(SuapError.SuapUnavailable, unavailable.error)
+    }
+
 }

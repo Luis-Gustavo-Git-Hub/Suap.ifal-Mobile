@@ -69,27 +69,12 @@ fun DetalhesJustificativaScreen(
         isLoading = true
         coroutineScope.launch {
             try {
-                val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
-                if (cookie.isNullOrEmpty()) {
-                    val cached = com.example.util.JustificativaCache.loadDetalhes(context, justificativaId)
-                    if (cached != null) {
-                        detalhes = cached
-                        com.example.util.AppSnackbarManager.show("Sem sessão ativa — exibindo dados salvos.")
-                    } else {
-                        errorMessage = "Sessão expirada. Sincronize novamente no início."
-                    }
-                    isLoading = false
-                    return@launch
-                }
+                com.example.util.JustificativaCache.loadDetalhes(context, justificativaId)?.let { detalhes = it }
+
 
                 val url = "https://suap.ifal.edu.br/edu/abonofaltas/$justificativaId/"
                 val doc = withContext(Dispatchers.IO) {
-                    Jsoup.connect(url)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                        .get()
+                    com.example.network.SuapAuthRepository.getInstance(context).readDocument(url)
                 }
 
                 var aluno = "-"
@@ -181,7 +166,7 @@ fun DetalhesJustificativaScreen(
                 val cached = com.example.util.JustificativaCache.loadDetalhes(context, justificativaId)
                 if (cached != null) {
                     detalhes = cached
-                    com.example.util.AppSnackbarManager.show("Sem conexão — exibindo dados salvos.")
+                    com.example.util.AppSnackbarManager.show("Exibindo dados salvos no dispositivo.")
                 } else {
                     errorMessage = "Erro ao carregar detalhes: ${e.message}"
                 }

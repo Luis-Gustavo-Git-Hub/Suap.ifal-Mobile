@@ -54,20 +54,10 @@ fun ReposicaoAtividadeScreen(
         isLoading = true
         coroutineScope.launch {
             try {
-                val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
-                if (cookie.isNullOrEmpty()) {
-                    errorMessage = "Sessão expirada. Faça login novamente."
-                    isLoading = false
-                    return@launch
-                }
+
 
                 val doc = withContext(Dispatchers.IO) {
-                    Jsoup.connect(url)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                        .get()
+                    com.example.network.SuapAuthRepository.getInstance(context).readDocument(url)
                 }
 
                 val alertMsg = doc.select(".alert-warning, .alert-danger, .errornote, .message.error").text()
@@ -322,7 +312,7 @@ fun ReposicaoAtividadeScreen(
                                         .post(formBodyBuilder.build())
                                         .build()
 
-                                    val response = client.newCall(request).execute()
+                                    val response = com.example.network.SuapAuthRepository.getInstance(context).executeRaw(request)
                                     
                                     withContext(Dispatchers.Main) {
                                         isSubmitting = false

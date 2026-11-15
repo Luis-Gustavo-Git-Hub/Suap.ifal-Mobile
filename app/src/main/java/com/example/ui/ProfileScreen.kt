@@ -285,7 +285,7 @@ fun ProfileScreen(
                                 .crossfade(true)
                                 .apply {
                                     if (com.example.util.UrlSecurityUtils.isAllowedSuapUrl(profilePhotoUrl)) {
-                                        addHeader("Cookie", CookieManager.getInstance().getCookie("https://suap.ifal.edu.br") ?: "")
+                                        addHeader("Cookie", com.example.network.SuapAuthRepository.getInstance(context).cookieHeaderFor("https://suap.ifal.edu.br"))
                                         addHeader("Referer", "https://suap.ifal.edu.br/")
                                     }
                                 }
@@ -943,6 +943,7 @@ fun ProfileScreen(
                             onClick = { 
                                 if (termsAccepted) {
                                     if (credentialStore.setSuapCredentials(editMatricula, editSenha)) {
+                                        viewModel.syncCoordinator.credentialsChanged()
                                         showSavedMsg = true
                                     } else {
                                         com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
@@ -1241,6 +1242,7 @@ fun ProfileScreen(
                         appPrefs.edit().putBoolean("terms_accepted", true).apply()
                         if (termsDialogTarget == "SUAP") {
                             if (credentialStore.setSuapCredentials(editMatricula, editSenha)) {
+                                        viewModel.syncCoordinator.credentialsChanged()
                                 showSavedMsg = true
                             } else {
                                 com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")

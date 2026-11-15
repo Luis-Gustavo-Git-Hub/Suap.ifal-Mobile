@@ -18,7 +18,7 @@ object SuapClient {
      * the exact same authentication cookies seamlessly.
      */
     val webKitCookieJar = object : CookieJar {
-        private val cookieManager = CookieManager.getInstance()
+        private val cookieManager = CookieManager.getInstance().apply { setAcceptCookie(true) }
 
         override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
             if (url.scheme != "https" || url.host != SUAP_HOST) return

@@ -50,7 +50,7 @@ import com.example.data.ProfessorContact
 fun AvisosScreen(viewModel: SuapViewModel) {
     val avisos by viewModel.avisos.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingAvisos.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.avisosError.collectAsStateWithLifecycle()
+    val rawErrorMessage by viewModel.avisosError.collectAsStateWithLifecycle()
     val professorContacts by viewModel.professorContacts.collectAsStateWithLifecycle()
     var showProfessorsSheet by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -70,13 +70,15 @@ fun AvisosScreen(viewModel: SuapViewModel) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchAvisos()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val errorMessage = rawErrorMessage ?: (syncState as? com.example.sync.SyncState.Failed)?.let {
+        com.example.network.SuapError.fromReason(it.reason).message
     }
+    val syncTimes by viewModel.syncCoordinator.lastSyncedAt.collectAsStateWithLifecycle()
 
     PullToRefreshBox(
-        isRefreshing = isLoading,
-        onRefresh = { viewModel.fetchAvisos() },
+        isRefreshing = isLoading || syncState is com.example.sync.SyncState.Syncing,
+        onRefresh = { viewModel.requestSync(force = true, module = com.example.sync.SyncModule.AVISOS) },
         modifier = Modifier.fillMaxSize()
     ) {
         Box(
@@ -90,7 +92,9 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 .widthIn(max = 600.dp)
                 .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
         ) {
-        val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
+        val lastSyncTime = syncTimes[com.example.sync.SyncModule.AVISOS]?.let {
+            java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it))
+        }.orEmpty()
         com.example.ui.components.AppPageHeader(
             eyebrow = "SUAP",
             title = "Avisos",
@@ -111,19 +115,20 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 }
             },
             supportingContent = {
-                if (lastSyncTime.isNotBlank()) {
+                if (syncState is com.example.sync.SyncState.Syncing) Text("Sincronizando...", style = MaterialTheme.typography.labelSmall)
+                else if (lastSyncTime.isNotBlank()) {
                     com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
                 }
             }
         )
         
-        errorMessage?.let { message ->
+        errorMessage?.takeIf { avisos.isEmpty() && syncState !is com.example.sync.SyncState.Syncing }?.let { message ->
             com.example.ui.components.AppFeedbackCard(
                 title = "Não foi possível atualizar os avisos",
                 message = if (avisos.isNotEmpty()) "$message Exibindo os avisos salvos no dispositivo." else message,
                 modifier = Modifier.padding(vertical = AppDimens.Spacing8),
                 actionLabel = "Tentar novamente",
-                onAction = { viewModel.fetchAvisos() }
+                onAction = { viewModel.requestSync(force = true, module = com.example.sync.SyncModule.AVISOS) }
             )
         }
 
@@ -513,7 +518,7 @@ fun ProfessorAvatar(
     }
     val cookie = remember {
         try {
-            android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br") ?: ""
+            com.example.network.SuapAuthRepository.getInstance(context).cookieHeaderFor("https://suap.ifal.edu.br")
         } catch (e: Exception) { "" }
     }
     val targetUrl = remember(photoUrl) {
