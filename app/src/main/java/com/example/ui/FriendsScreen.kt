@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,11 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +53,7 @@ import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.text.Normalizer
 
 private fun cachedFriendDateFormat(pattern: String) = object : ThreadLocal<SimpleDateFormat>() {
     override fun initialValue() = SimpleDateFormat(pattern, Locale.forLanguageTag("pt-BR"))
@@ -56,6 +61,42 @@ private fun cachedFriendDateFormat(pattern: String) = object : ThreadLocal<Simpl
 
 private val FRIEND_TIME_FORMATTER = cachedFriendDateFormat("HH:mm")
 private val FRIEND_DATE_FORMATTER = cachedFriendDateFormat("dd/MM 'às' HH:mm")
+
+private data class FriendSubjectMatch(
+    val name: String,
+    val mine: com.example.data.Subject?,
+    val friend: Map<String, String>?
+)
+
+private fun subjectComparisonKey(name: String): String = Normalizer
+    .normalize(name, Normalizer.Form.NFD)
+    .replace(Regex("\\p{M}+"), "")
+    .lowercase(Locale.ROOT)
+    .replace(Regex("[^a-z0-9]+"), " ")
+    .trim()
+
+private fun matchFriendSubjects(
+    mine: List<com.example.data.Subject>,
+    friend: List<Map<String, String>>
+): List<FriendSubjectMatch> {
+    val mineByKey = mine.filter { subjectComparisonKey(it.name).isNotBlank() }
+        .groupBy { subjectComparisonKey(it.name) }
+    val friendByKey = friend.filter { subjectComparisonKey(it["name"].orEmpty()).isNotBlank() }
+        .groupBy { subjectComparisonKey(it["name"].orEmpty()) }
+    return (mineByKey.keys + friendByKey.keys).distinct().map { key ->
+        val mineMatches = mineByKey[key].orEmpty()
+        val friendMatches = friendByKey[key].orEmpty()
+        val count = maxOf(mineMatches.size, friendMatches.size)
+        (0 until count).map { index ->
+            FriendSubjectMatch(
+                name = mineMatches.getOrNull(index)?.name
+                    ?: friendMatches.getOrNull(index)?.get("name").orEmpty(),
+                mine = mineMatches.getOrNull(index),
+                friend = friendMatches.getOrNull(index)
+            )
+        }
+    }.flatten().sortedBy { it.name.lowercase(Locale.ROOT) }
+}
 
 val cardColorPresets = com.example.ui.theme.FriendCardColorPresets
 
@@ -154,7 +195,6 @@ fun FriendsScreen(
     var showSettingsSheet by remember { mutableStateOf(false) }
     var profileBase64Cache by remember { mutableStateOf("") }
     var myUserMatricula by remember { mutableStateOf("") }
-    var myUserEmail by remember { mutableStateOf("") }
     var myCardColorHex by remember { mutableStateOf("") }
     var searchMatricula by rememberSaveable { mutableStateOf("") }
     var listSearchQuery by rememberSaveable { mutableStateOf("") }
@@ -166,7 +206,6 @@ fun FriendsScreen(
     var showRequestsSheet by rememberSaveable { mutableStateOf(false) }
     var selectedFriendBoletim by remember { mutableStateOf<BoletimShared?>(null) }
     var selectedFriendForCompare by remember { mutableStateOf<Friend?>(null) }
-    var myBoletim by remember { mutableStateOf<BoletimShared?>(null) }
     var isLoadingCompare by remember { mutableStateOf(false) }
     var isSearching by remember { mutableStateOf(false) }
     var friendsList by remember { mutableStateOf<List<Friend>>(emptyList()) }
@@ -223,18 +262,6 @@ fun FriendsScreen(
             
             myUserMatricula = savedMatricula
             
-            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
-            if (uid.isNotEmpty()) {
-                try {
-                    val userDoc = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
-                    myUserEmail = userDoc.getString("email")?.takeIf { it.isNotEmpty() } ?: com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: ""
-                } catch (e: Exception) {
-                    myUserEmail = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.email ?: ""
-                }
-            } else {
-                myUserEmail = ""
-            }
-            
             if (savedMatricula.isNotEmpty() && savedMatricula != "-") {
                 val savedPhotoUrl = sharedPrefs.getString("saved_profile_photo_url", "") ?: ""
                 var base64 = ""
@@ -289,44 +316,10 @@ fun FriendsScreen(
         topBar = {
             com.example.ui.components.AppTopBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.colorScheme.tertiary
-                                        )
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Group,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Rede Acadêmica",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                text = if (isSignedIn) "${friendsList.size} amigos conectados" else "Conecte-se e compare notas",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    com.example.ui.components.AppBarTitle(
+                        title = "Amigos",
+                        subtitle = if (isSignedIn) "${friendsList.size} conectados" else "Rede Acadêmica do IFAL"
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -411,112 +404,80 @@ fun FriendsScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             if (!isSignedIn) {
-                // Google Sign-In Hero Bento
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .widthIn(max = 600.dp)
                         .verticalScroll(rememberScrollState(), flingBehavior = rememberAppFlingBehavior())
                         .padding(AppDimens.Spacing16),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary,
-                                        MaterialTheme.colorScheme.tertiary
+                    com.example.ui.components.AppPageHeader(
+                        title = "Conecte-se com seus colegas",
+                        subtitle = "Entre com sua conta Google para montar sua rede acadêmica, compartilhar atualizações do boletim e comparar disciplinas.",
+                        leadingContent = {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.PeopleAlt,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(24.dp)
                                     )
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.PeopleAlt,
-                            contentDescription = null,
-                            modifier = Modifier.size(46.dp),
-                            tint = Color.White
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(20.dp))
-                    
-                    Text(
-                        text = "Rede Acadêmica do IFAL",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Conecte sua conta do Google para adicionar amigos, personalizar a cor do seu card, acompanhar atualizações de notas e comparar seu desempenho acadêmico.",
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(18.dp),
-                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
-                        ) {
-                            FeatureRow(icon = Icons.Outlined.Sync, text = "Sincronização em tempo real das notas do SUAP")
-                            FeatureRow(icon = Icons.Outlined.Palette, text = "Personalização de cor do seu card para amigos")
-                            FeatureRow(icon = Icons.Outlined.AccessTime, text = "Data e hora exatas de atualização do boletim")
-                            FeatureRow(icon = Icons.Outlined.Compare, text = "Comparação detalhada de disciplinas e médias")
+                                }
+                            }
                         }
-                    }
+                    )
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    com.example.ui.components.AppCard {
+                        Text(
+                            text = "Sua rede acadêmica",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(AppDimens.Spacing12))
+                        FeatureRow(icon = Icons.Outlined.PersonAdd, text = "Adicione colegas por e-mail ou QR Code")
+                        Spacer(Modifier.height(AppDimens.Spacing12))
+                        FeatureRow(icon = Icons.Outlined.Sync, text = "Compartilhe atualizações do seu boletim")
+                        Spacer(Modifier.height(AppDimens.Spacing12))
+                        FeatureRow(icon = Icons.Outlined.Compare, text = "Compare disciplinas e médias")
+                    }
 
                     com.example.ui.components.AppPrimaryButton(
                         onClick = {
                             isSigningIn = true
                             coroutineScope.launch {
-                                val success = try {
+                                try {
                                     FriendsManager.signInWithGoogle(context)
                                 } catch (e: Exception) {
                                     com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
-                                    FriendsManager.isUserSignedIn()
+                                } finally {
+                                    signedInUserUid = FriendsManager.currentUserId()
+                                    isSignedIn = FriendsManager.isUserSignedIn()
+                                    isSigningIn = false
                                 }
-                                signedInUserUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                isSignedIn = success || FriendsManager.isUserSignedIn()
-                                isSigningIn = false
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.large,
                         enabled = !isSigningIn
                     ) {
                         if (isSigningIn) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                                 color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.5.dp
+                                strokeWidth = 2.dp
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Entrando...", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.width(AppDimens.Spacing8))
+                            Text("Aguardando Google…")
                         } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Login,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Entrar com a Conta Google", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Icon(Icons.Outlined.Login, contentDescription = null)
+                            Spacer(Modifier.width(AppDimens.Spacing8))
+                            Text("Entrar com Google")
                         }
                     }
                 }
@@ -872,15 +833,13 @@ modifier = Modifier.fillMaxSize(),
                                         friend = friend,
                                         onClick = {
                                             selectedFriendForCompare = friend
+                                            selectedFriendBoletim = null
+                                            compareSearchQuery = ""
                                             showCompareSheet = true
                                             isLoadingCompare = true
                                             coroutineScope.launch {
                                                 try {
                                                     selectedFriendBoletim = FriendsManager.getSharedBoletim(friend.uid)
-                                                    val myUid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                                    if (myUid != null) {
-                                                        myBoletim = FriendsManager.getSharedBoletim(myUid)
-                                                    }
                                                 } catch (e: Exception) {
                                                     com.example.util.AppLog.printStackTrace(e)
                                                     com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
@@ -1070,6 +1029,7 @@ modifier = Modifier.fillMaxSize(),
                         
                         // Connected Account Card
                         val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                        val currentGoogleEmail = FriendsManager.currentGoogleAccountEmail()
                         if (currentUser != null) {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
@@ -1099,7 +1059,7 @@ modifier = Modifier.fillMaxSize(),
                                         )
                                     }
                                     Text(
-                                        text = currentUser.email ?: "Conta ativada",
+                                        text = currentGoogleEmail ?: "Conta ativada",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -1147,20 +1107,37 @@ modifier = Modifier.fillMaxSize(),
                             com.example.ui.components.AppPrimaryButton(
                                 onClick = {
                                     showSettingsSheet = false
+                                    val previousEmail = FriendsManager.currentGoogleAccountEmail()
+                                    isSigningIn = true
                                     coroutineScope.launch {
-                                        val newEmail = FriendsManager.changeGoogleAccount(context)
-                                        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                                        signedInUserUid = currentUser?.uid
-                                        isSignedIn = currentUser != null
-                                        if (newEmail != null && currentUser != null) {
-                                            com.example.util.AppSnackbarManager.show("Conta alterada para: $newEmail")
-                                        } else {
-                                            com.example.util.AppSnackbarManager.show("Troca de conta não concluída.")
+                                        try {
+                                            var switchFailed = false
+                                            val switchResult = try {
+                                                FriendsManager.changeGoogleAccount(context)
+                                            } catch (e: Exception) {
+                                                switchFailed = true
+                                                com.example.util.AppSnackbarManager.show(FriendsManager.userFacingError(e))
+                                                null
+                                            }
+                                            val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                                            signedInUserUid = currentUser?.uid
+                                            isSignedIn = currentUser != null
+                                            if (!switchFailed) {
+                                                when {
+                                                    switchResult == null -> com.example.util.AppSnackbarManager.show("Nenhuma conta foi selecionada. Sua conta atual foi mantida.")
+                                                    !switchResult.profileUpdated -> com.example.util.AppSnackbarManager.show("Conta conectada como ${switchResult.email}, mas o perfil no Firebase não foi atualizado.")
+                                                    !switchResult.email.equals(previousEmail, ignoreCase = true) -> com.example.util.AppSnackbarManager.show("Conta conectada: ${switchResult.email}")
+                                                    else -> com.example.util.AppSnackbarManager.show("Essa conta já estava conectada: ${switchResult.email}")
+                                                }
+                                            }
+                                        } finally {
+                                            isSigningIn = false
                                         }
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.medium
+                                shape = MaterialTheme.shapes.medium,
+                                enabled = !isSigningIn
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.SwitchAccount,
@@ -1457,129 +1434,223 @@ modifier = Modifier.fillMaxSize(),
                             shape = MaterialTheme.shapes.medium
                         )
                         
-                        val mySubjects = remember(myBoletim) { myBoletim?.disciplinas?.associateBy { it["name"] ?: "" } ?: emptyMap() }
-                        val friendSubjects = remember(selectedFriendBoletim) { selectedFriendBoletim!!.disciplinas }
-                        val filteredSubjects = remember(friendSubjects, compareSearchQuery) { 
-                            friendSubjects.filter { (it["name"] ?: "").contains(compareSearchQuery, ignoreCase = true) }
-                        }
-                        
-                        LazyColumn(
-                flingBehavior = rememberAppFlingBehavior(), modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
-                            item {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = AppDimens.Spacing4, start = AppDimens.Spacing8, end = AppDimens.Spacing8),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Disciplina", modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("Turma", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("Dif.", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("Você", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.primary)
-                                    Text("Amigo", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.secondary)
-                                }
-                            }
-                            
-                            items(
-                                items = filteredSubjects,
-                                key = { it["name"] ?: it.hashCode() },
-                                contentType = { "compare_subject_item" }
-                            ) { friendSub ->
-                                val name = friendSub["name"] ?: ""
-                                
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    shape = MaterialTheme.shapes.large,
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                ) {
-                                    Column(modifier = Modifier.fillMaxWidth().padding(AppDimens.Spacing12)) {
-                                        Text(name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        
-                                        val gradesKeys = listOf("grade1" to "1º Bim", "grade2" to "2º Bim", "grade3" to "3º Bim", "grade4" to "4º Bim", "finalGrade" to "Média")
-                                        val localSub = localSubjects.find { it.name.equals(name, ignoreCase = true) }
-                                        
-                                        var mySum = 0.0
-                                        var myCount = 0
-                                        var frSum = 0.0
-                                        var frCount = 0
-                                        var classSum = 0.0
-                                        var classCount = 0
-                                        
-                                        gradesKeys.forEach { (key, label) ->
-                                            val isMedia = key == "finalGrade"
-                                            
-                                            var myG = mySubjects[name]?.get(key)?.takeIf { it.isNotBlank() } ?: "-"
-                                            var frG = friendSub[key]?.takeIf { it.isNotBlank() } ?: "-"
-                                            var classGrade = when (key) {
-                                                "grade1" -> localSub?.classGrade1
-                                                "grade2" -> localSub?.classGrade2
-                                                "grade3" -> localSub?.classGrade3
-                                                "grade4" -> localSub?.classGrade4
-                                                else -> null
-                                            }?.takeIf { it.isNotBlank() && it != "0.0" && it != "0" } ?: "-"
-                                            
-                                            if (!isMedia) {
-                                                val myN = myG.replace(",", ".").toDoubleOrNull()
-                                                val frN = frG.replace(",", ".").toDoubleOrNull()
-                                                val clN = classGrade.replace(",", ".").toDoubleOrNull()
-                                                if (myN != null) { mySum += myN; myCount++ }
-                                                if (frN != null) { frSum += frN; frCount++ }
-                                                if (clN != null) { classSum += clN; classCount++ }
-                                            } else {
-                                                if (myCount > 0) myG = String.format(Locale.US, "%.1f", mySum / myCount).replace(".", ",")
-                                                if (frCount > 0) frG = String.format(Locale.US, "%.1f", frSum / frCount).replace(".", ",")
-                                                if (classCount > 0) classGrade = String.format(Locale.US, "%.1f", classSum / classCount).replace(".", ",")
-                                            }
-                                            
-                                            val myNum = myG.replace(",", ".").toFloatOrNull()
-                                            val frNum = frG.replace(",", ".").toFloatOrNull()
-                                            
-                                            val diffText = if (myNum != null && frNum != null) {
-                                                val diff = myNum - frNum
-                                                if (diff > 0) "+${String.format("%.1f", diff)}" 
-                                                else if (diff < 0) String.format("%.1f", diff)
-                                                else "0,0"
-                                            } else {
-                                                "-"
-                                            }
-                                            
-                                            val diffColor = if (myNum != null && frNum != null) {
-                                                val diff = myNum - frNum
-                                                if (diff > 0) AppSemanticColors.success
-                                                else if (diff < 0) AppSemanticColors.danger
-                                                else MaterialTheme.colorScheme.onSurfaceVariant
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
+                        FriendComparisonContent(
+                            localSubjects = localSubjects,
+                            friendSubjects = selectedFriendBoletim!!.disciplinas,
+                            searchQuery = compareSearchQuery
+                        )
 
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), 
-                                                horizontalArrangement = Arrangement.SpaceBetween, 
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(label, modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                
-                                                Text(classGrade, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                                                
-                                                Text(diffText.replace(".", ","), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = diffColor, textAlign = TextAlign.Center)
-                                                
-                                                Text(myG, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
-                                                
-                                                Text(frG, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
-                                            }
-                                            if (key != "finalGrade") {
-                                                HorizontalDivider(modifier = Modifier.padding(vertical = 3.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
+        }
+    }
+}
+
+
+private data class FriendGradePoint(val stage: String, val mine: Double?, val friend: Double?)
+
+private fun parseComparisonGrade(value: String?): Double? = value
+    ?.trim()
+    ?.replace(",", ".")
+    ?.toDoubleOrNull()
+    ?.takeIf { it.isFinite() && it in 0.0..10.0 }
+
+private fun FriendSubjectMatch.gradePoints(): List<FriendGradePoint> {
+    val friendKeys = listOf("grade1", "grade2", "grade3", "grade4")
+    val mineGrades = listOf(mine?.grade1, mine?.grade2, mine?.grade3, mine?.grade4)
+    return friendKeys.mapIndexed { index, key ->
+        FriendGradePoint(
+            stage = "B${index + 1}",
+            mine = parseComparisonGrade(mineGrades[index]),
+            friend = parseComparisonGrade(friend?.get(key))
+        )
+    }
+}
+
+@Composable
+private fun FriendComparisonContent(
+    localSubjects: List<com.example.data.Subject>,
+    friendSubjects: List<Map<String, String>>,
+    searchQuery: String
+) {
+    val matches = remember(localSubjects, friendSubjects) {
+        matchFriendSubjects(localSubjects, friendSubjects)
+    }
+    val normalizedQuery = remember(searchQuery) { subjectComparisonKey(searchQuery) }
+    val visible = remember(matches, normalizedQuery) {
+        matches.filter {
+            normalizedQuery.isBlank() || subjectComparisonKey(it.name).contains(normalizedQuery)
+        }
+    }
+    val common = visible.filter { it.mine != null && it.friend != null }
+    val mineOnly = visible.filter { it.mine != null && it.friend == null }
+    val friendOnly = visible.filter { it.mine == null && it.friend != null }
+    val gradePairs = common.flatMap { it.gradePoints() }
+    val mineAverage = gradePairs.mapNotNull { it.mine }.average().takeIf { it.isFinite() }
+    val friendAverage = gradePairs.mapNotNull { it.friend }.average().takeIf { it.isFinite() }
+
+    if (localSubjects.isEmpty()) {
+        com.example.ui.components.AppFeedbackCard(
+            title = "Suas notas não estão carregadas",
+            message = "Entre no SUAP e sincronize o boletim para comparar suas disciplinas com as do amigo."
+        )
+        return
+    }
+
+    if (visible.isEmpty()) {
+        com.example.ui.components.AppEmptyState("Nenhuma disciplina encontrada para essa busca.")
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+        flingBehavior = rememberAppFlingBehavior(),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
+        contentPadding = PaddingValues(bottom = AppDimens.Spacing16)
+    ) {
+        item {
+            com.example.ui.components.AppCard {
+                Text("Visão geral", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "${common.size} ${if (common.size == 1) "disciplina em comum" else "disciplinas em comum"}. Só comparamos nomes equivalentes; matérias exclusivas de cada curso ficam separadas.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(AppDimens.Spacing12))
+                Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
+                    ComparisonMetric("Sua média", mineAverage, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                    ComparisonMetric("Média do amigo", friendAverage, MaterialTheme.colorScheme.secondary, Modifier.weight(1f))
+                }
+            }
+        }
+
+        if (common.isNotEmpty()) {
+            item {
+                com.example.ui.components.AppSectionHeader(
+                    title = "Comparação por etapa",
+                    action = { Text("0–10", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                )
+            }
+            items(common, key = { "common:${subjectComparisonKey(it.name)}:${it.mine?.id.orEmpty()}:${it.friend?.hashCode()}" }) { match ->
+                FriendSubjectChartCard(match)
+            }
+        } else {
+            item {
+                com.example.ui.components.AppFeedbackCard(
+                    title = "Nenhuma matéria em comum",
+                    message = "Os nomes das disciplinas não coincidem entre os boletins. Para evitar uma comparação errada, elas não foram agrupadas."
+                )
+            }
+        }
+
+        if (mineOnly.isNotEmpty()) {
+            item { UnmatchedSubjectsCard("Só no seu boletim", mineOnly.map { it.name }) }
+        }
+        if (friendOnly.isNotEmpty()) {
+            item { UnmatchedSubjectsCard("Só no boletim do amigo", friendOnly.map { it.name }) }
+        }
+    }
+}
+
+@Composable
+private fun ComparisonMetric(label: String, value: Double?, color: Color, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = color.copy(alpha = 0.10f)
+    ) {
+        Column(Modifier.padding(AppDimens.Spacing12)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                value?.let { String.format(Locale.forLanguageTag("pt-BR"), "%.1f", it) } ?: "—",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
+    }
+}
+
+@Composable
+private fun FriendSubjectChartCard(match: FriendSubjectMatch) {
+    val points = remember(match) { match.gradePoints() }
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    com.example.ui.components.AppCard {
+        Text(match.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(AppDimens.Spacing8))
+        Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)) {
+            ChartLegend(primary, "Você")
+            ChartLegend(secondary, "Amigo")
+        }
+        Canvas(
+            modifier = Modifier.fillMaxWidth().height(120.dp).semantics {
+                val detail = points.joinToString { point ->
+                    "${point.stage}: você ${point.mine?.let { String.format(Locale.US, "%.1f", it) } ?: "sem nota"}, " +
+                        "amigo ${point.friend?.let { String.format(Locale.US, "%.1f", it) } ?: "sem nota"}"
+                }
+                contentDescription = "Notas de ${match.name}. $detail"
+            }
+        ) {
+            val left = 10.dp.toPx()
+            val right = size.width - 10.dp.toPx()
+            val top = 8.dp.toPx()
+            val bottom = size.height - 8.dp.toPx()
+            val chartHeight = bottom - top
+            for (value in listOf(0, 5, 10)) {
+                val y = bottom - chartHeight * value / 10f
+                drawLine(gridColor.copy(alpha = 0.55f), Offset(left, y), Offset(right, y), 1.dp.toPx())
+            }
+            val groupWidth = (right - left) / points.size
+            val barWidth = minOf(13.dp.toPx(), groupWidth * 0.24f)
+            points.forEachIndexed { index, point ->
+                val center = left + groupWidth * (index + 0.5f)
+                listOf(point.mine to primary, point.friend to secondary).forEachIndexed { side, entry ->
+                    val (grade, color) = entry
+                    if (grade != null) {
+                        val height = chartHeight * (grade / 10.0).toFloat()
+                        drawRoundRect(
+                            color = color,
+                            topLeft = Offset(center + (side - 0.5f) * barWidth - barWidth / 2f, bottom - height),
+                            size = androidx.compose.ui.geometry.Size(barWidth, height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
+                        )
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            points.forEach { point ->
+                Text(point.stage, Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Spacer(Modifier.height(AppDimens.Spacing4))
+        Text(
+            points.joinToString("   ·   ") { point ->
+                "${point.stage}: ${point.mine?.let { String.format(Locale.forLanguageTag("pt-BR"), "%.1f", it) } ?: "—"} / ${point.friend?.let { String.format(Locale.forLanguageTag("pt-BR"), "%.1f", it) } ?: "—"}"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ChartLegend(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
+        Surface(Modifier.size(10.dp), shape = CircleShape, color = color) {}
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun UnmatchedSubjectsCard(title: String, subjects: List<String>) {
+    com.example.ui.components.AppCard {
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+        subjects.forEach { subject ->
+            Text("• $subject", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -1591,18 +1662,8 @@ fun FriendItemCard(
     onRemoveClick: () -> Unit,
     onEditClick: () -> Unit
 ) {
-    var friendBoletim by remember { mutableStateOf<BoletimShared?>(null) }
     val xp = friend.xp
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-
-    LaunchedEffect(friend.uid) {
-        try {
-            friendBoletim = FriendsManager.getSharedBoletim(friend.uid)
-        } catch (e: Exception) {
-            friendBoletim = null
-            com.example.util.AppLog.printStackTrace(e)
-        }
-    }
 
     val customCardColor = remember(friend.cardColorHex) {
         if (friend.cardColorHex.isNotBlank() && friend.cardColorHex != "#00000000") {
@@ -1628,7 +1689,7 @@ fun FriendItemCard(
         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
     }
     
-    val totalSubjects = friendBoletim?.disciplinas?.size ?: 10
+    val totalSubjects = friend.sharedSubjectCount.takeIf { it > 0 } ?: 10
     val lvl2 = totalSubjects * 70
     val lvl3 = totalSubjects * 140
     val lvl4 = totalSubjects * 230

@@ -19,8 +19,8 @@ android {
     applicationId = "com.aistudio.suap.xkcdz"
     minSdk = 24
     targetSdk = 37
-    versionCode = 15
-    versionName = "2.5.5"
+    versionCode = 16
+    versionName = "2.6"
 
     val benchmarkSeedEnabled = providers.gradleProperty("benchmarkSeedEnabled")
       .map { it.toBoolean() }
