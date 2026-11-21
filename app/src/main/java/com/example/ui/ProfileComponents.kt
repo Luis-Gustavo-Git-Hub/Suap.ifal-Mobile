@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -47,14 +48,14 @@ fun ProfileField(
                     }
                 } else Modifier
             )
-            .padding(vertical = 6.dp, horizontal = 4.dp),
+            .padding(vertical = AppDimens.Spacing4, horizontal = AppDimens.Spacing4),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             modifier = Modifier.weight(1f).padding(end = if (canCopy) 8.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             if (icon != null) {
                 Box(

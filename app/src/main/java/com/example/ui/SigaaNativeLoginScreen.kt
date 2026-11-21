@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.util.configureAppWebSettings
 
 import android.annotation.SuppressLint
@@ -12,8 +14,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,8 +49,8 @@ fun SigaaNativeLoginScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(if (showWebView) "Navegador SIGAA" else "Login SIGAA", fontWeight = FontWeight.Bold) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Entrar no SIGAA") },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (showWebView) {
@@ -212,8 +212,8 @@ fun SigaaNativeLoginScreen(
                     ) {
                         Text("Login realizado com sucesso!", style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text("Voltar")
+                        com.example.ui.components.AppPrimaryButton(onClick = onNavigateBack) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_back))
                         }
                     }
                 } else {
@@ -226,8 +226,8 @@ fun SigaaNativeLoginScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Conectando ao SIGAA em 2º plano...")
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = { isLoggingIn = false }) {
-                            Text("Cancelar")
+                        com.example.ui.components.AppOutlineButton(onClick = { isLoggingIn = false }) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                         }
                     }
                 }
@@ -240,15 +240,15 @@ fun SigaaNativeLoginScreen(
                     ) {
                         Text("Login realizado com sucesso!", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onNavigateBack) {
-                            Text("Voltar")
+                        com.example.ui.components.AppPrimaryButton(onClick = onNavigateBack) {
+                            Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_back))
                         }
                     }
                 } else {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(24.dp),
+                            .padding(AppDimens.Spacing24),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -260,7 +260,7 @@ fun SigaaNativeLoginScreen(
                         )
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = username,
                             onValueChange = { username = it },
                             label = { Text("Usuário") },
@@ -272,7 +272,7 @@ fun SigaaNativeLoginScreen(
 
                         var showPassword by remember { mutableStateOf(false) }
                         
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Senha") },
@@ -286,7 +286,7 @@ fun SigaaNativeLoginScreen(
                                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                 ) {
                                     Icon(
-                                        imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                                         contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
                                     )
                                 }
@@ -308,7 +308,7 @@ fun SigaaNativeLoginScreen(
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        Button(
+                        com.example.ui.components.AppPrimaryButton(
                             onClick = {
                                 val credentialsSaved = !saveCredentials ||
                                     credentialStore.setSigaaCredentials(username, password, true)
@@ -324,12 +324,12 @@ fun SigaaNativeLoginScreen(
                                 .height(56.dp),
                             enabled = username.isNotBlank() && password.isNotBlank()
                         ) {
-                            Text("Entrar (Oculto)", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                            Text("Entrar", fontSize = MaterialTheme.typography.titleMedium.fontSize)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        OutlinedButton(
+                        com.example.ui.components.AppOutlineButton(
                             onClick = {
                                 val credentialsSaved = !saveCredentials ||
                                     credentialStore.setSigaaCredentials(username, password, true)
@@ -344,7 +344,7 @@ fun SigaaNativeLoginScreen(
                                 .fillMaxWidth()
                                 .height(56.dp)
                         ) {
-                            Text("Login via Navegador (Clássico)")
+                            Text("Entrar pelo navegador")
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import android.webkit.CookieManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -53,20 +54,10 @@ fun ReposicaoAtividadeScreen(
         isLoading = true
         coroutineScope.launch {
             try {
-                val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
-                if (cookie.isNullOrEmpty()) {
-                    errorMessage = "Sessão expirada. Faça login novamente."
-                    isLoading = false
-                    return@launch
-                }
+
 
                 val doc = withContext(Dispatchers.IO) {
-                    Jsoup.connect(url)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                        .get()
+                    com.example.network.SuapAuthRepository.getInstance(context).readDocument(url)
                 }
 
                 val alertMsg = doc.select(".alert-warning, .alert-danger, .errornote, .message.error").text()
@@ -160,8 +151,8 @@ fun ReposicaoAtividadeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Solicitar Reposição", fontWeight = FontWeight.Bold) },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Reposição de atividades") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -178,7 +169,7 @@ fun ReposicaoAtividadeScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (errorMessage != null) {
                 Column(
-                    modifier = Modifier.align(Alignment.Center).padding(24.dp),
+                    modifier = Modifier.align(Alignment.Center).padding(AppDimens.Spacing24),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -188,8 +179,8 @@ fun ReposicaoAtividadeScreen(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onBack) {
-                        Text("Voltar")
+                    com.example.ui.components.AppPrimaryButton(onClick = onBack) {
+                        Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_back))
                     }
                 }
             } else {
@@ -197,17 +188,17 @@ fun ReposicaoAtividadeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(AppDimens.Spacing16),
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
                 ) {
-                    Card(
+                    com.example.ui.components.AppContentCard(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier = Modifier.padding(AppDimens.Spacing16),
+                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
                         ) {
                             Text(
                                 text = "Preencha os dados da reposição",
@@ -226,7 +217,7 @@ fun ReposicaoAtividadeScreen(
                                             expanded = expanded,
                                             onExpandedChange = { expanded = !expanded }
                                         ) {
-                                            OutlinedTextField(
+                                            com.example.ui.components.AppTextField(
                                                 value = selectedOptionText,
                                                 onValueChange = {},
                                                 readOnly = true,
@@ -252,7 +243,7 @@ fun ReposicaoAtividadeScreen(
                                         }
                                     }
                                     "textarea" -> {
-                                        OutlinedTextField(
+                                        com.example.ui.components.AppTextField(
                                             value = formValues[field.name] ?: "",
                                             onValueChange = { formValues[field.name] = it },
                                             label = { Text(field.label + if (field.isRequired) " *" else "") },
@@ -278,11 +269,11 @@ fun ReposicaoAtividadeScreen(
                                                     }
                                                 }
                                             )
-                                            Text(field.label, modifier = Modifier.padding(start = 8.dp))
+                                            Text(field.label, modifier = Modifier.padding(start = AppDimens.Spacing8))
                                         }
                                     }
                                     else -> {
-                                        OutlinedTextField(
+                                        com.example.ui.components.AppTextField(
                                             value = formValues[field.name] ?: "",
                                             onValueChange = { formValues[field.name] = it },
                                             label = { Text(field.label + if (field.isRequired) " *" else "") },
@@ -297,13 +288,13 @@ fun ReposicaoAtividadeScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
+                    com.example.ui.components.AppPrimaryButton(
                         onClick = {
                             // Validate required fields
                             val missingFields = visibleFields.filter { it.isRequired && formValues[it.name].isNullOrBlank() }
                             if (missingFields.isNotEmpty()) {
                                 com.example.util.AppSnackbarManager.show("Preencha todos os campos obrigatórios.")
-                                return@Button
+                                return@AppPrimaryButton
                             }
 
                             isSubmitting = true
@@ -321,7 +312,7 @@ fun ReposicaoAtividadeScreen(
                                         .post(formBodyBuilder.build())
                                         .build()
 
-                                    val response = client.newCall(request).execute()
+                                    val response = com.example.network.SuapAuthRepository.getInstance(context).executeRaw(request)
                                     
                                     withContext(Dispatchers.Main) {
                                         isSubmitting = false

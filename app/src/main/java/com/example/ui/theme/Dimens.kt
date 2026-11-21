@@ -10,5 +10,11 @@ object AppDimens {
     val Spacing16: Dp = 16.dp
     val Spacing24: Dp = 24.dp
 
+    val Spacing32: Dp = 32.dp
+    val CardPadding: Dp = Spacing16
+    val ItemSpacing: Dp = Spacing12
+    val IconSmall: Dp = 16.dp
+    val IconMedium: Dp = 24.dp
+    val IconLarge: Dp = 32.dp
     val ScreenPadding: Dp = 16.dp
 }

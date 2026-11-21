@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Suap IFAL",
+        "supportEmail": "support@suap-ifal.firebaseapp.com",
+        "authorizedRedirectUris": [
+          "https://suap-ifal.firebaseapp.com/__/auth/handler",
+          "https://suap-ifal.web.app/__/auth/handler"
+        ]
+      }
+    }
+  }
+}

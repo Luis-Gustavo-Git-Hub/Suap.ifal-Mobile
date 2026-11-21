@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
 import com.example.ui.theme.rememberAppFlingBehavior
 import com.example.ui.theme.AppSemanticColors
 import com.example.ui.theme.AppDimens
@@ -102,9 +103,9 @@ fun CustomFilterChip(
             .padding(vertical = 1.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp),
+            modifier = Modifier.padding(horizontal = AppDimens.Spacing12),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(14.dp))
             Text(
@@ -123,7 +124,6 @@ fun CustomFilterChip(
 fun BoletimScreen(
     viewModel: SuapViewModel,
     onBack: () -> Unit,
-    onNavigateToLogs: () -> Unit = {},
     onSubjectClick: ((String, String) -> Unit)? = null,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {}
@@ -177,34 +177,16 @@ fun BoletimScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Boletim Escolar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text("${subjectUiModels.size} disciplinas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
-                            if (lastSyncTime.isNotBlank()) {
-                                Text("•", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
-                            }
-                        }
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Boletim") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToLogs) {
-                        Icon(Icons.Default.Terminal, contentDescription = "Ver Logs do Sistema")
-                    }
                     IconButton(onClick = { viewModel.downloadBoletim(context) }) {
-                        Icon(Icons.Default.Download, contentDescription = "Exportar PDF")
+                        Icon(Icons.Outlined.Download, contentDescription = "Exportar PDF")
                     }
                 }
             )
@@ -221,7 +203,7 @@ fun BoletimScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = if (isWide) 16.dp else 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
             ) {
                 Box(
                     modifier = Modifier
@@ -243,8 +225,8 @@ fun BoletimScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .widthIn(max = if (isWide) 800.dp else 600.dp),
-                        contentPadding = PaddingValues(bottom = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        contentPadding = PaddingValues(bottom = AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                 // 1. XP Hero Card
                 if (subjectUiModels.isNotEmpty()) {
@@ -258,7 +240,7 @@ fun BoletimScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 2.dp),
+                                .padding(horizontal = AppDimens.Spacing12, vertical = 2.dp),
                             shape = MaterialTheme.shapes.medium,
                             color = if (isDark) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
                             border = BorderStroke(
@@ -274,13 +256,13 @@ fun BoletimScreen(
                             shadowElevation = 0.5.dp
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).fillMaxWidth(),
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing4).fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -292,7 +274,7 @@ fun BoletimScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Star,
+                                            imageVector = Icons.Outlined.Star,
                                             contentDescription = null,
                                             tint = Color.White,
                                             modifier = Modifier.size(16.dp)
@@ -322,7 +304,7 @@ fun BoletimScreen(
                                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                                     ) {
@@ -351,18 +333,18 @@ fun BoletimScreen(
 
                 // 2. Search Bar
                 item(key = "search_bar", contentType = "search_bar") {
-                    OutlinedTextField(
+                    com.example.ui.components.AppTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 2.dp),
+                            .padding(horizontal = AppDimens.Spacing12, vertical = 2.dp),
                         placeholder = { Text("Pesquisar disciplinas...", style = MaterialTheme.typography.bodySmall) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar", modifier = Modifier.size(16.dp)) },
+                        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Pesquisar", modifier = Modifier.size(16.dp)) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Limpar", modifier = Modifier.size(15.dp))
+                                    Icon(Icons.Outlined.Close, contentDescription = "Limpar", modifier = Modifier.size(15.dp))
                                 }
                             }
                         },
@@ -397,16 +379,16 @@ fun BoletimScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = 12.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing4),
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                         ) {
                             val filters = listOf(
-                                Triple("Todas", "Todas", Icons.Default.Book),
-                                Triple("Favoritas", "Favoritas", Icons.Default.Star),
-                                Triple("Aprovado", "Aprovado", Icons.Default.Check),
-                                Triple("Em Andamento", "Em curso", Icons.Default.Warning),
-                                Triple("Recuperação", "Recuperação", Icons.Default.Info),
-                                Triple("Reprovado", "Reprovado", Icons.Default.Close)
+                                Triple("Todas", "Todas", Icons.Outlined.Book),
+                                Triple("Favoritas", "Favoritas", Icons.Outlined.Star),
+                                Triple("Aprovado", "Aprovado", Icons.Outlined.Check),
+                                Triple("Em Andamento", "Em curso", Icons.Outlined.Warning),
+                                Triple("Recuperação", "Recuperação", Icons.Outlined.Info),
+                                Triple("Reprovado", "Reprovado", Icons.Outlined.Close)
                             )
                             filters.forEach { (label, value, icon) ->
                                 CustomFilterChip(
@@ -432,21 +414,21 @@ fun BoletimScreen(
                         }
                     } else {
                         item(key = "empty_state", contentType = "empty_state") {
-                            Card(
+                            com.example.ui.components.AppContentCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 24.dp),
+                                    .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing24),
                                 shape = MaterialTheme.shapes.extraLarge,
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(24.dp),
+                                        .padding(AppDimens.Spacing24),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Info,
+                                        imageVector = Icons.Outlined.Info,
                                         contentDescription = null,
                                         modifier = Modifier.size(40.dp),
                                         tint = MaterialTheme.colorScheme.primary
@@ -479,18 +461,18 @@ fun BoletimScreen(
                         onSubjectClick = onSubjectClick,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
+                            .padding(horizontal = AppDimens.Spacing12)
                     )
                 }
             }
         }
 
         if (isWide) {
-            Card(
+            com.example.ui.components.AppContentCard(
                 modifier = Modifier
                     .weight(1.2f)
                     .fillMaxHeight()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = AppDimens.Spacing4),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             ) {
@@ -505,15 +487,15 @@ fun BoletimScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(32.dp),
+                            .padding(AppDimens.Spacing32),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Book,
+                                imageVector = Icons.Outlined.Book,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
@@ -541,7 +523,7 @@ fun BoletimScreen(
 
     if (!isWide && currentSubjectForDetails != null) {
         val subject = currentSubjectForDetails
-        ModalBottomSheet(
+        com.example.ui.components.AppBottomSheet(
             onDismissRequest = { selectedSubjectForDetails = null },
             sheetState = sheetState
         ) {
@@ -632,11 +614,11 @@ fun SubjectBimesterCard(
         modifier = modifier
             .background(cardBgBrush, MaterialTheme.shapes.large)
             .border(BorderStroke(1.dp, cardBorderBrush), MaterialTheme.shapes.large)
-            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing8)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             // Header Row
             Row(
@@ -646,8 +628,8 @@ fun SubjectBimesterCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f).padding(end = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing4),
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     AnimatedSubjectBadge(
                         subjectName = model.cleanName,
@@ -699,13 +681,13 @@ fun SubjectBimesterCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     // Status Pill
                     Box(
                         modifier = Modifier
                             .background(statusBg, MaterialTheme.shapes.extraSmall)
-                            .padding(horizontal = 5.dp, vertical = 1.5.dp)
+                            .padding(horizontal = AppDimens.Spacing4, vertical = AppDimens.Spacing4)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -713,7 +695,7 @@ fun SubjectBimesterCard(
                         ) {
                             if (model.isApproved) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    imageVector = Icons.Outlined.Check,
                                     contentDescription = null,
                                     modifier = Modifier.size(10.dp),
                                     tint = statusTextColor
@@ -740,7 +722,7 @@ fun SubjectBimesterCard(
                             }
                     ) {
                         Icon(
-                            imageVector = if (bimestersExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            imageVector = if (bimestersExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                             contentDescription = if (bimestersExpanded) "Ocultar notas por bimestre" else "Mostrar notas por bimestre"
                         )
                     }
@@ -750,7 +732,7 @@ fun SubjectBimesterCard(
                         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                     ) {
                         Icon(
-                            imageVector = if (subject.isFavorite) Icons.Filled.Star else Icons.Default.Star,
+                            imageVector = if (subject.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
                             contentDescription = if (subject.isFavorite) "Remover ${model.cleanName} dos favoritos" else "Adicionar ${model.cleanName} aos favoritos",
                             tint = if (subject.isFavorite) semantic.warning else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             modifier = Modifier.size(15.dp)
@@ -760,7 +742,7 @@ fun SubjectBimesterCard(
             }
 
             AnimatedVisibility(visible = bimestersExpanded) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
                     Text(
                         text = "Notas por bimestre",
                         style = MaterialTheme.typography.labelMedium,
@@ -768,7 +750,7 @@ fun SubjectBimesterCard(
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                     ) {
                         model.bimesters.forEach { bInfo ->
                             BimesterItem(
@@ -811,7 +793,7 @@ fun SubjectBimesterCard(
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isDark) 0.35f else 0.25f),
                         MaterialTheme.shapes.small
                     )
-                    .padding(horizontal = 6.dp, vertical = 2.5.dp),
+                    .padding(horizontal = AppDimens.Spacing4, vertical = AppDimens.Spacing4),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -849,14 +831,14 @@ fun SubjectBimesterCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     val safeAbsences = subject.absences.orEmpty()
                     if (safeAbsences.isNotBlank() && safeAbsences != "0") {
                         Box(
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f), MaterialTheme.shapes.extraSmall)
-                                .padding(horizontal = 3.5.dp, vertical = 1.dp)
+                                .padding(horizontal = AppDimens.Spacing4, vertical = 1.dp)
                         ) {
                             Text(
                                 text = "${safeAbsences}F",
@@ -874,7 +856,7 @@ fun SubjectBimesterCard(
                     Box(
                         modifier = Modifier
                             .background(mediaColor.copy(alpha = if (isDark) 0.20f else 0.12f), MaterialTheme.shapes.extraSmall)
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                            .padding(horizontal = AppDimens.Spacing4, vertical = 1.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -903,7 +885,7 @@ fun SubjectBimesterCard(
                             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                             .background(model.primaryColor.copy(alpha = if (isDark) 0.22f else 0.14f), MaterialTheme.shapes.extraSmall)
                             .clickable(role = Role.Button) { onShowDetails(subject) }
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -911,7 +893,7 @@ fun SubjectBimesterCard(
                             horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Book,
+                                imageVector = Icons.Outlined.Book,
                                 contentDescription = "Abrir detalhes de ${model.cleanName}",
                                 tint = model.primaryColor,
                                 modifier = Modifier.size(16.dp)
@@ -1005,7 +987,7 @@ fun SubjectDetailsSheet(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.85f)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8)
     ) {
         // Header
         Row(
@@ -1015,7 +997,7 @@ fun SubjectDetailsSheet(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f).padding(end = 6.dp)
+                modifier = Modifier.weight(1f).padding(end = AppDimens.Spacing4)
             ) {
                 AnimatedSubjectBadge(
                     subjectName = subject.name.orEmpty(),
@@ -1044,7 +1026,7 @@ fun SubjectDetailsSheet(
                 onClick = onClose,
                 modifier = Modifier.size(28.dp)
             ) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = "Fechar", modifier = Modifier.size(18.dp))
+                Icon(imageVector = Icons.Outlined.Close, contentDescription = "Fechar", modifier = Modifier.size(18.dp))
             }
         }
 
@@ -1055,13 +1037,13 @@ fun SubjectDetailsSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), MaterialTheme.shapes.small)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
             ) {
                 Text(
                     text = "Status:",
@@ -1083,7 +1065,7 @@ fun SubjectDetailsSheet(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
             ) {
                 val finalG = parseGradeSafe(subject.finalGrade)
                 val semanticColors = AppSemanticColors
@@ -1118,8 +1100,8 @@ fun SubjectDetailsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing8),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 Text(
                     text = "Buscando detalhes do SUAP...",
@@ -1149,22 +1131,22 @@ fun SubjectDetailsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 20.dp)
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8),
+                contentPadding = PaddingValues(bottom = AppDimens.Spacing16)
             ) {
                 items(
                     items = etapaDetails,
                     key = { it.title },
                     contentType = { "etapa_detail" }
                 ) { etapa ->
-                    Card(
+                    com.example.ui.components.AppContentCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
+                        Column(modifier = Modifier.padding(AppDimens.Spacing8)) {
                             val cleanTitle = etapa.title
                                 .replace(" - Média Aritmética", "")
                                 .replace("Etapa ", "")
@@ -1200,7 +1182,7 @@ fun SubjectDetailsSheet(
                                             textAlign = TextAlign.Center,
                                             maxLines = 1,
                                             softWrap = false,
-                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                                         )
                                     }
 
@@ -1258,7 +1240,7 @@ fun SubjectDetailsSheet(
                                                 gradeVal != null && gradeVal > 0.0 -> itemSemantic.danger
                                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                                             },
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                                         )
                                     }
                                 }

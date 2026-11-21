@@ -18,7 +18,8 @@ class VisualConsistencyLintTest {
 
     @Test
     fun testNoHardcodedStylingOutsideDesignSystem() {
-        val uiDir = File("app/src/main/java/com/example/ui")
+        val uiDir = listOf(File("src/main/java/com/example/ui"), File("app/src/main/java/com/example/ui"))
+            .firstOrNull { it.isDirectory } ?: error("UI source directory not found; audit must not silently skip files")
         val violations = mutableListOf<String>()
 
         val roundedPattern = Pattern.compile("RoundedCornerShape\\s*\\(\\s*\\d+(\\.\\d+)?\\.dp\\s*\\)")

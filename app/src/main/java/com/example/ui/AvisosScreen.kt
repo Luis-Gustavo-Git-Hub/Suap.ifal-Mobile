@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.rememberAppFlingBehavior
 
 import androidx.compose.animation.animateContentSize
@@ -15,28 +17,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContactMail
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MarkEmailUnread
-import androidx.compose.material.icons.filled.OfflinePin
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -65,7 +50,7 @@ import com.example.data.ProfessorContact
 fun AvisosScreen(viewModel: SuapViewModel) {
     val avisos by viewModel.avisos.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoadingAvisos.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.avisosError.collectAsStateWithLifecycle()
+    val rawErrorMessage by viewModel.avisosError.collectAsStateWithLifecycle()
     val professorContacts by viewModel.professorContacts.collectAsStateWithLifecycle()
     var showProfessorsSheet by rememberSaveable { mutableStateOf(false) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -85,13 +70,15 @@ fun AvisosScreen(viewModel: SuapViewModel) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.fetchAvisos()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val errorMessage = rawErrorMessage ?: (syncState as? com.example.sync.SyncState.Failed)?.let {
+        com.example.network.SuapError.fromReason(it.reason).message
     }
+    val syncTimes by viewModel.syncCoordinator.lastSyncedAt.collectAsStateWithLifecycle()
 
     PullToRefreshBox(
-        isRefreshing = isLoading,
-        onRefresh = { viewModel.fetchAvisos() },
+        isRefreshing = isLoading || syncState is com.example.sync.SyncState.Syncing,
+        onRefresh = { viewModel.requestSync(force = true, module = com.example.sync.SyncModule.AVISOS) },
         modifier = Modifier.fillMaxSize()
     ) {
         Box(
@@ -103,12 +90,14 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 .fillMaxSize()
                 .statusBarsPadding()
                 .widthIn(max = 600.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
         ) {
-        val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
+        val lastSyncTime = syncTimes[com.example.sync.SyncModule.AVISOS]?.let {
+            java.text.SimpleDateFormat("dd/MM/yy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it))
+        }.orEmpty()
         com.example.ui.components.AppPageHeader(
             eyebrow = "SUAP",
-            title = "Central de avisos",
+            title = "Avisos",
             subtitle = "Comunicados e contatos dos seus professores.",
             leadingContent = {
                 Box(
@@ -118,7 +107,7 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.MarkEmailUnread,
+                        imageVector = Icons.Outlined.MarkEmailUnread,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(22.dp)
@@ -126,19 +115,20 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 }
             },
             supportingContent = {
-                if (lastSyncTime.isNotBlank()) {
+                if (syncState is com.example.sync.SyncState.Syncing) Text("Sincronizando...", style = MaterialTheme.typography.labelSmall)
+                else if (lastSyncTime.isNotBlank()) {
                     com.example.ui.components.SyncTimestampBadge(rawTimestamp = lastSyncTime)
                 }
             }
         )
         
-        errorMessage?.let { message ->
+        errorMessage?.takeIf { avisos.isEmpty() && syncState !is com.example.sync.SyncState.Syncing }?.let { message ->
             com.example.ui.components.AppFeedbackCard(
                 title = "Não foi possível atualizar os avisos",
                 message = if (avisos.isNotEmpty()) "$message Exibindo os avisos salvos no dispositivo." else message,
-                modifier = Modifier.padding(vertical = 8.dp),
+                modifier = Modifier.padding(vertical = AppDimens.Spacing8),
                 actionLabel = "Tentar novamente",
-                onAction = { viewModel.fetchAvisos() }
+                onAction = { viewModel.requestSync(force = true, module = com.example.sync.SyncModule.AVISOS) }
             )
         }
 
@@ -146,11 +136,11 @@ fun AvisosScreen(viewModel: SuapViewModel) {
         val estimatedEmails = professorContacts.count {
             it.emailEstimated || !com.example.util.ProfessorEmail.isValid(it.email)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp),
+                    .padding(top = AppDimens.Spacing4),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -163,14 +153,14 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                TextButton(onClick = { showProfessorsSheet = true }, enabled = professorContacts.isNotEmpty()) {
+                com.example.ui.components.AppTextButton(onClick = { showProfessorsSheet = true }, enabled = professorContacts.isNotEmpty()) {
                     Text("Ver todos")
                 }
             }
             if (professorContacts.isNotEmpty()) LazyRow(
                 flingBehavior = rememberAppFlingBehavior(),
                 contentPadding = PaddingValues(horizontal = 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(
@@ -188,13 +178,13 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 }
             }
             else Surface(
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = AppDimens.Spacing4),
                 shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surfaceContainerLow
             ) {
                 Text(
                     "Sincronize seus dados acadêmicos para carregar professores e e-mails.",
-                    modifier = Modifier.padding(14.dp),
+                    modifier = Modifier.padding(AppDimens.Spacing12),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -205,7 +195,7 @@ fun AvisosScreen(viewModel: SuapViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 4.dp),
+                .padding(top = AppDimens.Spacing4, bottom = AppDimens.Spacing4),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -223,25 +213,25 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                     Text(
                         text = if (showUnreadOnly) "${filteredAvisos.size} não lidos" else "${avisos.count { !it.isRead }} não lidos",
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp),
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
 
-        OutlinedTextField(
+        com.example.ui.components.AppTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
+                .padding(vertical = AppDimens.Spacing4),
             placeholder = { Text("Filtrar avisos...", style = MaterialTheme.typography.bodySmall) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpar busca", modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.Close, contentDescription = "Limpar busca", modifier = Modifier.size(16.dp))
                     }
                 }
             },
@@ -255,17 +245,17 @@ fun AvisosScreen(viewModel: SuapViewModel) {
             )
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)) {
-            FilterChip(
+        Row(horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8), modifier = Modifier.padding(top = 2.dp, bottom = AppDimens.Spacing4)) {
+            com.example.ui.components.AppFilterChip(
                 selected = !showUnreadOnly,
                 onClick = { showUnreadOnly = false },
                 label = { Text("Todos (${avisos.size})") }
             )
-            FilterChip(
+            com.example.ui.components.AppFilterChip(
                 selected = showUnreadOnly,
                 onClick = { showUnreadOnly = true },
                 label = { Text("Não lidos (${avisos.count { !it.isRead }})") },
-                leadingIcon = if (avisos.any { !it.isRead }) ({ Icon(Icons.Default.MarkEmailUnread, contentDescription = null, modifier = Modifier.size(16.dp)) }) else null
+                leadingIcon = if (avisos.any { !it.isRead }) ({ Icon(Icons.Outlined.MarkEmailUnread, contentDescription = null, modifier = Modifier.size(16.dp)) }) else null
             )
         }
         
@@ -275,8 +265,8 @@ fun AvisosScreen(viewModel: SuapViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(vertical = AppDimens.Spacing8),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 repeat(4) {
                     com.example.ui.components.AvisoCardSkeleton()
@@ -291,7 +281,7 @@ fun AvisosScreen(viewModel: SuapViewModel) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Default.MarkEmailUnread,
+                        imageVector = Icons.Outlined.MarkEmailUnread,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -321,7 +311,7 @@ fun AvisosScreen(viewModel: SuapViewModel) {
                 flingBehavior = rememberAppFlingBehavior(),
 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(bottom = 100.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
             ) {
                 items(
                     items = filteredAvisos,
@@ -337,7 +327,7 @@ modifier = Modifier.fillMaxWidth().weight(1f),
     }
 
     if (showProfessorsSheet) {
-        ModalBottomSheet(
+        com.example.ui.components.AppBottomSheet(
             onDismissRequest = { showProfessorsSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
@@ -352,18 +342,18 @@ modifier = Modifier.fillMaxWidth().weight(1f),
     professorToEdit?.let { prof ->
         var emailText by remember(prof.name) { mutableStateOf(if (prof.emailEstimated) "" else prof.email) }
         val invalidEmail = emailText.isNotBlank() && !com.example.util.ProfessorEmail.isValid(emailText)
-        AlertDialog(
+        com.example.ui.components.AppDialog(
             onDismissRequest = { professorToEdit = null },
             title = { Text("E-mail de ${prof.name}", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                     if (prof.emailEstimated) {
                         Text(
                             "O SUAP não informou o e-mail; o app estimou ${prof.email}. Digite o correto ou deixe em branco para manter a estimativa.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    OutlinedTextField(
+                    com.example.ui.components.AppTextField(
                         value = emailText,
                         onValueChange = { emailText = it },
                         label = { Text("E-mail") },
@@ -377,14 +367,14 @@ modifier = Modifier.fillMaxWidth().weight(1f),
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                com.example.ui.components.AppTextButton(onClick = {
                     if (viewModel.setProfessorEmail(prof.name, emailText)) {
                         professorToEdit = null
                     }
-                }, enabled = !invalidEmail) { Text("Salvar") }
+                }, enabled = !invalidEmail) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { professorToEdit = null }) { Text("Cancelar") }
+                com.example.ui.components.AppTextButton(onClick = { professorToEdit = null }) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel)) }
             }
         )
     }
@@ -416,7 +406,7 @@ fun CompactProfessorCard(
         )
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = Modifier.width(290.dp),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -426,7 +416,7 @@ fun CompactProfessorCard(
         Column(
             modifier = Modifier
                 .background(cardBgGradient)
-                .padding(14.dp)
+                .padding(AppDimens.Spacing12)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ProfessorAvatar(
@@ -468,7 +458,7 @@ fun CompactProfessorCard(
             ) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Email,
+                        imageVector = Icons.Outlined.Email,
                         contentDescription = null,
                         modifier = Modifier.size(15.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -493,7 +483,7 @@ fun CompactProfessorCard(
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ContentCopy,
+                        imageVector = Icons.Outlined.ContentCopy,
                         contentDescription = "Copiar E-mail",
                         modifier = Modifier.size(13.dp)
                     )
@@ -528,7 +518,7 @@ fun ProfessorAvatar(
     }
     val cookie = remember {
         try {
-            android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br") ?: ""
+            com.example.network.SuapAuthRepository.getInstance(context).cookieHeaderFor("https://suap.ifal.edu.br")
         } catch (e: Exception) { "" }
     }
     val targetUrl = remember(photoUrl) {
@@ -601,7 +591,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
         colors[index]
     }
 
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize()
@@ -633,11 +623,11 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
             }
         )
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.Spacing12)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
             ) {
                 // Circular visual indicator with dynamic icon and gradient-like background
                 Box(
@@ -656,7 +646,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Campaign,
+                        imageVector = Icons.Outlined.Campaign,
                         contentDescription = null,
                         tint = accentColor,
                         modifier = Modifier.size(20.dp)
@@ -688,7 +678,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                 // Right side: date & expand arrow
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -699,12 +689,12 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                             text = aviso.date.take(10),
                             style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
                             color = accentColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = AppDimens.Spacing4, vertical = 2.dp)
                         )
                     }
 
                     Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                         contentDescription = if (isExpanded) "Recolher" else "Expandir",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.size(20.dp)
@@ -721,15 +711,15 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(vertical = AppDimens.Spacing12),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         com.example.ui.components.SkeletonBox(modifier = Modifier.fillMaxWidth(0.9f).height(16.dp))
                         com.example.ui.components.SkeletonBox(modifier = Modifier.fillMaxWidth(0.6f).height(14.dp))
                         com.example.ui.components.SkeletonBox(modifier = Modifier.fillMaxWidth().height(60.dp), shape = MaterialTheme.shapes.small)
                     }
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)) {
                         // Content card
                         Surface(
                             shape = MaterialTheme.shapes.large,
@@ -737,7 +727,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(AppDimens.Spacing12)) {
                                 Text(
                                     text = messageDetail?.content ?: "Não foi possível carregar o conteúdo.",
                                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -755,7 +745,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     // Copy Button
-                                    TextButton(
+                                    com.example.ui.components.AppTextButton(
                                         onClick = {
                                             messageDetail?.content?.let { content ->
                                                 clipboardManager.setText(AnnotatedString(content))
@@ -763,10 +753,10 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                             }
                                         },
                                         shape = MaterialTheme.shapes.small,
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.ContentCopy,
+                                            imageVector = Icons.Outlined.ContentCopy,
                                             contentDescription = null,
                                             modifier = Modifier.size(14.dp)
                                         )
@@ -777,7 +767,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                     Spacer(modifier = Modifier.width(8.dp))
 
                                     // Share Button
-                                    TextButton(
+                                    com.example.ui.components.AppTextButton(
                                         onClick = {
                                             messageDetail?.content?.let { content ->
                                                 try {
@@ -794,10 +784,10 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                             }
                                         },
                                         shape = MaterialTheme.shapes.small,
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Share,
+                                            imageVector = Icons.Outlined.Share,
                                             contentDescription = null,
                                             modifier = Modifier.size(14.dp)
                                         )
@@ -816,7 +806,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                 fontWeight = FontWeight.Bold,
                                 color = accentColor,
                                 letterSpacing = 0.5.sp,
-                                modifier = Modifier.padding(horizontal = 4.dp)
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing4)
                             )
 
                             messageDetail!!.attachments.forEach { attachment ->
@@ -836,9 +826,9 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                     shadowElevation = 0.5.dp
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        modifier = Modifier.padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                                     ) {
                                         Box(
                                             modifier = Modifier
@@ -847,7 +837,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.AttachFile,
+                                                imageVector = Icons.Outlined.AttachFile,
                                                 contentDescription = null,
                                                 tint = accentColor,
                                                 modifier = Modifier.size(16.dp)
@@ -865,7 +855,7 @@ fun CompactAvisoCard(aviso: Aviso, viewModel: SuapViewModel) {
                                         )
 
                                         Icon(
-                                            imageVector = Icons.Default.KeyboardArrowRight,
+                                            imageVector = Icons.Outlined.KeyboardArrowRight,
                                             contentDescription = null,
                                             tint = accentColor.copy(alpha = 0.7f),
                                             modifier = Modifier.size(18.dp)
@@ -908,7 +898,7 @@ fun ProfessorContactsSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.9f)
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = AppDimens.ScreenPadding)
     ) {
         // Top Bar
         Row(
@@ -918,7 +908,7 @@ fun ProfessorContactsSheetContent(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.ContactMail,
+                    imageVector = Icons.Outlined.ContactMail,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
@@ -933,22 +923,22 @@ fun ProfessorContactsSheetContent(
                 }
             }
             IconButton(onClick = onClose) {
-                Icon(imageVector = Icons.Default.Close, contentDescription = "Fechar")
+                Icon(imageVector = Icons.Outlined.Close, contentDescription = "Fechar")
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
         // Search Input
-        OutlinedTextField(
+        com.example.ui.components.AppTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("Buscar por professor ou disciplina...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpar busca")
+                        Icon(Icons.Outlined.Close, contentDescription = "Limpar busca")
                     }
                 }
             },
@@ -983,8 +973,8 @@ fun ProfessorContactsSheetContent(
 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
+                contentPadding = PaddingValues(bottom = AppDimens.Spacing32)
             ) {
                 items(
                     items = filteredContacts,
@@ -1024,14 +1014,14 @@ fun ProfessorCardItem(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    Card(
+    com.example.ui.components.AppContentCard(
         modifier = Modifier.fillMaxWidth().animateContentSize(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(AppDimens.Spacing16)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -1060,7 +1050,7 @@ fun ProfessorCardItem(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = AppDimens.Spacing8, vertical = 3.dp)
                             )
                         }
                     }
@@ -1078,7 +1068,7 @@ fun ProfessorCardItem(
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                         MaterialTheme.shapes.medium
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1087,7 +1077,7 @@ fun ProfessorCardItem(
                     modifier = Modifier.weight(1f).clickable { onCopyEmail(professor.email) }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Email,
+                        imageVector = Icons.Outlined.Email,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
@@ -1108,7 +1098,7 @@ fun ProfessorCardItem(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ContentCopy,
+                            imageVector = Icons.Outlined.ContentCopy,
                             contentDescription = "Copiar E-mail",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -1119,7 +1109,7 @@ fun ProfessorCardItem(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
+                            imageVector = Icons.Outlined.Edit,
                             contentDescription = "Corrigir E-mail",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
@@ -1131,7 +1121,7 @@ fun ProfessorCardItem(
                         enabled = !professor.emailEstimated
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Email,
+                            imageVector = Icons.Outlined.Email,
                             contentDescription = if (professor.emailEstimated) "Envio indisponível: e-mail estimado" else "Enviar E-mail",
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)

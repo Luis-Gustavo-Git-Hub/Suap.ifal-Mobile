@@ -20,6 +20,7 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
     override suspend fun doWork(): Result {
+        if (com.example.sync.SyncCoordinator.shared.isSyncing) return Result.success()
         val appPrefs = applicationContext.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
         val notificationsEnabled = appPrefs.getBoolean("notifications_enabled", false)
@@ -29,8 +30,11 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
         val credentialStore = com.example.util.CredentialStore.getInstance(applicationContext)
         val username = credentialStore.getSuapUsername()
         val password = credentialStore.getSuapPassword()
+        val accountPrefs = applicationContext.getSharedPreferences("suap_credentials", Context.MODE_PRIVATE)
+        val matricula = accountPrefs.getString("saved_matricula", username)?.takeIf { it.isNotBlank() && it != "-" } ?: username
+        val method = appPrefs.getString("suap_login_method", "password")
 
-        if (username.isEmpty() || password.isEmpty()) return Result.failure()
+        if (matricula.isBlank()) return Result.failure()
 
         com.example.util.AppLog.d("SyncWorker", "Starting background sync at 19h")
 
@@ -38,45 +42,57 @@ class SyncWorker(appContext: Context, workerParams: WorkerParameters) :
 
         try {
             var shouldRetry = false
+            var needsLogin = false
+            val recovery = WorkerSessionRecovery(
+                allowPasswordLogin = method != "gov_br" && username.isNotBlank() && password.isNotBlank(),
+                request = { suapAuthRepository.executeRequest(it, coordinate = false) },
+                login = { suapAuthRepository.login() }
+            )
 
             // 1. Fetch Grades (Boletim)
-            val boletimUrl = "https://suap.ifal.edu.br/edu/aluno/$username/?tab=boletim"
-            val boletimResult = suapAuthRepository.executeRequest(Request.Builder().url(boletimUrl))
+            val boletimUrl = "https://suap.ifal.edu.br/edu/aluno/$matricula/?tab=boletim"
+            val boletimResult = recovery.execute(Request.Builder().url(boletimUrl))
             boletimResult.onSuccess { boletimHtml ->
                 val parseResult = SuapParser.parseSubjects(Jsoup.parse(boletimHtml))
                 parseResult.onSuccess { newSubjects ->
                     checkGradesChanges(newSubjects)
                 }.onFailure { error ->
                     com.example.util.AppLog.e("SyncWorker", "Could not parse grades: ${error.message}")
-                    shouldRetry = true
+                    // A parser failure is permanent for this response; preserve the cache.
                 }
-            }.onError { message, error ->
-                com.example.util.AppLog.e("SyncWorker", "Could not fetch grades: $message", error)
-                shouldRetry = true
+            }
+            if (boletimResult is com.example.network.NetworkResult.Error) {
+                shouldRetry = shouldRetry || boletimResult.error.isTransient
+                needsLogin = needsLogin || boletimResult.error.requiresUserAction || boletimResult.error is com.example.network.SuapError.SessionExpired
             }
 
             // 2. Fetch Avisos
             val avisosUrl = "https://suap.ifal.edu.br/admin/edu/mensagementrada/?tab=tab_todas"
-            val avisosResult = suapAuthRepository.executeRequest(Request.Builder().url(avisosUrl))
+            val avisosResult = recovery.execute(Request.Builder().url(avisosUrl))
             avisosResult.onSuccess { avisosHtml ->
                 val parseResult = SuapParser.parseAvisos(Jsoup.parse(avisosHtml))
                 parseResult.onSuccess { newAvisos ->
                     checkAvisosChanges(newAvisos)
                 }.onFailure { error ->
                     com.example.util.AppLog.e("SyncWorker", "Could not parse notices: ${error.message}")
-                    shouldRetry = true
+                    // A parser failure is permanent for this response; preserve the cache.
                 }
-            }.onError { message, error ->
-                com.example.util.AppLog.e("SyncWorker", "Could not fetch notices: $message", error)
-                shouldRetry = true
             }
+            if (avisosResult is com.example.network.NetworkResult.Error) {
+                shouldRetry = shouldRetry || avisosResult.error.isTransient
+                needsLogin = needsLogin || avisosResult.error.requiresUserAction || avisosResult.error is com.example.network.SuapError.SessionExpired
+            }
+            if (needsLogin && !appPrefs.getBoolean("session_action_notified", false)) {
+                NotificationHelper.sendNotification(applicationContext, "Atualização do SUAP", "Entre no app para atualizar seus dados.", 1002)
+                appPrefs.edit().putBoolean("session_action_notified", true).apply()
+            } else if (!needsLogin) appPrefs.edit().putBoolean("session_action_notified", false).apply()
 
-            return if (shouldRetry) Result.retry() else Result.success()
+            return if (shouldRetry && !needsLogin) Result.retry() else Result.success()
 
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             com.example.util.AppLog.e("SyncWorker", "Sync failed", e)
-            return Result.retry()
+            return if (com.example.network.SuapError.fromException(e).isTransient) Result.retry() else Result.failure()
         }
     }
 

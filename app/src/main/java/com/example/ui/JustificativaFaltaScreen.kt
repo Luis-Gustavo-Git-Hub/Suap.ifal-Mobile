@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.ui.theme.AppSemanticColors
 
 import android.net.Uri
@@ -18,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,7 +96,7 @@ fun JustificativaFaltaScreen(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(onClick = {
+                com.example.ui.components.AppTextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
                         val calendar = Calendar.getInstance()
                         calendar.timeInMillis = it
@@ -109,8 +110,8 @@ fun JustificativaFaltaScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
+                com.example.ui.components.AppTextButton(onClick = { showDatePicker = false }) {
+                    Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel))
                 }
             }
         ) {
@@ -120,21 +121,8 @@ fun JustificativaFaltaScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Justificar Falta",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            text = "Envio de Atestados & Justificativas no SUAP",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
+            com.example.ui.components.AppTopBar(
+                title = { com.example.ui.components.AppBarTitle("Justificar faltas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -160,8 +148,8 @@ fun JustificativaFaltaScreen(
                     .fillMaxSize()
                     .widthIn(max = 600.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12),
+                verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing16)
             ) {
                 // Warning Bento Banner
                 Box(
@@ -178,10 +166,10 @@ fun JustificativaFaltaScreen(
                             ),
                             MaterialTheme.shapes.extraLarge
                         )
-                        .padding(16.dp)
+                        .padding(AppDimens.Spacing16)
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -194,7 +182,7 @@ fun JustificativaFaltaScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Info,
+                                imageVector = Icons.Outlined.Info,
                                 contentDescription = null,
                                 tint = AppSemanticColors.warning,
                                 modifier = Modifier.size(22.dp)
@@ -227,15 +215,15 @@ fun JustificativaFaltaScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                            .padding(AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.DateRange,
+                                imageVector = Icons.Outlined.DateRange,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -250,7 +238,7 @@ fun JustificativaFaltaScreen(
 
                         // Data Inicio Picker Box
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            OutlinedTextField(
+                            com.example.ui.components.AppTextField(
                                 value = dataInicio,
                                 onValueChange = {},
                                 label = { Text("Data de Início *") },
@@ -259,7 +247,7 @@ fun JustificativaFaltaScreen(
                                 shape = MaterialTheme.shapes.medium,
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Default.CalendarToday,
+                                        imageVector = Icons.Outlined.CalendarToday,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary
                                     )
@@ -275,7 +263,7 @@ fun JustificativaFaltaScreen(
                             )
                         }
 
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = quantidadeDias,
                             onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) quantidadeDias = it },
                             label = { Text("Quantidade de Dias de Ausência *") },
@@ -284,7 +272,7 @@ fun JustificativaFaltaScreen(
                             shape = MaterialTheme.shapes.medium,
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Timer,
+                                    imageVector = Icons.Outlined.Timer,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -303,15 +291,15 @@ fun JustificativaFaltaScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                            .padding(AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Assignment,
+                                imageVector = Icons.Outlined.Assignment,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -328,7 +316,7 @@ fun JustificativaFaltaScreen(
                             expanded = showMotivoDropdown,
                             onExpandedChange = { showMotivoDropdown = !showMotivoDropdown }
                         ) {
-                            OutlinedTextField(
+                            com.example.ui.components.AppTextField(
                                 value = motivos.find { it.first == motivo }?.second ?: "Selecione o motivo da falta...",
                                 onValueChange = {},
                                 readOnly = true,
@@ -358,7 +346,7 @@ fun JustificativaFaltaScreen(
                             }
                         }
 
-                        OutlinedTextField(
+                        com.example.ui.components.AppTextField(
                             value = justificativa,
                             onValueChange = { justificativa = it },
                             label = { Text("Informação Complementar (Opcional)") },
@@ -383,15 +371,15 @@ fun JustificativaFaltaScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(AppDimens.Spacing16),
+                        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AttachFile,
+                                imageVector = Icons.Outlined.AttachFile,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
@@ -423,11 +411,11 @@ fun JustificativaFaltaScreen(
                                     MaterialTheme.shapes.large
                                 )
                                 .clickable { filePickerLauncher.launch("*/*") }
-                                .padding(16.dp)
+                                .padding(AppDimens.Spacing16)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -439,7 +427,7 @@ fun JustificativaFaltaScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = if (anexoUri != null) Icons.Default.CheckCircle else Icons.Default.UploadFile,
+                                        imageVector = if (anexoUri != null) Icons.Outlined.CheckCircle else Icons.Outlined.UploadFile,
                                         contentDescription = null,
                                         tint = if (anexoUri != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(22.dp)
@@ -467,9 +455,9 @@ fun JustificativaFaltaScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Submit Large Button
-                Button(
+                com.example.ui.components.AppPrimaryButton(
                     onClick = {
-                        if (isSubmitting) return@Button
+                        if (isSubmitting) return@AppPrimaryButton
                         if (dataInicio.isEmpty() || quantidadeDias.isEmpty() || motivo.isEmpty() || anexoUri == null) {
                             com.example.util.AppSnackbarManager.show("Preencha a data, o motivo e selecione o anexo obrigatório.")
                         } else {
@@ -496,7 +484,7 @@ fun JustificativaFaltaScreen(
                         Text("Enviando ao SUAP...", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     } else {
                         Icon(
-                            imageVector = Icons.Default.Send,
+                            imageVector = Icons.Outlined.Send,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )

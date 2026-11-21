@@ -245,7 +245,7 @@ fun MyApplicationTheme(
         LocalSemanticColors provides semanticColors
     ) {
         MaterialTheme(
-            colorScheme = colorScheme,
+            colorScheme = colorScheme.withAccessibleContentColors(),
             typography = typography,
             shapes = appShapes,
             content = content

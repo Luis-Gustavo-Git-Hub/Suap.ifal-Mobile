@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -13,14 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.Grade
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -144,8 +138,8 @@ fun DashboardTodayCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             // Cabeçalho compacto: "Hoje" + dia e data
             Row(
@@ -157,10 +151,10 @@ fun DashboardTodayCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CalendarToday,
+                        imageVector = Icons.Outlined.CalendarToday,
                         contentDescription = null,
                         modifier = Modifier.size(15.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -191,7 +185,7 @@ fun DashboardTodayCard(
             if (recentEvaluations.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     recentEvaluations.forEach { eval ->
                         TodayEvaluationBadgeCard(
@@ -209,10 +203,10 @@ fun DashboardTodayCard(
             // 3. Aviso e Nota lado a lado com datas reais
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
             ) {
                 TodayCompactMicroItem(
-                    icon = Icons.Default.Notifications,
+                    icon = Icons.Outlined.Notifications,
                     category = "Aviso",
                     headline = newestAviso?.subject ?: "Nenhum aviso novo",
                     date = newestAviso?.date?.takeIf { it.isNotBlank() },
@@ -222,7 +216,7 @@ fun DashboardTodayCard(
                 )
 
                 TodayCompactMicroItem(
-                    icon = Icons.Default.Grade,
+                    icon = Icons.Outlined.Grade,
                     category = "Nota",
                     headline = if (latestGradeInfo.third.isNotBlank()) "${latestGradeInfo.first}: ${latestGradeInfo.second}" else latestGradeInfo.second,
                     date = latestGradeInfo.third.takeIf { it.isNotBlank() },
@@ -254,9 +248,9 @@ private fun TodayEvaluationBadgeCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             // Badge com a data em destaque
             Box(
@@ -265,7 +259,7 @@ private fun TodayEvaluationBadgeCard(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = MaterialTheme.shapes.extraSmall
                     )
-                    .padding(horizontal = 6.dp, vertical = 3.dp),
+                    .padding(horizontal = AppDimens.Spacing4, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -321,9 +315,9 @@ private fun TodayClassCompactRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Box(
                 modifier = Modifier
@@ -335,7 +329,7 @@ private fun TodayClassCompactRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Schedule,
+                    imageVector = Icons.Outlined.Schedule,
                     contentDescription = "Aula",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(14.dp)
@@ -393,9 +387,9 @@ private fun TodayCompactMicroItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 5.dp),
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)
         ) {
             Box(
                 modifier = Modifier
@@ -474,7 +468,7 @@ fun DashboardSearchBar(
         },
         leadingIcon = {
             Icon(
-                imageVector = Icons.Default.Search,
+                imageVector = Icons.Outlined.Search,
                 contentDescription = "Buscar",
                 tint = MaterialTheme.colorScheme.primary
             )
@@ -486,7 +480,7 @@ fun DashboardSearchBar(
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = Icons.Outlined.Close,
                         contentDescription = "Limpar busca",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -564,8 +558,8 @@ fun DashboardSearchResults(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(AppDimens.Spacing12),
+            verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Text(
                 text = "Resultados da busca ($totalMatches)",
@@ -578,12 +572,12 @@ fun DashboardSearchResults(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(vertical = AppDimens.Spacing24),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Search,
+                        imageVector = Icons.Outlined.Search,
                         contentDescription = null,
                         modifier = Modifier.size(36.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -623,7 +617,7 @@ fun DashboardSearchResults(
                     )
                     matchedAvisos.take(4).forEach { aviso ->
                         SearchResultItem(
-                            icon = Icons.Default.Notifications,
+                            icon = Icons.Outlined.Notifications,
                             title = aviso.subject,
                             subtitle = "${aviso.sender} • ${aviso.date}",
                             onClick = onNavigateToAviso
@@ -641,7 +635,7 @@ fun DashboardSearchResults(
                     )
                     matchedProfessors.take(4).forEach { prof ->
                         SearchResultItem(
-                            icon = Icons.Default.Person,
+                            icon = Icons.Outlined.Person,
                             title = prof.first,
                             subtitle = prof.second,
                             onClick = {}
@@ -672,9 +666,9 @@ private fun SearchResultItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing8),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
         ) {
             Icon(
                 imageVector = icon,

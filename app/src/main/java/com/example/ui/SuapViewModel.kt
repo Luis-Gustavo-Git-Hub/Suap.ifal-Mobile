@@ -94,6 +94,16 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
     @Volatile
     private var dataScope = createDataScope()
 
+    val syncCoordinator = com.example.sync.SyncCoordinator.shared
+    val syncState = syncCoordinator.state
+    fun requestSync(force: Boolean = false, module: com.example.sync.SyncModule? = null): Boolean {
+        if (force && (syncState.value as? com.example.sync.SyncState.Failed)?.requiresUserAction == true) {
+            syncCoordinator.requestUserLogin()
+            return false
+        }
+        return syncCoordinator.requestSync(force, module)
+    }
+
     private val _scheduleItems = MutableStateFlow<List<ScheduleItem>>(emptyList())
     val scheduleItems: StateFlow<List<ScheduleItem>> = _scheduleItems
     private val _isLoadingSchedule = MutableStateFlow(false)
@@ -376,6 +386,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
             var saved = false
             htmlSyncMutex.withLock {
                 try {
+                    syncCoordinator.sessionAccepted()
                     val document = Jsoup.parse(html)
                     val baseSubjects = when (val result = com.example.util.SuapParser.parseSubjects(document)) {
                         is com.example.util.ParserResult.Success -> result.data
@@ -555,7 +566,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                         repository.syncSubjects(parsedSubjects)
                         detailedSubjects.clear()
                         _subjectDetails.value = emptyMap()
-                        syncDisciplinasUrls()
+                        // Discipline URLs are refreshed by the coordinated pipeline.
                     }
 
                     // Parse schedule tables from HTML
@@ -567,8 +578,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     }
                     parseAndSyncProfessorsFromHtml(document, parsedDiarios)
                 
-                    fetchAcademicCalendar()
-                    fetchClassAveragesInBackground()
+
 
                     sharedPreferences.edit()
                         .putString("saved_student_name", _studentName.value)
@@ -597,6 +607,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     com.example.util.AppLog.printStackTrace(e)
                 }
             }
+            syncCoordinator.parsed(saved)
             kotlinx.coroutines.withContext(Dispatchers.Main) { onComplete(saved) }
         }
     }
@@ -692,14 +703,14 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
         return classAvgMap
     }
 
-    fun fetchScheduleFromSuap(matriculaVal: String = _matricula.value) {
+    fun fetchScheduleFromSuap(matriculaVal: String = _matricula.value): Job? {
         if (matriculaVal.isEmpty() || matriculaVal == "-") {
             _scheduleError.value = "Entre no SUAP para carregar seus horários."
-            return
+            return null
         }
-        if (!_isLoadingSchedule.compareAndSet(false, true)) return
+        if (!_isLoadingSchedule.compareAndSet(false, true)) return null
         _scheduleError.value = null
-        dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        return dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val url = "https://suap.ifal.edu.br/edu/aluno/$matriculaVal/?tab=locais_aula_aluno"
                 com.example.util.AppLog.d("SUAP_SCHEDULE", "Fetching schedule")
@@ -717,17 +728,17 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 com.example.util.AppLog.e("SUAP_SCHEDULE", "Error fetching schedule", e)
-                _scheduleError.value = "Não foi possível atualizar os horários. Verifique sua conexão."
+                _scheduleError.value = com.example.network.SuapError.fromException(e).message
             } finally {
                 _isLoadingSchedule.value = false
             }
         }
     }
 
-    fun fetchClassAveragesInBackground() {
+    fun fetchClassAveragesInBackground(): Job? {
         val matriculaVal = _matricula.value
-        if (matriculaVal == "-" || matriculaVal.isEmpty()) return
-        dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        if (matriculaVal == "-" || matriculaVal.isEmpty()) return null
+        return dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val repo = com.example.network.SuapAuthRepository.getInstance(applicationContext)
                 // Two concurrent pages shorten total wait time without keeping all
@@ -809,7 +820,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     .url(imprimirUrl)
                     .build()
                 
-                var response = client.newCall(request).execute()
+                var response = com.example.network.SuapAuthRepository.getInstance(applicationContext).executeRaw(request)
                 if (!response.isSuccessful) {
                     kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                         com.example.util.AppSnackbarManager.show("Erro ao acessar boletim", actionLabel = "Tentar de novo", onAction = { downloadBoletim(context) })
@@ -873,7 +884,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     request = okhttp3.Request.Builder()
                         .url(pdfUrl)
                         .build()
-                    response = client.newCall(request).execute()
+                    response = com.example.network.SuapAuthRepository.getInstance(applicationContext).executeRaw(request)
                     contentType = response.header("Content-Type") ?: ""
                 }
                 
@@ -1002,6 +1013,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
     }
 
     suspend fun clearAllData() = withContext(Dispatchers.IO) {
+        syncCoordinator.reset()
         // Wait for cancelled writers before deleting so old requests cannot repopulate the cache.
         val previousScope = dataScope
         previousScope.cancel()
@@ -1490,10 +1502,10 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
         )
     }
 
-    fun fetchAcademicCalendar() {
-        if (!_isLoadingCalendar.compareAndSet(false, true)) return
+    fun fetchAcademicCalendar(): Job? {
+        if (!_isLoadingCalendar.compareAndSet(false, true)) return null
         _calendarError.value = null
-        dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        return dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val repo = com.example.network.SuapAuthRepository.getInstance(applicationContext)
                 val allEvents = mutableListOf<AcademicEvent>()
@@ -1596,7 +1608,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                 throw e
             } catch (e: Exception) {
                 com.example.util.AppLog.printStackTrace(e)
-                _calendarError.value = "Não foi possível atualizar o calendário. Verifique sua conexão."
+                _calendarError.value = com.example.network.SuapError.fromException(e).message
                 val offline = loadAcademicCalendarFromPrefs()
                 if (offline.isNotEmpty()) _academicEvents.value = offline
             } finally {
@@ -1605,10 +1617,10 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
         }
     }
 
-    fun fetchAvisos() {
-        if (!_isLoadingAvisos.compareAndSet(false, true)) return
+    fun fetchAvisos(): Job? {
+        if (!_isLoadingAvisos.compareAndSet(false, true)) return null
         _avisosError.value = null
-        dataScope.launch(Dispatchers.IO) {
+        return dataScope.launch(Dispatchers.IO) {
             try {
                 val repo = com.example.network.SuapAuthRepository.getInstance(applicationContext)
                 val response = repo.executeRequest(okhttp3.Request.Builder()
@@ -1632,7 +1644,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                 throw e
             } catch (e: Exception) {
                 com.example.util.AppLog.printStackTrace(e)
-                _avisosError.value = "Não foi possível atualizar os avisos. Verifique sua conexão."
+                _avisosError.value = com.example.network.SuapError.fromException(e).message
             } finally {
                 _isLoadingAvisos.value = false
             }
@@ -1726,7 +1738,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                 suspend fun loadDocument(url: String): org.jsoup.nodes.Document {
                     return when (val result = repo.executeRequest(okhttp3.Request.Builder().url(url))) {
                         is com.example.network.NetworkResult.Success -> Jsoup.parse(result.data, url)
-                        is com.example.network.NetworkResult.Error -> throw java.io.IOException(result.message)
+                        is com.example.network.NetworkResult.Error -> throw com.example.network.SuapRequestException(result.error)
                     }
                 }
                 var finalUrl = subjectUrl.trim()
@@ -1840,7 +1852,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
             } catch (e: Exception) {
                 com.example.util.AppLog.e("SUAP_MATERIAIS", "Error fetching materials", e)
                 if (materialsRequestVersion.get() == requestVersion) {
-                    _materialsError.value = "Não foi possível carregar os materiais. Verifique sua conexão e tente novamente."
+                    _materialsError.value = com.example.network.SuapError.fromException(e).message
                 }
             } finally {
                 if (materialsRequestVersion.get() == requestVersion) _isLoadingMaterials.value = false
@@ -1856,16 +1868,12 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
         _isLoadingMaterials.value = false
     }
 
-    fun syncDisciplinasUrls() {
-        dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun syncDisciplinasUrls(): Job? {
+        return dataScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val cookie = android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
                 if (cookie != null) {
-                    val doc = org.jsoup.Jsoup.connect("https://suap.ifal.edu.br/edu/disciplinas/")
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .get()
+                    val doc = readSuapDocument("https://suap.ifal.edu.br/edu/disciplinas/")
                     parseAndSyncProfessorsFromHtml(doc)
                     
                     val links = doc.select("h3.title a")
@@ -2263,15 +2271,10 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                 val triedKey = "prof_email_try_${t.profileUrl.hashCode()}"
                 if (now - sharedPreferences.getLong(triedKey, 0L) < oneDay) continue
                 try {
-                    val doc = org.jsoup.Jsoup.connect(t.profileUrl)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(10000)
-                        .userAgent("Mozilla/5.0 (Linux; Android 10; K)")
-                        .get()
+                    val doc = readSuapDocument(t.profileUrl)
                     sharedPreferences.edit().putLong(triedKey, now).apply()
                     val found = com.example.util.ProfessorEmail.fromProfile(doc, t.name)
-                    com.example.util.AppLog.i(message = "E-mail professor '${t.name}' (${t.profileUrl}): ${found ?: "não encontrado no perfil"}")
+                    com.example.util.AppLog.i(message = "Perfil do professor processado; emailEncontrado=${found != null}")
                     if (found != null) {
                         // Re-read the current state after the request: the user may have
                         // corrected this address while the profile was loading.
@@ -2533,14 +2536,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
             if (com.example.util.UrlSecurityUtils.isAllowedSuapUrl(urlToFetch)) {
                 try {
                     val cookie = android.webkit.CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
-                    val conn = org.jsoup.Jsoup.connect(urlToFetch)
-                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                        .followRedirects(false)
-                        .timeout(10000)
-                    if (!cookie.isNullOrEmpty()) {
-                        conn.header("Cookie", cookie)
-                    }
-                    val doc = conn.get()
+                    val doc = readSuapDocument(urlToFetch)
                     val parsedEtapas = parseEtapaDetailsFromDocument(doc)
                     if (parsedEtapas.isNotEmpty()) {
                         _subjectDetails.update { it + (subjectKey to parsedEtapas) }
@@ -2631,11 +2627,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     if (!com.example.util.UrlSecurityUtils.isAllowedSuapUrl(fullUrl)) {
                         return@withContext cached ?: com.example.data.MessageDetail("Endereço da mensagem fora do SUAP oficial bloqueado.")
                     }
-                    val doc = org.jsoup.Jsoup.connect(fullUrl)
-                        .header("Cookie", cookie)
-                        .followRedirects(false)
-                        .timeout(15000)
-                        .get()
+                    val doc = readSuapDocument(fullUrl)
                     
                     var textContent = ""
                     val contentMain = doc.select(".richtext").first()
@@ -2698,7 +2690,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                     .url("https://suap.ifal.edu.br/edu/cadastrar_justificativa_falta/")
                     .build()
 
-                val html = client.newCall(getRequest).execute().use { response ->
+                val html = com.example.network.SuapAuthRepository.getInstance(applicationContext).executeRaw(getRequest).use { response ->
                     response.body?.string().orEmpty()
                 }
 
@@ -2764,7 +2756,7 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
                 var postResponseCode = 0
                 var postFinalPath = ""
                 var postResponseSuccessful = false
-                val postResponseBody = client.newCall(postRequest).execute().use { postResponse ->
+                val postResponseBody = com.example.network.SuapAuthRepository.getInstance(applicationContext).executeRaw(postRequest).use { postResponse ->
                     postResponseCode = postResponse.code
                     postFinalPath = postResponse.request.url.encodedPath
                     postResponseSuccessful = postResponse.isSuccessful
@@ -2794,4 +2786,66 @@ class SuapViewModel(private val applicationContext: android.content.Context, pri
             }
         }
     }
+    private suspend fun readSuapDocument(url: String): org.jsoup.nodes.Document {
+        return when (val response = com.example.network.SuapAuthRepository.getInstance(applicationContext)
+            .executeRequest(okhttp3.Request.Builder().url(url))) {
+            is com.example.network.NetworkResult.Success -> org.jsoup.Jsoup.parse(response.data, url)
+            is com.example.network.NetworkResult.Error -> throw com.example.network.SuapRequestException(response.error)
+        }
+    }
+
+    init {
+        syncCoordinator.loginPolicy = {
+            val mode = applicationContext.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                .getString("suap_login_method", "password")
+            when {
+                mode == "gov_br" -> com.example.network.SuapError.SessionExpired(true)
+                !com.example.util.CredentialStore.getInstance(applicationContext).hasSuapCredentials() -> com.example.network.SuapError.NoCredentials
+                else -> null
+            }
+        }
+        viewModelScope.launch {
+            syncCoordinator.lastSyncedAt.collect { times ->
+                val editor = sharedPreferences.edit()
+                times.forEach { (module, at) -> editor.putLong("module_sync_${module.name}", at) }
+                editor.apply()
+            }
+        }
+        syncCoordinator.restoreTimes(com.example.sync.SyncModule.entries.associateWith {
+            sharedPreferences.getLong("module_sync_${it.name}", 0L)
+        }.filterValues { it > 0 })
+        syncCoordinator.bind(viewModelScope) { requested ->
+            val failures = mutableMapOf<com.example.sync.SyncModule, com.example.network.SuapError>()
+            val modules = requested?.let { listOf(it) } ?: listOf(
+                com.example.sync.SyncModule.CALENDAR, com.example.sync.SyncModule.AVERAGES,
+                com.example.sync.SyncModule.AVISOS, com.example.sync.SyncModule.BOLETIM)
+            for (module in modules) {
+                val repo = com.example.network.SuapAuthRepository.getInstance(applicationContext)
+                repo.lastError = null
+                val task = when (module) {
+                    com.example.sync.SyncModule.CALENDAR -> fetchAcademicCalendar()
+                    com.example.sync.SyncModule.AVERAGES -> fetchClassAveragesInBackground()
+                    com.example.sync.SyncModule.AVISOS -> fetchAvisos()
+                    com.example.sync.SyncModule.SCHEDULE -> fetchScheduleFromSuap()
+                    com.example.sync.SyncModule.BOLETIM -> syncDisciplinasUrls()
+                }
+                try { task?.join() } catch (e: kotlinx.coroutines.CancellationException) {
+                    task?.cancel(); throw e
+                }
+                val parseFailed = when (module) {
+                    com.example.sync.SyncModule.CALENDAR -> _calendarError.value != null
+                    com.example.sync.SyncModule.AVISOS -> _avisosError.value != null
+                    com.example.sync.SyncModule.SCHEDULE -> _scheduleError.value != null
+                    else -> false
+                }
+                val error = repo.lastError ?: if (parseFailed) com.example.network.SuapError.ParseError else null
+                if (error != null) failures[module] = error else {
+                    syncCoordinator.markSynced(module)
+                    sharedPreferences.edit().putLong("module_sync_${module.name}", System.currentTimeMillis()).apply()
+                }
+            }
+            failures
+        }
+    }
+
 }

@@ -9,15 +9,34 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import java.security.MessageDigest
 import java.util.UUID
 
 private fun Context.googleWebClientId(): String {
     val resourceId = resources.getIdentifier("default_web_client_id", "string", packageName)
     return resourceId.takeIf { it != 0 }?.let(::getString).orEmpty()
+}
+
+private fun sameGoogleAccountEmail(first: String, second: String): Boolean {
+    fun canonical(value: String): String {
+        val normalized = value.trim().lowercase(java.util.Locale.ROOT)
+        val at = normalized.lastIndexOf('@')
+        if (at <= 0) return normalized
+        val local = normalized.substring(0, at)
+        val domain = normalized.substring(at + 1)
+        return if (domain == "gmail.com" || domain == "googlemail.com") {
+            "${local.substringBefore('+').replace(".", "")}@gmail.com"
+        } else normalized
+    }
+    return canonical(first) == canonical(second)
 }
 
 data class Friend(
@@ -28,7 +47,8 @@ data class Friend(
     val status: String = "accepted",
     var xp: Int = 0,
     val lastUpdateTimestamp: Long = 0L,
-    val cardColorHex: String = ""
+    val cardColorHex: String = "",
+    val sharedSubjectCount: Int = 0
 )
 
 data class BoletimShared(
@@ -37,19 +57,47 @@ data class BoletimShared(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+data class GoogleAccountSwitchResult(
+    val email: String,
+    val profileUpdated: Boolean
+)
+
 object FriendsManager {
     private val auth by lazy { FirebaseAuth.getInstance() }
     private val db by lazy { FirebaseFirestore.getInstance() }
 
     fun isFirebaseConfigured(context: Context): Boolean = runCatching {
-        FirebaseApp.getApps(context.applicationContext)
-            .any { it.name == FirebaseApp.DEFAULT_APP_NAME }
+        val appContext = context.applicationContext
+        FirebaseApp.getApps(appContext).any { it.name == FirebaseApp.DEFAULT_APP_NAME } ||
+            FirebaseApp.initializeApp(appContext)?.name == FirebaseApp.DEFAULT_APP_NAME
     }.getOrDefault(false)
 
     fun currentUserId(): String? = runCatching { auth.currentUser?.uid }.getOrNull()
 
+    /** Prefer the authenticated Google provider identity over Firebase User.email, which can be stale
+     * when the Firebase account has multiple linked providers. */
+    fun currentGoogleAccountEmail(): String? = runCatching {
+        val user = auth.currentUser ?: return@runCatching null
+        user.providerData.firstOrNull { it.providerId == GoogleAuthProvider.PROVIDER_ID }
+            ?.email?.trim()?.takeIf { it.isNotEmpty() }
+            ?: user.email?.trim()?.takeIf { it.isNotEmpty() }
+    }.getOrNull()
+
     fun isUserSignedIn(): Boolean {
         return runCatching { auth.currentUser != null }.getOrDefault(false)
+    }
+
+    fun userFacingError(error: Throwable): String = when {
+        error is FirebaseAuthException && error.errorCode == "ERROR_OPERATION_NOT_ALLOWED" ->
+            "O login Google ainda não está habilitado no Firebase Auth do projeto Suap IFAL."
+        error is FirebaseAuthException && error.errorCode == "ERROR_INVALID_CREDENTIAL" ->
+            "A credencial Google expirou ou é inválida. Tente entrar novamente."
+        error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+            "O Firebase negou o acesso. Verifique as regras do Firestore para a Rede Acadêmica."
+        error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.UNAVAILABLE ->
+            "O Firebase está indisponível no momento. Confira a conexão e tente de novo."
+        else -> error.localizedMessage?.takeIf { it.isNotBlank() }
+            ?: "Não foi possível concluir a operação no Firebase. Tente novamente."
     }
 
     suspend fun signInWithGoogle(context: Context, forceAccountPicker: Boolean = true): Boolean {
@@ -76,7 +124,7 @@ object FriendsManager {
 
             val webClientId = context.googleWebClientId().ifEmpty {
                 Log.e("FriendsManager", "WEB_CLIENT_ID is missing!")
-                return false
+                throw IllegalStateException("A configuração Google do Firebase está ausente nesta instalação.")
             }
 
             val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
@@ -109,18 +157,29 @@ object FriendsManager {
                 }
 
                 val authCredential = GoogleAuthProvider.getCredential(idToken, null)
-                auth.signInWithCredential(authCredential).await()
-                linkProfile(explicitEmail = googleEmail)
+                val signedInUser = auth.signInWithCredential(authCredential).await().user
+                    ?: throw IllegalStateException("O Firebase não retornou o usuário autenticado.")
+                val firebaseGoogleEmail = signedInUser.providerData
+                    .firstOrNull { it.providerId == GoogleAuthProvider.PROVIDER_ID }
+                    ?.email?.trim().orEmpty()
+                if (firebaseGoogleEmail.isNotBlank() && googleEmail.isNotBlank() &&
+                    !sameGoogleAccountEmail(firebaseGoogleEmail, googleEmail)) {
+                    auth.signOut()
+                    throw IllegalStateException("O Firebase autenticou uma conta Google diferente da selecionada. Tente novamente.")
+                }
+                linkProfile(explicitEmail = googleEmail.ifBlank { firebaseGoogleEmail })
                 return true
             }
+            throw IllegalStateException("O Google não retornou uma credencial compatível.")
         } catch (e: androidx.credentials.exceptions.GetCredentialException) {
             com.example.util.AppLog.e("FriendsManager", "GetCredentialException [${e.javaClass.simpleName}]: type=${e.type}, msg=${e.errorMessage}")
             com.example.util.AppLog.printStackTrace(e)
+            throw e
         } catch (e: Exception) {
             com.example.util.AppLog.printStackTrace(e)
             com.example.util.AppLog.e("FriendsManager", "Erro inesperado no login [${e.javaClass.simpleName}]: ${e.message}")
+            throw e
         }
-        return false
     }
 
     suspend fun linkProfile(photoBase64: String = "", sharePhoto: Boolean = true, explicitEmail: String? = null) {
@@ -130,11 +189,12 @@ object FriendsManager {
             "nome" to com.google.firebase.firestore.FieldValue.delete()
         )
         if (explicitEmail != null) {
-            map["email"] = explicitEmail
+            map["email"] = explicitEmail.trim().lowercase(java.util.Locale.ROOT)
         } else {
             val doc = db.collection("users").document(user.uid).get().await()
             if (!doc.exists() || doc.getString("email").isNullOrEmpty()) {
-                map["email"] = user.email ?: ""
+                map["email"] = (currentGoogleAccountEmail() ?: user.email.orEmpty())
+                    .trim().lowercase(java.util.Locale.ROOT)
             }
         }
         
@@ -146,7 +206,8 @@ object FriendsManager {
         db.collection("users").document(user.uid).set(map, com.google.firebase.firestore.SetOptions.merge()).await()
     }
     suspend fun shareBoletim(boletimData: List<Map<String, String>>) {
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google antes de compartilhar o boletim.")
+        require(boletimData.isNotEmpty()) { "Não há notas carregadas para compartilhar." }
         db.collection("boletins").document(uid).set(
             mapOf(
                 "uid" to uid,
@@ -156,9 +217,12 @@ object FriendsManager {
         ).await()
     }
     suspend fun searchUserByEmail(email: String): Friend? {
-        val query = db.collection("users").whereEqualTo("email", email).get().await()
+        val normalizedEmail = email.trim().lowercase(java.util.Locale.ROOT)
+        if (normalizedEmail.isBlank()) return null
+        val query = db.collection("users").whereEqualTo("email", normalizedEmail).limit(1).get().await()
         if (!query.isEmpty) {
             val doc = query.documents[0]
+            if (doc.id == auth.currentUser?.uid) return null
             return Friend(
                 uid = doc.id,
                 email = doc.getString("email") ?: "",
@@ -171,109 +235,115 @@ object FriendsManager {
     }
 
     suspend fun sendFriendRequest(toUid: String, customName: String) {
-        val fromUid = auth.currentUser?.uid ?: return
-        val myEmail = auth.currentUser?.email ?: return
-        
-        // Save in my friends as pending
-        db.collection("users").document(fromUid).collection("friends").document(toUid).set(
-            mapOf(
-                "customName" to customName,
-                "status" to "pending",
-                "timestamp" to System.currentTimeMillis()
-            )
-        ).await()
-        
-        // Save request for the other user
-        db.collection("users").document(toUid).collection("requests").document(fromUid).set(
-            mapOf("from" to fromUid, "email" to myEmail, "timestamp" to System.currentTimeMillis())
-        ).await()
+        val user = auth.currentUser ?: throw IllegalStateException("Entre com o Google para adicionar amigos.")
+        val fromUid = user.uid
+        val myEmail = currentGoogleAccountEmail()?.lowercase(java.util.Locale.ROOT)
+            ?: throw IllegalStateException("Sua conta Google não informou um e-mail.")
+        require(toUid.isNotBlank() && toUid != fromUid) { "Você não pode enviar uma solicitação para si mesmo." }
+        require(customName.isNotBlank()) { "Informe um apelido para o amigo." }
+
+        val timestamp = System.currentTimeMillis()
+        val batch = db.batch()
+        batch.set(
+            db.collection("users").document(fromUid).collection("friends").document(toUid),
+            mapOf("customName" to customName.trim(), "status" to "pending", "timestamp" to timestamp)
+        )
+        batch.set(
+            db.collection("users").document(toUid).collection("requests").document(fromUid),
+            mapOf("from" to fromUid, "email" to myEmail, "timestamp" to timestamp)
+        )
+        batch.commit().await()
     }
     
     suspend fun getPendingRequests(): List<Friend> {
         val uid = auth.currentUser?.uid ?: return emptyList()
         val requestsSnapshot = db.collection("users").document(uid).collection("requests").get().await()
         
-        val requests = mutableListOf<Friend>()
-        for (doc in requestsSnapshot.documents) {
-            val fromUid = doc.id
-            val email = doc.getString("email") ?: ""
-            val userDoc = db.collection("users").document(fromUid).get().await()
-            if (userDoc.exists()) {
-                requests.add(
+        return coroutineScope {
+            requestsSnapshot.documents.map { request ->
+                async {
+                    val fromUid = request.id
+                    val userDoc = db.collection("users").document(fromUid).get().await()
+                    if (!userDoc.exists()) return@async null
                     Friend(
                         uid = fromUid,
-                        email = email,
-                        nome = "", // Não tem nome ainda
+                        email = request.getString("email") ?: userDoc.getString("email").orEmpty(),
+                        nome = "",
                         photoBase64 = userDoc.getString("photoBase64") ?: ""
                     )
-                )
-            }
+                }
+            }.awaitAll().filterNotNull()
         }
-        return requests
     }
 
     suspend fun acceptFriendRequest(friendUid: String, customName: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        
-        // Adicionar na minha lista de amigos
-        db.collection("users").document(myUid).collection("friends").document(friendUid).set(
-            mapOf("customName" to customName, "status" to "accepted", "timestamp" to System.currentTimeMillis())
-        ).await()
-        
-        // Atualizar status na lista de amigos da outra pessoa
-        db.collection("users").document(friendUid).collection("friends").document(myUid).update(
-            "status", "accepted"
-        ).await()
-        
-        // Remover a solicitação
-        db.collection("users").document(myUid).collection("requests").document(friendUid).delete().await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para aceitar solicitações.")
+        require(customName.isNotBlank()) { "Informe um apelido para o amigo." }
+        val timestamp = System.currentTimeMillis()
+        val batch = db.batch()
+        batch.set(
+            db.collection("users").document(myUid).collection("friends").document(friendUid),
+            mapOf("customName" to customName.trim(), "status" to "accepted", "timestamp" to timestamp)
+        )
+        batch.set(
+            db.collection("users").document(friendUid).collection("friends").document(myUid),
+            mapOf("status" to "accepted"),
+            com.google.firebase.firestore.SetOptions.merge()
+        )
+        batch.delete(db.collection("users").document(myUid).collection("requests").document(friendUid))
+        batch.commit().await()
     }
 
     suspend fun declineFriendRequest(friendUid: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        db.collection("users").document(myUid).collection("requests").document(friendUid).delete().await()
-        // Optional: also delete the pending entry in the other user's friends list
-        try {
-            db.collection("users").document(friendUid).collection("friends").document(myUid).delete().await()
-        } catch (e: Exception) {}
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para gerenciar solicitações.")
+        val batch = db.batch()
+        batch.delete(db.collection("users").document(myUid).collection("requests").document(friendUid))
+        batch.delete(db.collection("users").document(friendUid).collection("friends").document(myUid))
+        batch.commit().await()
     }
 
     suspend fun getFriends(): List<Friend> {
-        val uid = auth.currentUser?.uid ?: return emptyList()
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para carregar seus amigos.")
         val friendsSnapshot = db.collection("users").document(uid).collection("friends").get().await()
         
-        val friends = mutableListOf<Friend>()
-        for (doc in friendsSnapshot.documents) {
-            val friendUid = doc.id
-            val status = doc.getString("status") ?: "accepted"
-            val customName = doc.getString("customName") ?: ""
-            
-            val userDoc = db.collection("users").document(friendUid).get().await()
-            if (userDoc.exists()) {
-                val boletim = getSharedBoletim(friendUid)
-                var computedXp = 0.0
-                boletim?.disciplinas?.forEach { subject ->
-                    val g1 = subject["grade1"]?.trim()?.replace(',', '.')?.toDoubleOrNull()
-                    val g2 = subject["grade2"]?.trim()?.replace(',', '.')?.toDoubleOrNull()
-                    val g3 = subject["grade3"]?.trim()?.replace(',', '.')?.toDoubleOrNull()
-                    val g4 = subject["grade4"]?.trim()?.replace(',', '.')?.toDoubleOrNull()
-                    fun norm(g: Double?) = if (g != null && g <= 10.0 && g > 0.0) g * 10.0 else if (g != null && g > 10.0) g else 0.0
-                    computedXp += norm(g1) + norm(g2) + norm(g3) + norm(g4)
-                }
-                
-                friends.add(
+        val friends = coroutineScope {
+            friendsSnapshot.documents.mapNotNull { doc ->
+                if ((doc.getString("status") ?: "accepted") != "accepted") return@mapNotNull null
+                async {
+                    val friendUid = doc.id
+                    val (userDoc, boletim) = coroutineScope {
+                        val user = async { db.collection("users").document(friendUid).get().await() }
+                        val grades = async { getSharedBoletim(friendUid) }
+                        user.await() to grades.await()
+                    }
+                    if (!userDoc.exists()) return@async null
+                    var computedXp = 0.0
+                    boletim?.disciplinas?.forEach { subject ->
+                        val grades = listOf("grade1", "grade2", "grade3", "grade4").map { key ->
+                            subject[key]?.trim()?.replace(',', '.')?.toDoubleOrNull()
+                                ?.takeIf { it.isFinite() && it > 0.0 }
+                        }
+                        computedXp += grades.sumOf { grade ->
+                            when {
+                                grade == null -> 0.0
+                                grade <= 10.0 -> grade * 10.0
+                                else -> grade
+                            }
+                        }
+                    }
                     Friend(
                         uid = friendUid,
                         email = userDoc.getString("email") ?: "",
-                        nome = customName,
+                        nome = doc.getString("customName") ?: "",
                         photoBase64 = userDoc.getString("photoBase64") ?: "",
-                        status = status,
+                        status = "accepted",
                         xp = computedXp.toInt(),
                         lastUpdateTimestamp = boletim?.timestamp ?: 0L,
-                        cardColorHex = userDoc.getString("cardColorHex") ?: ""
+                        cardColorHex = userDoc.getString("cardColorHex") ?: "",
+                        sharedSubjectCount = boletim?.disciplinas?.size ?: 0
                     )
-                )
-            }
+                }
+            }.awaitAll().filterNotNull()
         }
         return friends.sortedByDescending { it.xp }
     }
@@ -293,22 +363,21 @@ object FriendsManager {
     }
     
     suspend fun updateFriendName(friendUid: String, newName: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        db.collection("users").document(myUid).collection("friends").document(friendUid).update("customName", newName).await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para editar amigos.")
+        require(newName.isNotBlank()) { "Informe um apelido para o amigo." }
+        db.collection("users").document(myUid).collection("friends").document(friendUid).update("customName", newName.trim()).await()
     }
 
     suspend fun removeFriend(friendUid: String) {
-        val myUid = auth.currentUser?.uid ?: return
-        
-        // Remove da minha lista de amigos
-        db.collection("users").document(myUid).collection("friends").document(friendUid).delete().await()
-        // Remove da lista de amigos da outra pessoa
-        db.collection("users").document(friendUid).collection("friends").document(myUid).delete().await()
+        val myUid = auth.currentUser?.uid ?: throw IllegalStateException("Entre com o Google para remover amigos.")
+        val batch = db.batch()
+        batch.delete(db.collection("users").document(myUid).collection("friends").document(friendUid))
+        batch.delete(db.collection("users").document(friendUid).collection("friends").document(myUid))
+        batch.commit().await()
     }
-    suspend fun changeGoogleAccount(context: Context): String? {
+    suspend fun changeGoogleAccount(context: Context): GoogleAccountSwitchResult? {
         try {
             val credentialManager = CredentialManager.create(context)
-
             try {
                 credentialManager.clearCredentialState(androidx.credentials.ClearCredentialStateRequest())
             } catch (e: Exception) {
@@ -322,10 +391,13 @@ object FriendsManager {
             val hashedNonce = digest.fold("") { str, it -> str + "%02x".format(it) }
 
             val webClientId = context.googleWebClientId().ifEmpty {
-                return null
+                throw IllegalStateException("A configuração Google do Firebase está ausente nesta instalação.")
             }
 
-            val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+            // Keep account switching on the same picker path as the working initial sign-in.
+            // Disabling auto-select and allowing un-authorized accounts is what lets the user
+            // choose a different Google account from the one previously used in this app.
+            val googleIdOption = GetGoogleIdOption.Builder()
                 .setServerClientId(webClientId)
                 .setFilterByAuthorizedAccounts(false)
                 .setAutoSelectEnabled(false)
@@ -345,27 +417,66 @@ object FriendsManager {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 
                 val idToken = googleIdTokenCredential.idToken
-                var newEmail = googleIdTokenCredential.id
+                val selectedGoogleEmail = googleIdTokenCredential.id.trim()
+                var tokenEmail = selectedGoogleEmail
                 try {
                     val payloadBytes = android.util.Base64.decode(idToken.split(".")[1], android.util.Base64.URL_SAFE)
                     val payload = org.json.JSONObject(String(payloadBytes))
-                    newEmail = payload.optString("email").takeIf { it.isNotEmpty() } ?: newEmail
+                    tokenEmail = payload.optString("email").takeIf { it.isNotEmpty() } ?: tokenEmail
                 } catch (e: Exception) {
                     Log.e("FriendsManager", "Erro ao decodificar JWT: ${e.message}")
                 }
+
+                if (selectedGoogleEmail.isNotBlank() && tokenEmail.isNotBlank() &&
+                    !sameGoogleAccountEmail(selectedGoogleEmail, tokenEmail)) {
+                    throw IllegalStateException("A conta retornada pelo Google não corresponde à conta selecionada. Tente novamente.")
+                }
                 
                 val authCredential = GoogleAuthProvider.getCredential(idToken, null)
+                // Only clear the old Firebase session after Google returned a valid selected account.
+                // This keeps cancellation from logging the user out, while ensuring the next Firebase
+                // sign-in starts from a clean session.
+                auth.signOut()
                 val signInResult = auth.signInWithCredential(authCredential).await()
                 val newUser = signInResult.user ?: return null
-                
-                linkProfile(explicitEmail = newUser.email ?: newEmail)
-                return newUser.email ?: newEmail
+                val firebaseEmail = newUser.email?.trim().orEmpty()
+                val firebaseGoogleEmail = newUser.providerData
+                    .firstOrNull { it.providerId == GoogleAuthProvider.PROVIDER_ID }
+                    ?.email?.trim().orEmpty()
+                // Firebase User.email is the account's primary email, which can differ from the
+                // selected Google identity when providers are linked. Verify the Google provider
+                // entry rather than rejecting a valid Google account based on the primary email.
+                if (firebaseGoogleEmail.isNotBlank() && tokenEmail.isNotBlank() &&
+                    !sameGoogleAccountEmail(firebaseGoogleEmail, tokenEmail)) {
+                    auth.signOut()
+                    throw IllegalStateException("O Firebase autenticou uma conta diferente da escolhida no Google. Tente novamente.")
+                }
+
+                val profileUpdated = try {
+                    linkProfile(explicitEmail = tokenEmail.ifBlank { firebaseGoogleEmail }.ifBlank { firebaseEmail })
+                    true
+                } catch (e: Exception) {
+                    com.example.util.AppLog.printStackTrace(e)
+                    false
+                }
+                return GoogleAccountSwitchResult(
+                    email = tokenEmail.ifBlank { firebaseGoogleEmail.ifBlank { firebaseEmail } },
+                    profileUpdated = profileUpdated
+                )
             }
+            throw IllegalStateException("O Google não retornou uma credencial de conta compatível.")
+        } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            com.example.util.AppLog.i("FriendsManager", "Troca de conta cancelada pelo usuário.")
+            return null
+        } catch (e: androidx.credentials.exceptions.GetCredentialException) {
+            com.example.util.AppLog.printStackTrace(e)
+            com.example.util.AppLog.e("FriendsManager", "Falha do seletor de conta [${e.javaClass.simpleName}]: ${e.message}")
+            throw e
         } catch (e: Exception) {
             com.example.util.AppLog.printStackTrace(e)
             com.example.util.AppLog.e("FriendsManager", "Erro ao trocar conta do Google: ${e.message}")
+            throw e
         }
-        return null
     }
 
     suspend fun updateEmail(newEmail: String): Boolean {

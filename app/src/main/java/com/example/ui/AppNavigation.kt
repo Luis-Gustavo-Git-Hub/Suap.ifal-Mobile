@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.ui.theme.AppDimens
 import android.content.Context
 import android.webkit.CookieManager
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -145,7 +146,30 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
     LaunchedEffect(Unit) {
         if (autoLoginEnabled && credentialStore.hasSuapCredentials()) {
             isLoggedIn = true
-            isSilentSyncing = true
+            viewModel.requestSync()
+        }
+    }
+
+    val userLoginRequest by viewModel.syncCoordinator.userLoginRequests.collectAsStateWithLifecycle()
+    LaunchedEffect(userLoginRequest) {
+        if (userLoginRequest > 0) { isSyncing = true; viewModel.syncCoordinator.consumeUserLoginRequest() }
+    }
+    val coordinatorLogin by viewModel.syncCoordinator.loginRequested.collectAsStateWithLifecycle()
+    val coordinatedState by viewModel.syncState.collectAsStateWithLifecycle()
+    LaunchedEffect(coordinatorLogin) {
+        isSilentSyncing = coordinatorLogin
+        if (coordinatorLogin) com.example.network.SyncMetrics.logins.incrementAndGet()
+    }
+    LaunchedEffect(coordinatedState) {
+        if (coordinatedState is com.example.sync.SyncState.Synced || coordinatedState is com.example.sync.SyncState.Failed) {
+            com.example.util.CrashLogger.log(context, "INFO", "SYNC_METRICS: requests=${com.example.network.SyncMetrics.requests.get()}, logins=${com.example.network.SyncMetrics.logins.get()} (desde início do processo).")
+        }
+        val failure = coordinatedState as? com.example.sync.SyncState.Failed
+        if (failure?.requiresUserAction == true) {
+            com.example.util.AppSnackbarManager.showSyncError(failure.reason) {
+                viewModel.syncCoordinator.credentialsChanged()
+                isSyncing = true
+            }
         }
     }
 
@@ -190,6 +214,8 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
             onBack = { isSyncing = false },
             onSaveCredentials = { u, p ->
                 if (credentialStore.setSuapCredentials(u, p)) {
+                            appPrefs.edit().putString("suap_login_method", "password").apply()
+                            viewModel.syncCoordinator.credentialsChanged()
                     suapCredentialsSaved = credentialStore.hasSuapCredentials()
                 } else {
                     com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
@@ -329,7 +355,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                     .shadow(16.dp, navShape, spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.78f), navShape)
                                     .border(1.dp, MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), navShape)
-                                    .padding(horizontal = 8.dp),
+                                    .padding(horizontal = AppDimens.Spacing8),
                                 horizontalArrangement = Arrangement.SpaceAround,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -365,7 +391,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                     selected = isStatistics,
                                     onClick = { navigateTab(NavRoute.Statistics()) },
                                     icon = getTabIcon("statistics", isStatistics, appTheme),
-                                    label = "Estatística"
+                                    label = "Estatísticas"
                                 )
                                 NavItem(
                                     modifier = Modifier.weight(1f),
@@ -385,15 +411,19 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                     startDestination = NavRoute.Dashboard,
                     modifier = Modifier.padding(innerPadding),
                     enterTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeIn(tween(180)) else
                         slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> width / 3 } + fadeIn(animationSpec = tween(240))
                     },
                     exitTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeOut(tween(120)) else
                         slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> -width / 3 } + fadeOut(animationSpec = tween(240))
                     },
                     popEnterTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeIn(tween(180)) else
                         slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> -width / 3 } + fadeIn(animationSpec = tween(240))
                     },
                     popExitTransition = {
+                        if (initialState.destination.isAppTab() && targetState.destination.isAppTab()) fadeOut(tween(120)) else
                         slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { width -> width } + fadeOut(animationSpec = tween(240))
                     }
                 ) {
@@ -472,7 +502,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
                                 if (cookie.isNullOrEmpty() || !cookie.contains("sessionid")) {
                                     pendingNavigationRoute = NavRoute.JustificativaFalta
-                                    isSilentSyncing = true
+                                    viewModel.requestSync(force = true)
                                     com.example.util.AppSnackbarManager.show("Conectando ao SUAP...")
                                 } else {
                                     try { navController.navigate(NavRoute.JustificativaFalta) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir justificativa: ${e.message}", e) }
@@ -487,7 +517,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 val cookie = CookieManager.getInstance().getCookie("https://suap.ifal.edu.br")
                                 if (cookie.isNullOrEmpty() || !cookie.contains("sessionid")) {
                                     pendingNavigationRoute = NavRoute.SituacaoJustificativa
-                                    isSilentSyncing = true
+                                    viewModel.requestSync(force = true)
                                     com.example.util.AppSnackbarManager.show("Conectando ao SUAP...")
                                 } else {
                                     try { navController.navigate(NavRoute.SituacaoJustificativa) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir situacao: ${e.message}", e) }
@@ -509,7 +539,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                             },
                             onSyncClick = { isSyncing = true },
                             isRefreshing = isSilentSyncing,
-                            onRefresh = { isSilentSyncing = true }
+                            onRefresh = { viewModel.requestSync(force = true) }
                         )
                     }
 
@@ -517,9 +547,6 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                         BoletimScreen(
                             viewModel = viewModel,
                             onBack = { navController.popBackStack() },
-                            onNavigateToLogs = {
-                                try { navController.navigate(NavRoute.Logs) } catch (e: Exception) { CrashLogger.log(context, "ERROR", "Erro ao abrir logs: ${e.message}", e) }
-                            },
                             onSubjectClick = { name, url ->
                                 viewModel.selectSubject(name, url)
                                 try {
@@ -529,7 +556,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                                 }
                             },
                             isRefreshing = isSilentSyncing,
-                            onRefresh = { isSilentSyncing = true }
+                            onRefresh = { viewModel.requestSync(force = true) }
                         )
                     }
 
@@ -770,6 +797,8 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                     onBack = { },
                     onSaveCredentials = { u, p ->
                         if (credentialStore.setSuapCredentials(u, p)) {
+                            appPrefs.edit().putString("suap_login_method", "password").apply()
+                            viewModel.syncCoordinator.credentialsChanged()
                             suapCredentialsSaved = credentialStore.hasSuapCredentials()
                         } else {
                             com.example.util.AppSnackbarManager.show("Não foi possível proteger as credenciais neste dispositivo.")
@@ -808,14 +837,7 @@ fun AppNavigation(viewModel: SuapViewModel, benchmarkRoute: String? = null) {
                         isSilentSyncing = false
                         hasSilentSyncFailed = true
                         pendingNavigationRoute = null
-                        com.example.util.AppSnackbarManager.showSyncError(reason, onRetry = {
-                            when (reason) {
-                                com.example.util.SyncFailureReason.CAPTCHA_REQUIRED,
-                                com.example.util.SyncFailureReason.INVALID_CREDENTIALS,
-                                com.example.util.SyncFailureReason.NO_CREDENTIALS -> isSyncing = true
-                                else -> isSilentSyncing = true
-                            }
-                        })
+                        viewModel.syncCoordinator.fail(com.example.network.SuapError.fromReason(reason))
                     }
                 )
             }
@@ -903,3 +925,7 @@ fun NavItem(
         )
     }
 }
+
+private fun androidx.navigation.NavDestination.isAppTab(): Boolean =
+    hasRoute<NavRoute.Dashboard>() || hasRoute<NavRoute.Avisos>() ||
+        hasRoute<NavRoute.Statistics>() || hasRoute<NavRoute.Profile>()

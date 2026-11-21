@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -25,19 +27,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CompareArrows
-import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -72,7 +66,13 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val statisticTabs = listOf("Resumo", "Notas", "Frequência", "Comparar", "Simulador")
+private val statisticTabs = listOf(
+    "Resumo" to Icons.Outlined.Insights,
+    "Notas" to Icons.Outlined.BarChart,
+    "Frequência" to Icons.Outlined.CalendarMonth,
+    "Comparar" to Icons.Outlined.CompareArrows,
+    "Simulador" to Icons.Outlined.ShowChart
+)
 
 @Composable
 fun StatisticsScreen(viewModel: SuapViewModel) {
@@ -85,13 +85,36 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
     Column(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
     ) {
-        PrimaryTabRow(selectedTabIndex = selectedTab) {
-            statisticTabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
+        com.example.ui.components.AppPageHeader(
+            title = "Estatísticas",
+            subtitle = "Seu desempenho acadêmico",
+            modifier = Modifier.padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing12)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing4),
+            horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
+        ) {
+            statisticTabs.forEachIndexed { index, (title, icon) ->
+                val selected = selectedTab == index
+                Surface(
                     onClick = { selectedTab = index },
-                    text = { Text(title, maxLines = 1, softWrap = false) }
-                )
+                    shape = RoundedCornerShape(18.dp),
+                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1, softWrap = false)
+                    }
+                }
             }
         }
         when (selectedTab) {
@@ -107,7 +130,7 @@ fun StatisticsScreen(viewModel: SuapViewModel) {
 @Composable
 private fun SummaryTab(snapshot: StatisticsSnapshot) {
     StatisticsList {
-        item { PageHeading(Icons.Default.Insights, "Seu resumo acadêmico", "Notas e dados salvos no dispositivo") }
+        item { PageHeading(Icons.Outlined.Insights, "Seu resumo acadêmico", "Notas e dados salvos no dispositivo") }
         if (!snapshot.hasData) {
             item { EmptyState("Sincronize para ver suas estatísticas.") }
         } else {
@@ -140,7 +163,7 @@ private fun SummaryTab(snapshot: StatisticsSnapshot) {
 private fun NotesTab(snapshot: StatisticsSnapshot, selectedStage: Int, onStageSelected: (Int) -> Unit) {
     val rows = snapshot.subjects.filter { it.grades.any { grade -> grade != null } }
     StatisticsList {
-        item { PageHeading(Icons.Default.BarChart, "Notas", "Evolução por etapa e disciplina") }
+        item { PageHeading(Icons.Outlined.BarChart, "Notas", "Evolução por etapa e disciplina") }
         if (!snapshot.hasData) {
             item { EmptyState("Sincronize para ver a evolução das notas.") }
         } else {
@@ -181,7 +204,7 @@ private fun FrequencyTab(snapshot: StatisticsSnapshot, minimumAttendance: Float,
     val rows = snapshot.subjects.filter { it.absences > 0 || it.subject.absences.isNotBlank() }
         .sortedByDescending { it.absences }
     StatisticsList {
-        item { PageHeading(Icons.Default.CalendarMonth, "Frequência", "Faltas registradas no SUAP") }
+        item { PageHeading(Icons.Outlined.CalendarMonth, "Frequência", "Faltas registradas no SUAP") }
         if (!snapshot.hasData) {
             item { EmptyState("Sincronize para ver suas faltas e frequência.") }
         } else {
@@ -247,7 +270,7 @@ private fun CompareTab(snapshot: StatisticsSnapshot, selectedStage: Int, onStage
     val aboveClassPercent = stageComparisons.takeIf { it.isNotEmpty() }
         ?.let { pairs -> pairs.count { it.first > it.second }.toDouble() * 100.0 / pairs.size }
     StatisticsList {
-        item { PageHeading(Icons.Default.CompareArrows, "Comparar", "Você e a média da turma") }
+        item { PageHeading(Icons.Outlined.CompareArrows, "Comparar", "Você e a média da turma") }
         if (!snapshot.hasData) {
             item { EmptyState("Sincronize suas notas para comparar com a turma.") }
         } else {
@@ -283,7 +306,7 @@ private fun SimulatorTab(snapshot: StatisticsSnapshot, targetAverage: Float, onT
     val rows = snapshot.subjects.filter { it.neededAverage != null }
         .sortedBy { it.neededAverage }
     StatisticsList {
-        item { PageHeading(Icons.Default.ShowChart, "Simulador", "Cenários calculados pela regra acadêmica existente") }
+        item { PageHeading(Icons.Outlined.ShowChart, "Simulador", "Cenários calculados pela regra acadêmica existente") }
         if (!snapshot.hasData) {
             item { EmptyState("Sincronize para simular suas médias.") }
         } else {
@@ -310,8 +333,8 @@ private fun SimulatorTab(snapshot: StatisticsSnapshot, targetAverage: Float, onT
 private fun StatisticsList(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = AppDimens.Spacing16, vertical = AppDimens.Spacing16),
+        verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing12),
         content = content
     )
 }
@@ -319,11 +342,11 @@ private fun StatisticsList(content: androidx.compose.foundation.lazy.LazyListSco
 @Composable
 private fun PageHeading(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = AppDimens.Spacing4),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing12)
     ) {
-        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(44.dp).clip(androidx.compose.material3.MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
         Column {
@@ -335,18 +358,18 @@ private fun PageHeading(icon: androidx.compose.ui.graphics.vector.ImageVector, t
 
 @Composable
 private fun StagePicker(selectedStage: Int, onSelect: (Int) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
         (1..4).forEach { stage ->
-            FilterChip(selected = selectedStage == stage, onClick = { onSelect(stage) }, label = { Text("${stage}ª etapa") })
+            com.example.ui.components.AppFilterChip(selected = selectedStage == stage, onClick = { onSelect(stage) }, label = { Text("${stage}ª etapa") })
         }
     }
 }
 
 @Composable
 private fun MetricGrid(metrics: List<Pair<String, String>>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
         metrics.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
                 row.forEach { (title, value) ->
                     CardPanel(Modifier.weight(1f)) {
                         Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -363,11 +386,11 @@ private fun MetricGrid(metrics: List<Pair<String, String>>) {
 private fun StatusSummary(snapshot: StatisticsSnapshot) {
     CardPanel {
         Text("Situação das disciplinas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
             StatusPill("Aprovadas", snapshot.approvedCount, AppSemanticColors.success, Modifier.weight(1f))
             StatusPill("Em curso", snapshot.ongoingCount, MaterialTheme.colorScheme.primary, Modifier.weight(1f))
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing4)) {
             StatusPill("Em risco", snapshot.atRiskCount, AppSemanticColors.danger, Modifier.weight(1f))
             StatusPill("Recuperação", snapshot.recoveryCount, AppSemanticColors.warning, Modifier.weight(1f))
         }
@@ -376,8 +399,8 @@ private fun StatusSummary(snapshot: StatisticsSnapshot) {
 
 @Composable
 private fun StatusPill(label: String, count: Int, accent: Color, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(14.dp), color = accent.copy(alpha = 0.12f)) {
-        Column(Modifier.padding(10.dp)) {
+    Surface(modifier, shape = androidx.compose.material3.MaterialTheme.shapes.large, color = accent.copy(alpha = 0.12f)) {
+        Column(Modifier.padding(AppDimens.Spacing8)) {
             Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent)
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
         }
@@ -426,13 +449,13 @@ private fun NoteSubjectCard(row: SubjectStatistics, selectedStage: Int) {
     val previous = if (selectedStage > 1) row.grades[selectedStage - 2] else null
     val change = if (grade != null && previous != null) grade - previous else null
     CardPanel {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Icon(Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
+            Icon(Icons.Outlined.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
             Text(row.subject.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(gradeText(grade), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
         Text("Média calculada: ${gradeText(row.average)} · ${statusLabel(row.status)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
             row.grades.forEachIndexed { index, value ->
                 StageGradeChip(index + 1, value, Modifier.weight(1f))
             }
@@ -443,8 +466,8 @@ private fun NoteSubjectCard(row: SubjectStatistics, selectedStage: Int) {
 
 @Composable
 private fun StageGradeChip(stage: Int, grade: Double?, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-        Column(Modifier.padding(vertical = 7.dp, horizontal = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Surface(modifier, shape = androidx.compose.material3.MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant) {
+        Column(Modifier.padding(vertical = AppDimens.Spacing8, horizontal = AppDimens.Spacing4), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("B$stage", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(gradeText(grade), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         }
@@ -481,9 +504,9 @@ private fun CompareSubjectCard(row: SubjectStatistics, stage: Int) {
     val classroom = row.classGrades[stage - 1]
     val difference = if (student != null && classroom != null) student - classroom else null
     CardPanel {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
             Text(row.subject.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8), verticalAlignment = Alignment.CenterVertically) {
                 Text("Você ${gradeText(student)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                 Text("Turma ${gradeText(classroom)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
             }
@@ -507,7 +530,7 @@ private fun SimulatorSubjectCard(row: SubjectStatistics, target: Double) {
                 ?: "Todas as etapas já têm nota; média atual ${gradeText(row.average)}.",
             style = MaterialTheme.typography.bodyMedium
         )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)) {
             ForecastPill("Pior cenário", gradeText(row.worstCaseAverage), AppSemanticColors.danger, Modifier.weight(1f))
             ForecastPill("Melhor cenário", gradeText(row.bestCaseAverage), AppSemanticColors.success, Modifier.weight(1f))
         }
@@ -516,8 +539,8 @@ private fun SimulatorSubjectCard(row: SubjectStatistics, target: Double) {
 
 @Composable
 private fun ForecastPill(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.12f)) {
-        Column(Modifier.padding(10.dp)) {
+    Surface(modifier, shape = androidx.compose.material3.MaterialTheme.shapes.medium, color = color.copy(alpha = 0.12f)) {
+        Column(Modifier.padding(AppDimens.Spacing8)) {
             Text(label, style = MaterialTheme.typography.labelSmall)
             Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
         }
@@ -534,8 +557,8 @@ private fun SectionHeading(title: String, subtitle: String) {
 
 @Composable
 private fun CardPanel(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Card(modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+    com.example.ui.components.AppCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppDimens.ItemSpacing), content = content)
     }
 }
 
@@ -549,12 +572,8 @@ private fun InformationCard(title: String, body: String) {
 
 @Composable
 private fun EmptyState(message: String) {
-    Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Default.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    com.example.ui.components.AppEmptyState(message)
+
 }
 
 private fun statusLabel(status: AcademicStatus): String = when (status) {

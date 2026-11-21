@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.material.icons.outlined.*
+import com.example.ui.theme.AppDimens
 import com.example.util.configureAppWebSettings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.clickable
@@ -49,14 +51,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Surface
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.ImeAction
@@ -202,6 +201,7 @@ fun LoginScreen(
             WebView(context).apply {
                     activeWebView = this
                     configureAppWebSettings(enableJavaScript = true, enableDomStorage = true)
+                    CookieManager.getInstance().setAcceptCookie(true)
                     CookieManager.getInstance().setAcceptThirdPartyCookies(
                         this,
                         loginMethod == LoginMethod.CREDENTIALS
@@ -451,27 +451,27 @@ fun LoginScreen(
                     },
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(top = 48.dp, start = 16.dp),
+                        .padding(top = 48.dp, start = AppDimens.Spacing16),
                     containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                     contentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                 ) {
                     Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                 }
                 if (loginMethod == LoginMethod.GOV_BR) {
-                    TextButton(
+                    com.example.ui.components.AppTextButton(
                         onClick = { matriculaManual = inputMatricula; showMatriculaDialog = true },
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = AppDimens.Spacing16)
                     ) { Text("Informar matrícula") }
                 }
             }
         }
 
         if (showMatriculaDialog) {
-            androidx.compose.material3.AlertDialog(
+            com.example.ui.components.AppDialog(
                 onDismissRequest = { showMatriculaDialog = false },
                 title = { Text("Matrícula do SUAP") },
                 text = {
-                    OutlinedTextField(
+                    com.example.ui.components.AppTextField(
                         value = matriculaManual,
                         onValueChange = { matriculaManual = it.filter(Char::isDigit) },
                         label = { Text("Matrícula") },
@@ -481,7 +481,7 @@ fun LoginScreen(
                     )
                 },
                 confirmButton = {
-                    TextButton(onClick = {
+                    com.example.ui.components.AppTextButton(onClick = {
                         val matricula = matriculaManual.trim()
                         if (matricula.isNotEmpty()) {
                             inputMatricula = matricula
@@ -491,28 +491,24 @@ fun LoginScreen(
                     }) { Text("Continuar") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showMatriculaDialog = false }) { Text("Cancelar") }
+                    com.example.ui.components.AppTextButton(onClick = { showMatriculaDialog = false }) { Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_cancel)) }
                 }
             )
         }
         
         if (!showWebView) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            androidx.compose.material3.IconButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.TopStart).padding(top = 48.dp, start = 16.dp)
-            ) {
-                Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
-            }
+        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+            com.example.ui.components.AppTopBar(title = "Entrar no SUAP", onBack = onBack)
 
             androidx.compose.foundation.layout.Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
                     .widthIn(max = 480.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                    .padding(horizontal = AppDimens.ScreenPadding, vertical = AppDimens.Spacing16),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(AppDimens.Spacing16)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -524,12 +520,12 @@ fun LoginScreen(
                         style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    FilledTonalButton(
+                    com.example.ui.components.AppTonalButton(
                         onClick = { showTutorial = true },
                         shape = MaterialTheme.shapes.small,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = AppDimens.Spacing8, vertical = AppDimens.Spacing4)
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Tutorial", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
@@ -544,7 +540,7 @@ fun LoginScreen(
                     )
                 }
 
-                OutlinedTextField(
+                com.example.ui.components.AppTextField(
                     value = inputMatricula,
                     onValueChange = { inputMatricula = it },
                     label = { Text("Matrícula") },
@@ -558,7 +554,7 @@ fun LoginScreen(
 
                 var showPassword by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
-                OutlinedTextField(
+                com.example.ui.components.AppTextField(
                     value = inputSenha,
                     onValueChange = { inputSenha = it },
                     label = { Text("Senha") },
@@ -572,7 +568,7 @@ fun LoginScreen(
                     trailingIcon = {
                         androidx.compose.material3.IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
-                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                                 contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
                             )
                         }
@@ -588,12 +584,12 @@ fun LoginScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = AppDimens.Spacing12, vertical = AppDimens.Spacing8),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.Spacing8)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Info,
+                            imageVector = Icons.Outlined.Info,
                             contentDescription = null,
                             tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -611,7 +607,7 @@ fun LoginScreen(
                 var showTermsDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                 
                 if (showTermsDialog) {
-                    androidx.compose.material3.AlertDialog(
+                    com.example.ui.components.AppDialog(
                         onDismissRequest = { showTermsDialog = false },
                         title = { Text("Termos de Uso") },
                         text = {
@@ -647,7 +643,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                             }
                         },
                         confirmButton = {
-                            androidx.compose.material3.TextButton(
+                            com.example.ui.components.AppTextButton(
                                 onClick = { 
                                     termsAccepted = true
                                     prefs.edit().putBoolean("terms_accepted", true).apply()
@@ -658,16 +654,16 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                             }
                         },
                         dismissButton = {
-                            androidx.compose.material3.TextButton(
+                            com.example.ui.components.AppTextButton(
                                 onClick = { showTermsDialog = false }
                             ) {
-                                Text("Fechar")
+                                Text(androidx.compose.ui.res.stringResource(com.example.R.string.action_close))
                             }
                         }
                     )
                 }
                 
-                androidx.compose.material3.Card(
+                com.example.ui.components.AppContentCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.material3.MaterialTheme.shapes.large,
                     colors = androidx.compose.material3.CardDefaults.cardColors(
@@ -683,7 +679,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                                 termsAccepted = !termsAccepted 
                                 prefs.edit().putBoolean("terms_accepted", termsAccepted).apply()
                             }
-                            .padding(12.dp)
+                            .padding(AppDimens.Spacing12)
                     ) {
                         androidx.compose.material3.Checkbox(
                             checked = termsAccepted, 
@@ -721,13 +717,13 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                                 modifier = Modifier
                                     .clip(androidx.compose.material3.MaterialTheme.shapes.extraSmall)
                                     .clickable { showTermsDialog = true }
-                                    .padding(vertical = 4.dp, horizontal = 2.dp)
+                                    .padding(vertical = AppDimens.Spacing4, horizontal = 2.dp)
                             )
                         }
                     }
                 }
                 
-                Button(
+                com.example.ui.components.AppPrimaryButton(
                     onClick = { startLogin() },
                     modifier = Modifier.fillMaxWidth().height(50.dp).testTag("login_button"),
                     enabled = canSubmit
@@ -741,7 +737,7 @@ Ao marcar a caixa de concordância, você declara ter lido, compreendido e aceit
                     }
                 }
                 
-                androidx.compose.material3.OutlinedButton(
+                com.example.ui.components.AppOutlineButton(
                     onClick = { startGovBrLogin() },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     enabled = termsAccepted && !isLoading

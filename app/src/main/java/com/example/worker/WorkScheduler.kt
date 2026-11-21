@@ -25,6 +25,7 @@ object WorkScheduler {
                 .build()
 
             val periodicRequest = PeriodicWorkRequestBuilder<SyncWorker>(24, TimeUnit.HOURS, 6, TimeUnit.HOURS)
+                .setBackoffCriteria(androidx.work.BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)
                 .setConstraints(constraints)
                 .build()
 
